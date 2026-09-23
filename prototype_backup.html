@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Plano de Hipertrofia & Registro de Treino</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen pb-16 antialiased selection:bg-amber-500 selection:text-slate-900">
+
+  <!-- Cabeçalho Principal -->
+  <header class="border-b border-slate-800 bg-slate-900/60 backdrop-blur sticky top-0 z-40">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="inline-block w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
+          <h1 class="text-xl md:text-2xl font-black tracking-tight text-white uppercase">Guia de Hipertrofia</h1>
+        </div>
+        <p class="text-xs text-slate-400 mt-0.5">Treino ABC • Nutrição Natural • Progressão de Cargas</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <button id="reset-all" class="text-xs text-slate-400 hover:text-red-400 border border-slate-700 hover:border-red-800 px-3 py-1.5 rounded-lg transition-colors">
+          Limpar Registros
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 py-8 space-y-12">
+
+    <!-- Quadro Semanal de Frequência -->
+    <section class="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl relative overflow-hidden">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+        <div>
+          <h2 class="text-lg font-bold text-white flex items-center gap-2">
+            <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            Quadro de Frequência Semanal
+          </h2>
+          <p class="text-sm text-slate-400">Marque os dias concluídos para acompanhar sua consistência.</p>
+        </div>
+        <div class="text-sm bg-slate-800/80 px-4 py-2 rounded-xl border border-slate-700/60 font-medium">
+          Progresso da Semana: <span id="week-progress" class="text-amber-400 font-bold">0 / 7</span>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3" id="week-days-container">
+        <!-- Preenchido via JavaScript -->
+      </div>
+    </section>
+
+    <!-- Ficha de Treino ABC -->
+    <section class="space-y-6">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+        <div>
+          <h2 class="text-xl font-extrabold text-white tracking-tight">Ficha de Treino & Cargas</h2>
+          <p class="text-sm text-slate-400">Registre o peso (kg) e repetições máximas de cada exercício para aplicar sobrecarga progressiva.</p>
+        </div>
+        <!-- Abas de Treino -->
+        <div class="inline-flex bg-slate-900 p-1 rounded-xl border border-slate-800" id="workout-tabs">
+          <button data-tab="treino-a" class="tab-btn px-4 py-2 text-sm font-semibold rounded-lg transition-all bg-amber-500 text-slate-950 shadow">Treino A (Push)</button>
+          <button data-tab="treino-b" class="tab-btn px-4 py-2 text-sm font-semibold rounded-lg transition-all text-slate-400 hover:text-white">Treino B (Pull)</button>
+          <button data-tab="treino-c" class="tab-btn px-4 py-2 text-sm font-semibold rounded-lg transition-all text-slate-400 hover:text-white">Treino C (Legs)</button>
+        </div>
+      </div>
+
+      <!-- Treino A -->
+      <div id="treino-a" class="workout-content space-y-3">
+        <div class="bg-amber-500/10 border border-amber-500/20 text-amber-300 px-4 py-3 rounded-xl text-sm mb-4">
+          <strong>Foco:</strong> Peito, Ombros (anterior/lateral) e Tríceps. Descanse de 60 a 90 segundos entre as séries.
+        </div>
+        <div class="grid gap-3" id="list-treino-a"></div>
+      </div>
+
+      <!-- Treino B -->
+      <div id="treino-b" class="workout-content space-y-3 hidden">
+        <div class="bg-blue-500/10 border border-blue-500/20 text-blue-300 px-4 py-3 rounded-xl text-sm mb-4">
+          <strong>Foco:</strong> Costas, Trapézio, Deltoide Posterior e Bíceps. Puxe com os cotovelos para ativar a dorsal.
+        </div>
+        <div class="grid gap-3" id="list-treino-b"></div>
+      </div>
+
+      <!-- Treino C -->
+      <div id="treino-c" class="workout-content space-y-3 hidden">
+        <div class="bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 px-4 py-3 rounded-xl text-sm mb-4">
+          <strong>Foco:</strong> Quadríceps, Isquiotibiais, Panturrilhas e Core. Mantenha cadência controlada e amplitude segura.
+        </div>
+        <div class="grid gap-3" id="list-treino-c"></div>
+      </div>
+    </section>
+
+    <!-- Plano Alimentar & Suplementação Natural -->
+    <section class="space-y-6">
+      <div class="border-b border-slate-800 pb-4">
+        <h2 class="text-xl font-extrabold text-white tracking-tight">Plano Alimentar & Suplementação</h2>
+        <p class="text-sm text-slate-400">Nutrição focada em hipertrofia limpa com fontes integrais e uso diário de creatina.</p>
+      </div>
+
+      <!-- Card Destaque Creatina e Hidratação -->
+      <div class="grid md:grid-cols-2 gap-4">
+        <div class="p-5 rounded-2xl bg-gradient-to-br from-amber-500/10 via-slate-900 to-slate-900 border border-amber-500/20">
+          <div class="flex items-center gap-3 mb-2">
+            <span class="p-2 bg-amber-500/20 text-amber-400 rounded-lg">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+            </span>
+            <h3 class="font-bold text-white">Creatina Monohidratada (3g a 5g)</h3>
+          </div>
+          <p class="text-sm text-slate-300 leading-relaxed">
+            Consumo diário contínuo, <strong>inclusive nos dias de descanso</strong>. Tome com uma refeição rica em carboidratos (almoço ou pós-treino) para elevar a captação celular via pico de insulina.
+          </p>
+        </div>
+
+        <div class="p-5 rounded-2xl bg-gradient-to-br from-cyan-500/10 via-slate-900 to-slate-900 border border-cyan-500/20">
+          <div class="flex items-center gap-3 mb-2">
+            <span class="p-2 bg-cyan-500/20 text-cyan-400 rounded-lg">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+            </span>
+            <h3 class="font-bold text-white">Hidratação Crítica</h3>
+          </div>
+          <p class="text-sm text-slate-300 leading-relaxed">
+            A creatina atrai água para o meio intracelular. Ingira de <strong>35 a 40 ml de água por kg de peso corporal</strong> por dia para garantir a voluminização muscular e evitar sobrecarga renal.
+          </p>
+        </div>
+      </div>
+
+      <!-- Tabela / Cards de Refeições -->
+      <div class="grid md:grid-cols-2 gap-4" id="meals-container">
+        <!-- Injetado via JS -->
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    // Dados dos Exercícios
+    const workoutData = {
+      "treino-a": [
+        { id: "a1", name: "Supino Reto (Halteres ou Máquina)", series: "3x 8-10 reps", rest: "90s" },
+        { id: "a2", name: "Supino Inclinado com Halteres", series: "3x 10-12 reps", rest: "60s" },
+        { id: "a3", name: "Voador / Peck Deck", series: "3x 12-15 reps", rest: "60s" },
+        { id: "a4", name: "Desenvolvimento Sentado (Halteres)", series: "3x 10-12 reps", rest: "90s" },
+        { id: "a5", name: "Elevação Lateral (Halteres/Polia)", series: "3x 12-15 reps", rest: "60s" },
+        { id: "a6", name: "Tríceps Pulley (Barra ou Corda)", series: "3x 10-12 reps", rest: "60s" },
+        { id: "a7", name: "Tríceps Francês (Haltere ou Polia)", series: "3x 12 reps", rest: "60s" }
+      ],
+      "treino-b": [
+        { id: "b1", name: "Puxada Frontal na Polia", series: "3x 8-10 reps", rest: "90s" },
+        { id: "b2", name: "Remada Baixa Sentada (Triângulo)", series: "3x 10-12 reps", rest: "90s" },
+        { id: "b3", name: "Remada Curvada com Halteres", series: "3x 10-12 reps", rest: "60s" },
+        { id: "b4", name: "Crucifixo Inverso (Máquina ou Halteres)", series: "3x 12-15 reps", rest: "60s" },
+        { id: "b5", name: "Rosca Direta (Barra W ou Halteres)", series: "3x 10-12 reps", rest: "60s" },
+        { id: "b6", name: "Rosca Martelo com Halteres", series: "3x 10-12 reps", rest: "60s" },
+        { id: "b7", name: "Encolhimento de Ombros com Halteres", series: "3x 12-15 reps", rest: "45s" }
+      ],
+      "treino-c": [
+        { id: "c1", name: "Leg Press 45°", series: "3x 10-12 reps", rest: "90s" },
+        { id: "c2", name: "Agachamento Goblet (com haltere)", series: "3x 10-12 reps", rest: "90s" },
+        { id: "c3", name: "Cadeira Extensora", series: "3x 12-15 reps", rest: "60s" },
+        { id: "c4", name: "Mesa Flexora / Cadeira Flexora", series: "3x 10-12 reps", rest: "60s" },
+        { id: "c5", name: "Panturrilha em Pé (Máquina ou Degrau)", series: "4x 15 reps", rest: "45s" },
+        { id: "c6", name: "Abdominal Supra no Solo/Máquina", series: "3x 15-20 reps", rest: "45s" },
+        { id: "c7", name: "Prancha Isométrica", series: "3x 30s-45s", rest: "45s" }
+      ]
+    };
+
+    // Dados da Semana
+    const weekDays = [
+      { id: "seg", label: "Segunda", defaultWorkout: "Treino A" },
+      { id: "ter", label: "Terça", defaultWorkout: "Treino B" },
+      { id: "qua", label: "Quarta", defaultWorkout: "Descanso" },
+      { id: "qui", label: "Quinta", defaultWorkout: "Treino C" },
+      { id: "sex", label: "Sexta", defaultWorkout: "Treino A" },
+      { id: "sab", label: "Sábado", defaultWorkout: "Treino B / Cardio" },
+      { id: "dom", label: "Domingo", defaultWorkout: "Descanso" }
+    ];
+
+    // Dados de Refeições
+    const mealsData = [
+      {
+        title: "1. Café da Manhã",
+        tag: "Início do dia",
+        items: "3 ovos inteiros mexidos ou cozidos + 2 fatias de pão integral (ou 150g de cuscuz/mandioca) + 1 fruta (mamão ou banana).",
+        objective: "Proteínas completas e carboidratos de média absorção."
+      },
+      {
+        title: "2. Almoço Principal",
+        tag: "Anabolismo Base",
+        items: "150g a 180g de peito de frango, carne moída ou peixe + 200g de arroz + 1 concha de feijão + salada verde com azeite de oliva extra virgem. + CREATINA (5g).",
+        objective: "Aporte denso de micronutrientes, aminoácidos e creatina."
+      },
+      {
+        title: "3. Pré-Treino Natural (45-60m antes)",
+        tag: "Energia & Foco",
+        items: "1 banana amassada com 2 colheres de sopa de aveia em flocos e 1 colher de mel + 1 xícara de café preto sem açúcar.",
+        objective: "Digestão leve, carboidrato disponível rápido e cafeína natural."
+      },
+      {
+        title: "4. Jantar / Pós-Treino",
+        tag: "Recuperação Noturna",
+        items: "150g a 180g de filé de frango grelhado ou carne magra + 200g de batata-doce, mandioca ou arroz + vegetais cozidos.",
+        objective: "Reposição completa de glicogênio e reconstrução muscular."
+      },
+      {
+        title: "5. Ceia (Opcional)",
+        tag: "Anti-catabolismo",
+        items: "2 ovos cozidos ou 1 copo de leite integral com 1 colher de pasta de amendoim 100% integral.",
+        objective: "Liberação gradual de aminoácidos durante as horas de sono."
+      }
+    ];
+
+    // Renderização do Quadro Semanal
+    function renderWeekDays() {
+      const container = document.getElementById("week-days-container");
+      container.innerHTML = "";
+
+      let completedCount = 0;
+
+      weekDays.forEach(day => {
+        const isDone = localStorage.getItem(`day_${day.id}`) === "true";
+        if (isDone) completedCount++;
+
+        const card = document.createElement("div");
+        card.className = `p-3 rounded-xl border text-center transition-all cursor-pointer flex flex-col justify-between ${
+          isDone 
+            ? "bg-amber-500/15 border-amber-500/50 text-white shadow-sm" 
+            : "bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700"
+        }`;
+        
+        card.innerHTML = `
+          <div>
+            <span class="text-xs font-semibold uppercase tracking-wider block ${isDone ? 'text-amber-400' : 'text-slate-500'}">${day.label}</span>
+            <span class="text-xs font-medium block mt-1 line-clamp-1 ${isDone ? 'text-slate-200' : 'text-slate-400'}">${day.defaultWorkout}</span>
+          </div>
+          <div class="mt-3 flex items-center justify-center">
+            <span class="w-5 h-5 rounded-full flex items-center justify-center border text-xs ${
+              isDone ? 'bg-amber-500 border-amber-400 text-slate-950 font-bold' : 'border-slate-700 text-transparent'
+            }">✓</span>
+          </div>
+        `;
+
+        card.addEventListener("click", () => {
+          localStorage.setItem(`day_${day.id}`, (!isDone).toString());
+          renderWeekDays();
+        });
+
+        container.appendChild(card);
+      });
+
+      document.getElementById("week-progress").textContent = `${completedCount} / 7 Concluídos`;
+    }
+
+    // Renderização dos Exercícios
+    function renderWorkouts() {
+      Object.keys(workoutData).forEach(tabKey => {
+        const listEl = document.getElementById(`list-${tabKey}`);
+        if (!listEl) return;
+        listEl.innerHTML = "";
+
+        workoutData[tabKey].forEach(item => {
+          const savedWeight = localStorage.getItem(`weight_${item.id}`) || "";
+          const savedReps = localStorage.getItem(`reps_${item.id}`) || "";
+          const isFinished = localStorage.getItem(`check_${item.id}`) === "true";
+
+          const row = document.createElement("div");
+          row.className = `p-4 rounded-xl border transition-all flex flex-col md:flex-row md:items-center justify-between gap-4 ${
+            isFinished 
+              ? "bg-slate-900/40 border-slate-800/60 opacity-80" 
+              : "bg-slate-900 border-slate-800 hover:border-slate-700"
+          }`;
+
+          row.innerHTML = `
+            <div class="flex items-start md:items-center gap-3">
+              <button data-check="${item.id}" class="mt-0.5 md:mt-0 w-6 h-6 rounded-md flex-shrink-0 flex items-center justify-center border transition-colors ${
+                isFinished 
+                  ? "bg-amber-500 border-amber-500 text-slate-950 font-bold" 
+                  : "border-slate-700 hover:border-slate-500 text-transparent"
+              }">✓</button>
+              <div>
+                <h4 class="text-sm md:text-base font-semibold ${isFinished ? 'line-through text-slate-400' : 'text-white'}">${item.name}</h4>
+                <div class="flex items-center gap-2 mt-0.5 text-xs text-slate-400">
+                  <span class="text-amber-400/90 font-medium">${item.series}</span>
+                  <span>•</span>
+                  <span>Descanso: ${item.rest}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2 self-end md:self-auto w-full md:w-auto">
+              <div class="flex items-center gap-1.5 bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800 flex-1 md:flex-initial">
+                <span class="text-xs text-slate-500">Carga:</span>
+                <input type="number" step="0.5" placeholder="0" value="${savedWeight}" data-weight="${item.id}" class="w-16 bg-transparent text-sm font-semibold text-right text-amber-300 focus:outline-none focus:text-white" />
+                <span class="text-xs text-slate-500">kg</span>
+              </div>
+
+              <div class="flex items-center gap-1.5 bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800 flex-1 md:flex-initial">
+                <span class="text-xs text-slate-500">Reps:</span>
+                <input type="number" placeholder="10" value="${savedReps}" data-reps="${item.id}" class="w-12 bg-transparent text-sm font-semibold text-right text-amber-300 focus:outline-none focus:text-white" />
+              </div>
+            </div>
+          `;
+
+          // Eventos para salvar dados
+          const checkBtn = row.querySelector(`[data-check="${item.id}"]`);
+          checkBtn.addEventListener("click", () => {
+            localStorage.setItem(`check_${item.id}`, (!isFinished).toString());
+            renderWorkouts();
+          });
+
+          const weightInput = row.querySelector(`[data-weight="${item.id}"]`);
+          weightInput.addEventListener("input", (e) => {
+            localStorage.setItem(`weight_${item.id}`, e.target.value);
+          });
+
+          const repsInput = row.querySelector(`[data-reps="${item.id}"]`);
+          repsInput.addEventListener("input", (e) => {
+            localStorage.setItem(`reps_${item.id}`, e.target.value);
+          });
+
+          listEl.appendChild(row);
+        });
+      });
+    }
+
+    // Renderização das Refeições
+    function renderMeals() {
+      const container = document.getElementById("meals-container");
+      container.innerHTML = "";
+
+      mealsData.forEach(meal => {
+        const card = document.createElement("div");
+        card.className = "p-5 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col justify-between";
+        card.innerHTML = `
+          <div>
+            <div class="flex items-center justify-between gap-2 mb-2">
+              <h4 class="font-bold text-white text-base">${meal.title}</h4>
+              <span class="text-xs font-semibold px-2 py-0.5 rounded bg-slate-800 text-amber-400 border border-slate-700/60">${meal.tag}</span>
+            </div>
+            <p class="text-sm text-slate-300 leading-relaxed">${meal.items}</p>
+          </div>
+          <p class="text-xs text-slate-500 mt-4 pt-3 border-t border-slate-800/80">
+            <strong>Objetivo:</strong> ${meal.objective}
+          </p>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // Alternância de Abas
+    document.querySelectorAll(".tab-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".tab-btn").forEach(b => {
+          b.className = "tab-btn px-4 py-2 text-sm font-semibold rounded-lg transition-all text-slate-400 hover:text-white";
+        });
+        btn.className = "tab-btn px-4 py-2 text-sm font-semibold rounded-lg transition-all bg-amber-500 text-slate-950 shadow";
+
+        const target = btn.getAttribute("data-tab");
+        document.querySelectorAll(".workout-content").forEach(content => {
+          content.classList.add("hidden");
+        });
+        document.getElementById(target).classList.remove("hidden");
+      });
+    });
+
+    // Resetar Registros
+    document.getElementById("reset-all").addEventListener("click", () => {
+      if (confirm("Tem certeza que deseja resetar os checks da semana e registros de repetições/cargas?")) {
+        localStorage.clear();
+        renderWeekDays();
+        renderWorkouts();
+      }
+    });
+
+    // Inicialização
+    renderWeekDays();
+    renderWorkouts();
+    renderMeals();
+  </script>
+</body>
+</html>
