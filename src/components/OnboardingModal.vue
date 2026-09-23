@@ -2,11 +2,22 @@
   <div v-if="isOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
     <div class="relative w-full max-w-xl bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl overflow-hidden my-8">
       
-      <!-- Linha de Progresso do Wizard -->
+      <!-- Linha de Progresso do Wizard & Fechar -->
       <div class="mb-6">
         <div class="flex items-center justify-between text-xs font-semibold text-slate-400 mb-2">
           <span class="text-amber-400 font-bold uppercase tracking-wider">Passo {{ step }} de 3</span>
-          <span>{{ stepTitle }}</span>
+          <div class="flex items-center gap-3">
+            <span>{{ stepTitle }}</span>
+            <button 
+              v-if="initialProfile" 
+              type="button"
+              @click="emit('close')"
+              class="text-slate-400 hover:text-white p-1 rounded-lg bg-slate-800/80 hover:bg-slate-700 transition-colors leading-none"
+              title="Fechar"
+            >
+              ✕
+            </button>
+          </div>
         </div>
         <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
           <div 
@@ -206,7 +217,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 
 const props = defineProps({
   isOpen: {
@@ -224,15 +235,43 @@ const emit = defineEmits(['save', 'close']);
 const step = ref(1);
 
 const form = ref({
-  gender: props.initialProfile?.gender || 'male',
-  ageYears: props.initialProfile?.ageYears || 25,
-  weightKg: props.initialProfile?.weightKg || 74,
-  heightCm: props.initialProfile?.heightCm || 175,
-  daysPerWeek: props.initialProfile?.daysPerWeek || 4,
-  experienceLevel: props.initialProfile?.experienceLevel || 'intermediate',
-  equipment: props.initialProfile?.equipment || 'gym',
-  restrictions: props.initialProfile?.restrictions ? [...props.initialProfile.restrictions] : []
+  gender: 'male',
+  ageYears: 25,
+  weightKg: 74,
+  heightCm: 175,
+  daysPerWeek: 4,
+  experienceLevel: 'intermediate',
+  equipment: 'gym',
+  restrictions: []
 });
+
+watch(
+  () => props.initialProfile,
+  (val) => {
+    if (val) {
+      form.value = {
+        gender: val.gender || 'male',
+        ageYears: val.ageYears || 25,
+        weightKg: val.weightKg || 74,
+        heightCm: val.heightCm || 175,
+        daysPerWeek: val.daysPerWeek || 4,
+        experienceLevel: val.experienceLevel || 'intermediate',
+        equipment: val.equipment || 'gym',
+        restrictions: val.restrictions ? [...val.restrictions] : []
+      };
+    }
+  },
+  { immediate: true, deep: true }
+);
+
+watch(
+  () => props.isOpen,
+  (open) => {
+    if (open) {
+      step.value = 1;
+    }
+  }
+);
 
 const stepTitle = computed(() => {
   if (step.value === 1) return 'Biometria';
@@ -263,6 +302,5 @@ function toggleRestriction(id) {
 
 function submitProfile() {
   emit('save', { ...form.value });
-  step.value = 1;
 }
 </script>

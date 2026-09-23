@@ -5,9 +5,9 @@ import {
     calculateSurplusCalories,
     calculateTDEE,
     calculateWaterRequirement
-} from '../calculators/tdee';
-import { generateWorkoutSplit } from './workoutGenerator';
-import { MEAL_TEMPLATES } from '../knowledge/foodTemplates';
+} from '../calculators/tdee.js';
+import { generateWorkoutSplit } from './workoutGenerator.js';
+import { MEAL_TEMPLATES } from '../knowledge/foodTemplates.js';
 
 /**
  * Orquestrador Geral: Recebe as respostas do usuário e gera o Plano Completo

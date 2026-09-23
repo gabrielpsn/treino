@@ -1,4 +1,4 @@
-import { EXERCISE_CATALOG } from '../knowledge/exercises';
+import { EXERCISE_CATALOG } from '../knowledge/exercises.js';
 
 /**
  * Filtra exercícios com base nas restrições articulares e equipamento disponível

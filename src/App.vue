@@ -442,27 +442,43 @@ async function loadUserData() {
 }
 
 async function handleSaveProfile(newProfile) {
-  userProfile.value = newProfile;
-  await db.user_profile.put({ id: 'current_user', ...newProfile });
-  await applyAndSavePlan(newProfile, true);
-  isOnboardingOpen.value = false;
+  try {
+    const rawProfile = JSON.parse(JSON.stringify(newProfile));
+    userProfile.value = rawProfile;
+    await db.user_profile.put({ id: 'current_user', ...rawProfile });
+    await applyAndSavePlan(rawProfile, true);
+    isOnboardingOpen.value = false;
 
-  // Feedback visual de comemoração pela geração do plano inteligente
-  confetti({
-    particleCount: 80,
-    spread: 70,
-    origin: { y: 0.6 }
-  });
+    // Feedback visual de comemoração pela geração do plano inteligente
+    try {
+      confetti({
+        particleCount: 80,
+        spread: 70,
+        origin: { y: 0.6 }
+      });
+    } catch (e) {
+      // Ignora erro caso canvas-confetti falhe
+    }
+  } catch (err) {
+    console.error('Erro ao salvar perfil e gerar plano:', err);
+    // Mesmo em caso de erro no banco, fecha o modal para não prender o usuário
+    isOnboardingOpen.value = false;
+  }
 }
 
 async function applyAndSavePlan(profile, persist = true) {
-  const generated = buildPersonalizedPlan(profile);
-  activePlan.value = generated;
-  if (generated.workoutSplits?.length > 0) {
-    currentSplitTab.value = generated.workoutSplits[0].id;
-  }
-  if (persist) {
-    await db.active_plan.put(generated);
+  try {
+    const generated = buildPersonalizedPlan(profile);
+    const rawPlan = JSON.parse(JSON.stringify(generated));
+    activePlan.value = rawPlan;
+    if (rawPlan.workoutSplits?.length > 0) {
+      currentSplitTab.value = rawPlan.workoutSplits[0].id;
+    }
+    if (persist) {
+      await db.active_plan.put(rawPlan);
+    }
+  } catch (err) {
+    console.error('Erro ao gerar/salvar plano:', err);
   }
 }
 
