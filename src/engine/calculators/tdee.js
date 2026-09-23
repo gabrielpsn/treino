@@ -22,10 +22,16 @@ export function calculateTDEE(bmr, daysPerWeek = 4) {
   return Math.round(bmr * activityMultiplier);
 }
 
-// 3. Superávit para Hipertrofia Limpa (Lean Bulk)
-export function calculateSurplusCalories(tdee, experienceLevel) {
-  // Iniciantes aproveitam mais superávit sem ganho excessivo de gordura (+350 a +400 kcal)
-  // Avançados necessitam superávit mais controlado (+200 a +250 kcal)
+// 3. Calorias Alvo (Superávit para Hipertrofia ou Déficit Saudável para Perda de Peso)
+export function calculateTargetCalories(tdee, experienceLevel = 'intermediate', goal = 'hypertrophy') {
+  if (goal === 'weight_loss') {
+    // Déficit seguro de 400 a 500 kcal para perder de 2 a 3 kg por mês sem efeito sanfona
+    // Piso seguro mínimo para mulheres/homens (~1400 kcal)
+    const deficit = experienceLevel === 'beginner' ? 400 : 480;
+    return Math.max(1400, tdee - deficit);
+  }
+
+  // Hipertrofia Limpa (Lean Bulk)
   let surplus = 300;
   if (experienceLevel === 'beginner') surplus = 380;
   else if (experienceLevel === 'intermediate') surplus = 300;
@@ -34,17 +40,22 @@ export function calculateSurplusCalories(tdee, experienceLevel) {
   return tdee + surplus;
 }
 
-// 4. Divisão de Macronutrientes para Hipertrofia (g/kg e kcal)
-export function calculateMacros(targetCalories, weightKg, experienceLevel) {
-  // Proteína: 2.0g/kg de peso corporal (4 kcal/g)
-  const proteinGrams = Math.round(weightKg * 2.0);
+// Mantém retrocompatibilidade caso algo ainda chame calculateSurplusCalories
+export const calculateSurplusCalories = calculateTargetCalories;
+
+// 4. Divisão de Macronutrientes (Hipertrofia ou Perda de Peso)
+export function calculateMacros(targetCalories, weightKg, experienceLevel = 'intermediate', goal = 'hypertrophy') {
+  // Proteína: 2.0g a 2.2g/kg (fundamental tanto para construir músculo quanto para preservar massa magra em déficit)
+  const proteinMultiplier = goal === 'weight_loss' ? 2.0 : 2.0;
+  const proteinGrams = Math.round(weightKg * proteinMultiplier);
   const proteinKcal = proteinGrams * 4;
 
-  // Gorduras: 0.9g/kg de peso corporal (9 kcal/g) para suporte hormonal saudável
-  const fatGrams = Math.round(weightKg * 0.9);
+  // Gorduras: 0.8g/kg em déficit, 0.9g/kg em superávit
+  const fatMultiplier = goal === 'weight_loss' ? 0.8 : 0.9;
+  const fatGrams = Math.round(weightKg * fatMultiplier);
   const fatKcal = fatGrams * 9;
 
-  // Carboidratos: Restante calórico para maximizar estoques de glicogênio e performance (4 kcal/g)
+  // Carboidratos: Restante calórico
   const remainingKcal = Math.max(0, targetCalories - (proteinKcal + fatKcal));
   const carbsGrams = Math.round(remainingKcal / 4);
 

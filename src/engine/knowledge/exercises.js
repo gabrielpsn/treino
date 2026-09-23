@@ -401,5 +401,76 @@ export const EXERCISE_CATALOG = [
     defaultSeries: '3x 30s-60s',
     rest: '45s',
     tips: 'Linha reta dos tornozelos à cabeça. Não deixe o quadril ceder.'
+  },
+  {
+    id: 'prancha_modificada_joelhos',
+    name: 'Prancha Modificada (Joelhos Apoiados)',
+    muscle: 'core',
+    pattern: 'plank',
+    equipment: 'gym_or_home',
+    jointStress: [],
+    defaultSeries: '3x 20-35s',
+    rest: '45s',
+    tips: 'Apoie os joelhos em colchonete para eliminar sobrecarga na lombar.'
+  },
+
+  // --- GLÚTEOS / QUADRIL (ESPECÍFICOS) ---
+  {
+    id: 'cadeira_abdutora',
+    name: 'Cadeira Abdutora (Tronco Inclinado)',
+    muscle: 'gluteos',
+    pattern: 'abduction',
+    equipment: 'gym',
+    jointStress: [],
+    defaultSeries: '3x 15-20 reps',
+    rest: '45s',
+    tips: 'Incline o tronco levemente à frente para maior ativação do glúteo médio e mínimo.'
+  },
+
+  // --- CARDIO ESTRATÉGICO & BAIXO IMPACTO ---
+  {
+    id: 'esteira_inclinada',
+    name: 'Esteira Inclinada (Caminhada 4-5 km/h)',
+    muscle: 'cardio',
+    pattern: 'cardio_incline',
+    equipment: 'gym',
+    jointStress: [],
+    defaultSeries: '25-35 min',
+    rest: 'Contínuo',
+    tips: 'Aumente a inclinação (4 a 8%) sem correr para queimar gordura com zero impacto nos joelhos.'
+  },
+  {
+    id: 'bike_ergometrica',
+    name: 'Bicicleta Ergométrica (Ritmo Moderado)',
+    muscle: 'cardio',
+    pattern: 'cardio_bike',
+    equipment: 'gym_or_home',
+    jointStress: [],
+    defaultSeries: '20-30 min',
+    rest: 'Contínuo',
+    tips: 'Ajuste a altura do banco no osso do quadril para proteger a patela.'
+  },
+  {
+    id: 'eliptico_transport',
+    name: 'Elíptico / Transport (Zero Impacto)',
+    muscle: 'cardio',
+    pattern: 'cardio_eliptico',
+    equipment: 'gym',
+    jointStress: [],
+    defaultSeries: '20-25 min',
+    rest: 'Contínuo',
+    tips: 'Movimento guiado e fluido que preserva totalmente joelhos e tornozelos.'
+  },
+  {
+    id: 'meta_passos_diarios',
+    name: 'Meta Diária de Passos no Celular',
+    muscle: 'cardio',
+    pattern: 'steps',
+    equipment: 'gym_or_home',
+    jointStress: [],
+    defaultSeries: '7.000 a 9.000 passos',
+    rest: 'Ao longo do dia',
+    tips: 'Garante o gasto calórico não-exercício (NEAT) sustentável.'
   }
 ];
+
