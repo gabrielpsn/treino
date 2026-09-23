@@ -1,4 +1,4 @@
-name: Deploy to Cloudflare
+name: Deploy to Cloudflare Pages
 
 on:
   push:
@@ -29,20 +29,9 @@ jobs:
         run: npm run build
 
       - name: Deploy to Cloudflare Pages
-        id: pages_deploy
-        continue-on-error: true
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          echo "=== Tentando deploy no Cloudflare Pages (projeto: treino) ==="
+          npx wrangler pages project list || true
           npx wrangler pages deploy dist --project-name=treino --branch=main --commit-dirty=true
-
-      - name: Fallback to Cloudflare Worker (se Pages falhar)
-        if: steps.pages_deploy.outcome != 'success'
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: |
-          echo "Pages deploy falhou. Fazendo fallback para Cloudflare Worker com assets estáticos..."
-          npx wrangler deploy --name treino --assets dist --compatibility-date 2026-09-23
