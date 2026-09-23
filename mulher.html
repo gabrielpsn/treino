@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Plano de Emagrecimento & Recomposição Corporal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen pb-16 antialiased selection:bg-rose-500 selection:text-white">
+
+  <!-- Header -->
+  <header class="border-b border-slate-800 bg-slate-900/70 backdrop-blur sticky top-0 z-40">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="inline-block w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse"></span>
+          <h1 class="text-xl md:text-2xl font-black tracking-tight text-white uppercase">Plano de Emagrecimento Saudável</h1>
+        </div>
+        <p class="text-xs text-slate-400 mt-0.5">Perfil: Mulher, 39 anos | 1,56m | 86kg</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <button id="reset-all" class="text-xs text-slate-400 hover:text-rose-400 border border-slate-700 hover:border-rose-800 px-3 py-1.5 rounded-lg transition-colors">
+          Zerar Histórico
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 py-8 space-y-10">
+
+    <!-- Seção de Diagnóstico Antropométrico & Metas -->
+    <section class="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 md:p-8 shadow-2xl relative overflow-hidden">
+      <div class="absolute -right-16 -top-16 w-64 h-64 bg-rose-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+      <div class="border-b border-slate-800 pb-5 mb-6">
+        <span class="text-xs font-bold tracking-widest text-rose-400 uppercase">Diagnóstico Corporal & Metas Claras</span>
+        <h2 class="text-2xl font-extrabold text-white mt-1">Cálculo de Peso Ideal e Cronograma</h2>
+      </div>
+
+      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <!-- Card 1: Estado Atual -->
+        <div class="p-4 rounded-2xl bg-slate-950/60 border border-slate-800">
+          <span class="text-xs text-slate-400 font-medium">Situação Inicial</span>
+          <div class="text-2xl font-extrabold text-white mt-1">86,0 kg</div>
+          <p class="text-xs text-amber-400 font-medium mt-1">IMC: 35,3 (Obesidade Grau I)</p>
+        </div>
+
+        <!-- Card 2: Peso Alvo -->
+        <div class="p-4 rounded-2xl bg-slate-950/60 border border-rose-500/30">
+          <span class="text-xs text-rose-400 font-medium">Faixa Saudável (OMS)</span>
+          <div class="text-2xl font-extrabold text-white mt-1">54 a 60 kg</div>
+          <p class="text-xs text-slate-400 mt-1">Peso intermediário sustentável: ~64 kg</p>
+        </div>
+
+        <!-- Card 3: Total a Eliminar -->
+        <div class="p-4 rounded-2xl bg-slate-950/60 border border-slate-800">
+          <span class="text-xs text-slate-400 font-medium">Meta Total de Redução</span>
+          <div class="text-2xl font-extrabold text-rose-400 mt-1">-22 a -26 kg</div>
+          <p class="text-xs text-slate-400 mt-1">Fase 1 (Intermediária): -10 a -12 kg</p>
+        </div>
+
+        <!-- Card 4: Tempo Estimado -->
+        <div class="p-4 rounded-2xl bg-slate-950/60 border border-slate-800">
+          <span class="text-xs text-slate-400 font-medium">Tempo Recomendado</span>
+          <div class="text-2xl font-extrabold text-white mt-1">9 a 12 Meses</div>
+          <p class="text-xs text-emerald-400 font-medium mt-1">Ritmo: 2 a 3 kg por mês (sem efeito sanfona)</p>
+        </div>
+      </div>
+
+      <!-- Estratégia em Fases -->
+      <div class="grid md:grid-cols-3 gap-4 text-xs md:text-sm">
+        <div class="p-4 rounded-xl bg-slate-800/40 border border-slate-800">
+          <strong class="text-rose-300 block mb-1">Etapa 1 (Meses 1 a 3): -6 a -8 kg</strong>
+          Adaptação metabólica, redução rápida de retenção líquida e ganho de mobilidade articular.
+        </div>
+        <div class="p-4 rounded-xl bg-slate-800/40 border border-slate-800">
+          <strong class="text-rose-300 block mb-1">Etapa 2 (Meses 4 a 8): -10 a -12 kg</strong>
+          Perda consistente de gordura visceral, preservação muscular por musculação e ganho de fôlego.
+        </div>
+        <div class="p-4 rounded-xl bg-slate-800/40 border border-slate-800">
+          <strong class="text-rose-300 block mb-1">Etapa 3 (Meses 9 a 12): Consolidação</strong>
+          Atingimento do peso alvo (~60-62kg) e manutenção hormonal estável para evitar reganho.
+        </div>
+      </div>
+    </section>
+
+    <!-- Frequência Semanal -->
+    <section class="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+        <div>
+          <h2 class="text-lg font-bold text-white flex items-center gap-2">
+            <svg class="w-5 h-5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            Quadro Semanal de Compromisso
+          </h2>
+          <p class="text-sm text-slate-400">Clique no dia para registrar treinos e caminhadas concluídas.</p>
+        </div>
+        <div class="text-sm bg-slate-800/80 px-4 py-2 rounded-xl border border-slate-700/60 font-medium">
+          Semana Concluída: <span id="week-progress" class="text-rose-400 font-bold">0 / 7</span>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3" id="week-days-container"></div>
+    </section>
+
+    <!-- Ficha de Treino Adaptada (AB + Cardio) -->
+    <section class="space-y-6">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+        <div>
+          <h2 class="text-xl font-extrabold text-white tracking-tight">Ficha de Musculação & Articulações Seguras</h2>
+          <p class="text-sm text-slate-400">Projetada com aparelhos e apoio guiado para proteger joelhos e coluna.</p>
+        </div>
+        <div class="inline-flex bg-slate-900 p-1 rounded-xl border border-slate-800" id="workout-tabs">
+          <button data-tab="treino-fem-a" class="tab-btn px-4 py-2 text-sm font-semibold rounded-lg transition-all bg-rose-500 text-white shadow">Treino A (Inferiores & Glúteos)</button>
+          <button data-tab="treino-fem-b" class="tab-btn px-4 py-2 text-sm font-semibold rounded-lg transition-all text-slate-400 hover:text-white">Treino B (Superiores & Costas)</button>
+          <button data-tab="treino-fem-cardio" class="tab-btn px-4 py-2 text-sm font-semibold rounded-lg transition-all text-slate-400 hover:text-white">Cardio Estratégico</button>
+        </div>
+      </div>
+
+      <!-- Treino Feminino A -->
+      <div id="treino-fem-a" class="workout-content space-y-3">
+        <div class="bg-rose-500/10 border border-rose-500/20 text-rose-300 px-4 py-3 rounded-xl text-sm mb-4">
+          <strong>Foco:</strong> Pernas completas, glúteos e abdômen. Estimula grandes grupos musculares para acelerar o gasto calórico basal.
+        </div>
+        <div class="grid gap-3" id="list-treino-fem-a"></div>
+      </div>
+
+      <!-- Treino Feminino B -->
+      <div id="treino-fem-b" class="workout-content space-y-3 hidden">
+        <div class="bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 px-4 py-3 rounded-xl text-sm mb-4">
+          <strong>Foco:</strong> Costas, Ombros e Braços. Melhora a postura, reduz dores na lombar e mantém os braços firmes durante a perda de peso.
+        </div>
+        <div class="grid gap-3" id="list-treino-fem-b"></div>
+      </div>
+
+      <!-- Protocolo de Cardio -->
+      <div id="treino-fem-cardio" class="workout-content space-y-3 hidden">
+        <div class="bg-sky-500/10 border border-sky-500/20 text-sky-300 px-4 py-3 rounded-xl text-sm mb-4">
+          <strong>Foco:</strong> Gasto calórico aeróbico sem impacto prejudicial para os joelhos e tornozelos.
+        </div>
+        <div class="grid gap-3" id="list-treino-fem-cardio"></div>
+      </div>
+    </section>
+
+    <!-- Plano Alimentar & Componentes Naturais -->
+    <section class="space-y-6">
+      <div class="border-b border-slate-800 pb-4">
+        <h2 class="text-xl font-extrabold text-white tracking-tight">Plano Nutricional & Termogênicos Naturais</h2>
+        <p class="text-sm text-slate-400">Déficit calórico calculado (~1.400 a 1.500 kcal/dia) com alta saciedade e estímulos naturais.</p>
+      </div>
+
+      <!-- Componentes Naturais & Creatina -->
+      <div class="grid md:grid-cols-3 gap-4">
+        <div class="p-5 rounded-2xl bg-slate-900 border border-rose-500/20">
+          <div class="flex items-center gap-2 mb-2 text-rose-400">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            <h3 class="font-bold text-white text-sm">Chá Verde com Gengibre & Canela</h3>
+          </div>
+          <p class="text-xs text-slate-300 leading-relaxed">
+            <strong>Como usar:</strong> 300 ml pela manhã ou antes das 15h.<br>
+            Acelera moderadamente o gasto térmico, combate a retenção hídrica matinal e diminui picos de insulina.
+          </p>
+        </div>
+
+        <div class="p-5 rounded-2xl bg-slate-900 border border-amber-500/20">
+          <div class="flex items-center gap-2 mb-2 text-amber-400">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+            <h3 class="font-bold text-white text-sm">Psyllium em Flocos (Fibra Natural)</h3>
+          </div>
+          <p class="text-xs text-slate-300 leading-relaxed">
+            <strong>Como usar:</strong> 1 colher de sobremesa em 250ml de água 20 minutos antes do almoço.<br>
+            Expande no estômago formando um gel que reduz a absorção de gorduras e controla a fome compulsiva.
+          </p>
+        </div>
+
+        <div class="p-5 rounded-2xl bg-slate-900 border border-emerald-500/20">
+          <div class="flex items-center gap-2 mb-2 text-emerald-400">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <h3 class="font-bold text-white text-sm">Creatina Monohidratada (3g/dia)</h3>
+          </div>
+          <p class="text-xs text-slate-300 leading-relaxed">
+            <strong>Como usar:</strong> 3g todos os dias no almoço.<br>
+            Fundamental para não perder massa magra (músculo) durante o déficit calórico, evitando flacidez ao emagrecer.
+          </p>
+        </div>
+      </div>
+
+      <!-- Cardápio Diário -->
+      <div class="grid md:grid-cols-2 gap-4" id="meals-container"></div>
+    </section>
+
+  </main>
+
+  <script>
+    // Ficha de Treino Adaptada para Perda de Peso e Proteção Articular
+    const workoutData = {
+      "treino-fem-a": [
+        { id: "fa1", name: "Leg Press 45° ou Horizontal (Pés Médios)", series: "3x 12-15 reps", rest: "60s" },
+        { id: "fa2", name: "Cadeira Extensora (Controlada)", series: "3x 12-15 reps", rest: "60s" },
+        { id: "fa3", name: "Cadeira Flexora ou Mesa Flexora", series: "3x 12-15 reps", rest: "60s" },
+        { id: "fa4", name: "Elevação Pélvica (Solo ou Banco)", series: "3x 12-15 reps", rest: "60s" },
+        { id: "fa5", name: "Cadeira Abdutora (Tronco Levemente Inclinado)", series: "3x 15-20 reps", rest: "45s" },
+        { id: "fa6", name: "Panturrilha Sentada ou no Step", series: "3x 15 reps", rest: "45s" },
+        { id: "fa7", name: "Abdominal Supra Reto com Apoio Lombar", series: "3x 15 reps", rest: "45s" }
+      ],
+      "treino-fem-b": [
+        { id: "fb1", name: "Puxada Frontal Aberta na Polia", series: "3x 12-15 reps", rest: "60s" },
+        { id: "fb2", name: "Remada Baixa com Triângulo (Costas Retas)", series: "3x 12-15 reps", rest: "60s" },
+        { id: "fb3", name: "Supino Inclinado na Máquina Articulada", series: "3x 12 reps", rest: "60s" },
+        { id: "fb4", name: "Elevação Lateral com Halteres Leves", series: "3x 12-15 reps", rest: "45s" },
+        { id: "fb5", name: "Tríceps Corda na Polia Alta", series: "3x 12-15 reps", rest: "45s" },
+        { id: "fb6", name: "Rosca Martelo com Halteres", series: "3x 12 reps", rest: "45s" },
+        { id: "fb7", name: "Prancha Modificada (com Joelhos Apoiados)", series: "3x 20-35s", rest: "45s" }
+      ],
+      "treino-fem-cardio": [
+        { id: "fc1", name: "Esteira Inclinada (Caminhada 4 a 5 km/h sem correr)", series: "25-35 min", rest: "Contínuo" },
+        { id: "fc2", name: "Bicicleta Ergométrica (Intensidade Moderada)", series: "20-30 min", rest: "Contínuo" },
+        { id: "fc3", name: "Elíptico / Transport (Zero Impacto Articular)", series: "20-25 min", rest: "Contínuo" },
+        { id: "fc4", name: "Meta Diária de Passos no Celular", series: "7.000 a 9.000 passos", rest: "Ao longo do dia" }
+      ]
+    };
+
+    // Cronograma Semanal para Mulher de 39 Anos
+    const weekDays = [
+      { id: "seg", label: "Segunda", defaultWorkout: "Treino A (Pernas) + 20m Cardio" },
+      { id: "ter", label: "Terça", defaultWorkout: "Treino B (Superiores) + 20m Cardio" },
+      { id: "qua", label: "Quarta", defaultWorkout: "Caminhada Livre (40 min)" },
+      { id: "qui", label: "Quinta", defaultWorkout: "Treino A (Pernas) + 20m Cardio" },
+      { id: "sex", label: "Sexta", defaultWorkout: "Treino B (Superiores) + 20m Cardio" },
+      { id: "sab", label: "Sábado", defaultWorkout: "Cardio Leve / Passeio ao Ar Livre" },
+      { id: "dom", label: "Domingo", defaultWorkout: "Descanso Total & Recuperação" }
+    ];
+
+    // Cardápio Focado em Emagrecimento e Sabor
+    const mealsData = [
+      {
+        title: "1. Café da Manhã (Saciedade & Energia)",
+        tag: "~320 kcal",
+        items: "2 ovos inteiros mexidos (com orégano e pouco azeite) + 1 fatia de pão integral 100% ou 1 fatia média de melão/mamão + 1 xícara de café preto ou café com leite desnatado.",
+        objective: "Garante proteína logo pela manhã, evitando ataques de fome e ansiedade por doces antes do almoço."
+      },
+      {
+        title: "2. Almoço Nutritivo (Alta Saciedade)",
+        tag: "~450 kcal",
+        items: "1 filé médio (120g a 140g) de peito de frango, carne magra (patinho) ou peixe + 3 a 4 colheres de sopa de arroz integral + 1 concha rasa de feijão + Prato farto de salada verde (alface, rúcula, pepino, tomate) com 1 colher de chá de azeite extra virgem. + Creatina (3g).",
+        objective: "Combinação rica em fibras e aminoácidos para alimentar os músculos e queimar gordura."
+      },
+      {
+        title: "3. Lanche da Tarde Anti-Fome",
+        tag: "~220 kcal",
+        items: "1 pote (150g a 170g) de iogurte natural desnatado com 1 colher de sopa de sementes de chia ou farelo de aveia + 1 maçã média picada com canela em pó.",
+        objective: "A chia e o iogurte retardam a digestão e impedem compulsão alimentar no fim da tarde/início da noite."
+      },
+      {
+        title: "4. Jantar Leve & Digestivo",
+        tag: "~350 kcal",
+        items: "Omelete de 2 ovos com legumes (cenoura ralada, abobrinha, espinafre) OU 120g de frango desfiado com 150g de legumes cozidos no vapor (brócolis, couve-flor, abóbora) + salada crua à vontade.",
+        objective: "Redução de carboidratos pesados à noite para otimizar o hormônio de crescimento (GH) e queima lipídica noturna."
+      },
+      {
+        title: "5. Chá Relaxante Noturno (Ceia)",
+        tag: "Zero Açúcar",
+        items: "1 xícara de infusão de camomila, melissa ou erva-doce (sem açúcar ou adoçante natural se necessário).",
+        objective: "Reduz o cortisol (hormônio do estresse que retém líquido e acumula gordura abdominal) e induz o sono profundo."
+      }
+    ];
+
+    // Renderiza Frequência
+    function renderWeekDays() {
+      const container = document.getElementById("week-days-container");
+      container.innerHTML = "";
+      let completed = 0;
+
+      weekDays.forEach(day => {
+        const isDone = localStorage.getItem(`fem_day_${day.id}`) === "true";
+        if (isDone) completed++;
+
+        const card = document.createElement("div");
+        card.className = `p-3 rounded-xl border text-center transition-all cursor-pointer flex flex-col justify-between ${
+          isDone 
+            ? "bg-rose-500/15 border-rose-500/50 text-white shadow-sm" 
+            : "bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700"
+        }`;
+        
+        card.innerHTML = `
+          <div>
+            <span class="text-xs font-semibold uppercase tracking-wider block ${isDone ? 'text-rose-400' : 'text-slate-500'}">${day.label}</span>
+            <span class="text-xs font-medium block mt-1 line-clamp-2 ${isDone ? 'text-slate-200' : 'text-slate-400'}">${day.defaultWorkout}</span>
+          </div>
+          <div class="mt-3 flex items-center justify-center">
+            <span class="w-5 h-5 rounded-full flex items-center justify-center border text-xs ${
+              isDone ? 'bg-rose-500 border-rose-400 text-white font-bold' : 'border-slate-700 text-transparent'
+            }">✓</span>
+          </div>
+        `;
+
+        card.addEventListener("click", () => {
+          localStorage.setItem(`fem_day_${day.id}`, (!isDone).toString());
+          renderWeekDays();
+        });
+
+        container.appendChild(card);
+      });
+
+      document.getElementById("week-progress").textContent = `${completed} / 7 Concluídos`;
+    }
+
+    // Renderiza Exercícios
+    function renderWorkouts() {
+      Object.keys(workoutData).forEach(tabKey => {
+        const listEl = document.getElementById(`list-${tabKey}`);
+        if (!listEl) return;
+        listEl.innerHTML = "";
+
+        workoutData[tabKey].forEach(item => {
+          const savedWeight = localStorage.getItem(`fem_weight_${item.id}`) || "";
+          const savedReps = localStorage.getItem(`fem_reps_${item.id}`) || "";
+          const isFinished = localStorage.getItem(`fem_check_${item.id}`) === "true";
+
+          const row = document.createElement("div");
+          row.className = `p-4 rounded-xl border transition-all flex flex-col md:flex-row md:items-center justify-between gap-4 ${
+            isFinished 
+              ? "bg-slate-900/40 border-slate-800/60 opacity-80" 
+              : "bg-slate-900 border-slate-800 hover:border-slate-700"
+          }`;
+
+          row.innerHTML = `
+            <div class="flex items-start md:items-center gap-3">
+              <button data-check="${item.id}" class="mt-0.5 md:mt-0 w-6 h-6 rounded-md flex-shrink-0 flex items-center justify-center border transition-colors ${
+                isFinished 
+                  ? "bg-rose-500 border-rose-500 text-white font-bold" 
+                  : "border-slate-700 hover:border-slate-500 text-transparent"
+              }">✓</button>
+              <div>
+                <h4 class="text-sm md:text-base font-semibold ${isFinished ? 'line-through text-slate-400' : 'text-white'}">${item.name}</h4>
+                <div class="flex items-center gap-2 mt-0.5 text-xs text-slate-400">
+                  <span class="text-rose-400/90 font-medium">${item.series}</span>
+                  <span>•</span>
+                  <span>Intervalo: ${item.rest}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2 self-end md:self-auto w-full md:w-auto">
+              <div class="flex items-center gap-1.5 bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800 flex-1 md:flex-initial">
+                <span class="text-xs text-slate-500">Carga:</span>
+                <input type="number" step="0.5" placeholder="0" value="${savedWeight}" data-weight="${item.id}" class="w-16 bg-transparent text-sm font-semibold text-right text-rose-300 focus:outline-none focus:text-white" />
+                <span class="text-xs text-slate-500">kg</span>
+              </div>
+
+              <div class="flex items-center gap-1.5 bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800 flex-1 md:flex-initial">
+                <span class="text-xs text-slate-500">Reps:</span>
+                <input type="number" placeholder="12" value="${savedReps}" data-reps="${item.id}" class="w-12 bg-transparent text-sm font-semibold text-right text-rose-300 focus:outline-none focus:text-white" />
+              </div>
+            </div>
+          `;
+
+          const checkBtn = row.querySelector(`[data-check="${item.id}"]`);
+          checkBtn.addEventListener("click", () => {
+            localStorage.setItem(`fem_check_${item.id}`, (!isFinished).toString());
+            renderWorkouts();
+          });
+
+          const weightInput = row.querySelector(`[data-weight="${item.id}"]`);
+          weightInput.addEventListener("input", (e) => {
+            localStorage.setItem(`fem_weight_${item.id}`, e.target.value);
+          });
+
+          const repsInput = row.querySelector(`[data-reps="${item.id}"]`);
+          repsInput.addEventListener("input", (e) => {
+            localStorage.setItem(`fem_reps_${item.id}`, e.target.value);
+          });
+
+          listEl.appendChild(row);
+        });
+      });
+    }
+
+    // Renderiza Refeições
+    function renderMeals() {
+      const container = document.getElementById("meals-container");
+      container.innerHTML = "";
+
+      mealsData.forEach(meal => {
+        const card = document.createElement("div");
+        card.className = "p-5 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col justify-between";
+        card.innerHTML = `
+          <div>
+            <div class="flex items-center justify-between gap-2 mb-2">
+              <h4 class="font-bold text-white text-base">${meal.title}</h4>
+              <span class="text-xs font-semibold px-2 py-0.5 rounded bg-slate-800 text-rose-400 border border-slate-700/60">${meal.tag}</span>
+            </div>
+            <p class="text-sm text-slate-300 leading-relaxed">${meal.items}</p>
+          </div>
+          <p class="text-xs text-slate-500 mt-4 pt-3 border-t border-slate-800/80">
+            <strong>Efeito Fisiológico:</strong> ${meal.objective}
+          </p>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // Navegação de Abas
+    document.querySelectorAll(".tab-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".tab-btn").forEach(b => {
+          b.className = "tab-btn px-4 py-2 text-sm font-semibold rounded-lg transition-all text-slate-400 hover:text-white";
+        });
+        btn.className = "tab-btn px-4 py-2 text-sm font-semibold rounded-lg transition-all bg-rose-500 text-white shadow";
+
+        const target = btn.getAttribute("data-tab");
+        document.querySelectorAll(".workout-content").forEach(content => {
+          content.classList.add("hidden");
+        });
+        document.getElementById(target).classList.remove("hidden");
+      });
+    });
+
+    // Resetar
+    document.getElementById("reset-all").addEventListener("click", () => {
+      if (confirm("Deseja apagar os registros de treinos femininos e recomeçar?")) {
+        Object.keys(localStorage).forEach(key => {
+          if (key.startsWith("fem_")) {
+            localStorage.removeItem(key);
+          }
+        });
+        renderWeekDays();
+        renderWorkouts();
+      }
+    });
+
+    renderWeekDays();
+    renderWorkouts();
+    renderMeals();
+  </script>
+</body>
+</html>

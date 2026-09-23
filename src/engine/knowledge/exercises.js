@@ -197,6 +197,30 @@ export const EXERCISE_CATALOG = [
     tips: 'Excelente isolamento das dorsais com braços quase retos.'
   },
 
+  // --- TRAPÉZIO ---
+  {
+    id: 'encolhimento_halteres',
+    name: 'Encolhimento com Halteres (Trapézio)',
+    muscle: 'trapezio',
+    pattern: 'shrug',
+    equipment: 'gym_or_home',
+    jointStress: [],
+    defaultSeries: '3x 12-15 reps',
+    rest: '60s',
+    tips: 'Eleve os ombros reto em direção às orelhas e segure 1-2s no topo. Não faça rotação do ombro.'
+  },
+  {
+    id: 'encolhimento_barra_smith',
+    name: 'Encolhimento com Barra / Smith',
+    muscle: 'trapezio',
+    pattern: 'shrug',
+    equipment: 'gym',
+    jointStress: [],
+    defaultSeries: '3x 10-12 reps',
+    rest: '75s',
+    tips: 'Mantenha os braços esticados e use sobrecarga progressiva concentrando a contração no trapézio superior.'
+  },
+
   // --- BRAÇOS (BÍCEPS / TRÍCEPS / ANTEBRAÇO) ---
   {
     id: 'rosca_direta_w',
