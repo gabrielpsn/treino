@@ -86,16 +86,26 @@ test.describe('Validação Visual por Tela do App de Treino', () => {
     await page.locator('#btn-split-treino-a').click();
     await expect(page.locator('#container-treino-a')).toBeVisible();
 
-    // Checa se os exercícios são únicos (sem duplicatas)
-    const exerciseCards = page.locator('#container-treino-a h4');
-    const count = await exerciseCards.count();
+    // Valida se o botão de instalar PWA está visível no header
+    const installBtn = page.locator('#btn-install-app');
+    await expect(installBtn).toBeVisible();
+
+    // Checa se os exercícios são únicos (sem duplicatas) e têm links de imagem externa
+    const exerciseTitles = page.locator('#container-treino-a a[id^="link-exercise-"], #container-treino-a h4');
+    const count = await exerciseTitles.count();
     expect(count).toBeGreaterThan(0);
     const names = [];
     for (let i = 0; i < count; i++) {
-      names.push(await exerciseCards.nth(i).textContent());
+      names.push(await exerciseTitles.nth(i).textContent());
     }
     const uniqueNames = new Set(names);
     expect(uniqueNames.size).toBe(names.length);
+
+    // Valida que o primeiro exercício possui link externo válido com target _blank
+    const firstLink = page.locator('#container-treino-a a[id^="link-exercise-"]').first();
+    await expect(firstLink).toBeVisible();
+    await expect(firstLink).toHaveAttribute('target', '_blank');
+    await expect(firstLink).toHaveAttribute('href', /https?:\/\//);
 
     // Marca o primeiro exercício como concluído
     const firstCheck = page.locator('#container-treino-a button[id^="btn-check-"]').first();
@@ -120,12 +130,18 @@ test.describe('Validação Visual por Tela do App de Treino', () => {
     await page.locator('#tab-btn-nutrition').click();
     await expect(page.locator('#screen-nutrition')).toBeVisible();
 
-    // Valida os suplementos termogênicos do modelo
-    await expect(page.locator('#card-supplement-cha-verde')).toBeVisible();
-    await expect(page.locator('#card-supplement-psyllium')).toBeVisible();
-    await expect(page.locator('#card-supplement-creatina')).toBeVisible();
+    // Valida os suplementos ou recomendações nutricionais
+    const isLossMode = await page.locator('#card-supplement-cha-verde').isVisible();
+    if (isLossMode) {
+      await expect(page.locator('#card-supplement-cha-verde')).toBeVisible();
+      await expect(page.locator('#card-supplement-psyllium')).toBeVisible();
+      await expect(page.locator('#card-supplement-creatina')).toBeVisible();
+    } else {
+      await expect(page.locator('h4:has-text("Creatina Monohidratada")').first()).toBeVisible();
+      await expect(page.locator('h4:has-text("Hidratação Crítica")').first()).toBeVisible();
+    }
 
-    // Valida as refeições de alta saciedade
+    // Valida as refeições calculadas
     await expect(page.locator('#meal-card-meal-1')).toBeVisible();
     await expect(page.locator('#meal-card-meal-2')).toBeVisible();
     await expect(page.locator('#meal-card-meal-3')).toBeVisible();

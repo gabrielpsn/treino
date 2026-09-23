@@ -36,6 +36,18 @@
 
         <!-- Ações do Header -->
         <div class="flex items-center gap-2">
+          <!-- Botão PWA Instalar / Atalho -->
+          <button 
+            id="btn-install-app"
+            @click="handleInstallPWA"
+            :class="isWeightLoss ? 'bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border-rose-500/40' : 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border-amber-500/40'"
+            class="text-xs border px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 font-bold shadow-sm"
+            title="Instalar App ou Criar Atalho na Tela Inicial"
+          >
+            <span>📲</span>
+            <span class="hidden sm:inline">{{ isAppInstalled ? 'App Instalado' : 'Instalar App' }}</span>
+          </button>
+
           <button 
             id="btn-adjust-profile"
             @click="isOnboardingOpen = true"
@@ -241,13 +253,28 @@
                   </button>
 
                   <div class="space-y-0.5">
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-2 flex-wrap">
+                      <a 
+                        v-if="ex.imageUrl"
+                        :href="ex.imageUrl" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        :id="`link-exercise-${ex.id}`"
+                        class="text-sm md:text-base font-bold transition-colors hover:underline flex items-center gap-1.5 group"
+                        :class="workoutLogs[ex.id]?.isDone ? 'line-through text-slate-500' : 'text-white hover:text-amber-300'"
+                        title="Ver demonstração do exercício (imagem externa)"
+                      >
+                        <span>{{ ex.name }}</span>
+                        <span class="text-xs opacity-60 group-hover:opacity-100 transition-opacity">↗</span>
+                      </a>
                       <h4 
+                        v-else
                         class="text-sm md:text-base font-bold transition-colors"
                         :class="workoutLogs[ex.id]?.isDone ? 'line-through text-slate-500' : 'text-white'"
                       >
                         {{ ex.name }}
                       </h4>
+
                       <button 
                         :id="`btn-swap-${ex.id}`"
                         @click="openExercisePicker(ex, split.id)" 
@@ -489,6 +516,9 @@ const activePlan = ref(null);
 const workoutLogs = ref({});
 const weeklyChecks = ref({});
 
+const deferredPrompt = ref(null);
+const isAppInstalled = ref(false);
+
 // Referências
 const restTimerRef = ref(null);
 const selectedExerciseForSwap = ref(null);
@@ -503,22 +533,58 @@ const completedDaysCount = computed(() => {
 });
 
 onMounted(async () => {
+  setupPWA();
   await loadUserData();
 });
+
+function setupPWA() {
+  if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
+    isAppInstalled.value = true;
+  }
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt.value = e;
+  });
+
+  window.addEventListener('appinstalled', () => {
+    isAppInstalled.value = true;
+    deferredPrompt.value = null;
+  });
+}
+
+async function handleInstallPWA() {
+  if (deferredPrompt.value) {
+    deferredPrompt.value.prompt();
+    const { outcome } = await deferredPrompt.value.userChoice;
+    if (outcome === 'accepted') {
+      isAppInstalled.value = true;
+    }
+    deferredPrompt.value = null;
+  } else {
+    // Se o navegador não disparou o prompt nativo ou já está instalado
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    if (isIOS) {
+      alert('Para instalar no iPhone / iOS:\n1. Toque no botão Compartilhar (ícone com quadrado e seta)\n2. Role para baixo e selecione "Adicionar à Tela de Início".');
+    } else {
+      alert('Para adicionar o atalho ao seu celular ou computador:\n1. Clique no menu do navegador (três pontinhos no canto superior)\n2. Selecione "Instalar aplicativo" ou "Adicionar à tela inicial".');
+    }
+  }
+}
 
 async function loadUserData() {
   const profileRecord = await db.user_profile.get('current_user');
   
   if (!profileRecord) {
-    // Primeiro acesso: abre o onboarding
+    // Primeiro acesso: abre o onboarding com homem/João por padrão inicial
     isOnboardingOpen.value = true;
     const defaultProfile = {
-      userName: 'Mariana',
-      goal: 'weight_loss',
-      gender: 'female',
-      ageYears: 39,
-      weightKg: 86,
-      heightCm: 156,
+      userName: 'João',
+      goal: 'hypertrophy',
+      gender: 'male',
+      ageYears: 25,
+      weightKg: 74,
+      heightCm: 175,
       daysPerWeek: 4,
       experienceLevel: 'intermediate',
       equipment: 'gym',

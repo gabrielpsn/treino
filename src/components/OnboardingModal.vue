@@ -92,7 +92,7 @@
           <button 
             type="button"
             id="btn-gender-male"
-            @click="form.gender = 'male'"
+            @click="setGender('male')"
             :class="form.gender === 'male' ? 'border-amber-500 bg-amber-500/10 text-white font-semibold' : 'border-slate-800 bg-slate-950/60 text-slate-400 hover:border-slate-700'"
             class="p-3 rounded-2xl border text-center transition-all flex items-center justify-center gap-2"
           >
@@ -102,7 +102,7 @@
           <button 
             type="button"
             id="btn-gender-female"
-            @click="form.gender = 'female'"
+            @click="setGender('female')"
             :class="form.gender === 'female' ? 'border-rose-500 bg-rose-500/10 text-white font-semibold' : 'border-slate-800 bg-slate-950/60 text-slate-400 hover:border-slate-700'"
             class="p-3 rounded-2xl border text-center transition-all flex items-center justify-center gap-2"
           >
@@ -304,7 +304,7 @@ const emit = defineEmits(['save', 'close']);
 const step = ref(1);
 
 const form = ref({
-  userName: 'Atleta',
+  userName: 'João',
   goal: 'hypertrophy',
   gender: 'male',
   ageYears: 25,
@@ -315,6 +315,29 @@ const form = ref({
   equipment: 'gym',
   restrictions: []
 });
+
+function setGender(selectedGender) {
+  const previousGender = form.value.gender;
+  form.value.gender = selectedGender;
+  
+  // Se o nome atual for o padrão antigo (ou vazio/Atleta), altera automaticamente para João ou Maria
+  if (!form.value.userName || form.value.userName === 'Atleta' || form.value.userName === 'João' || form.value.userName === 'Maria' || form.value.userName === 'Mariana') {
+    form.value.userName = selectedGender === 'female' ? 'Maria' : 'João';
+  }
+
+  // Calibra biometria padrão de referência se for emagrecimento
+  if (form.value.goal === 'weight_loss' && (!props.initialProfile || !props.initialProfile.goal)) {
+    if (selectedGender === 'female') {
+      form.value.ageYears = 39;
+      form.value.weightKg = 86;
+      form.value.heightCm = 156;
+    } else {
+      form.value.ageYears = 30;
+      form.value.weightKg = 92;
+      form.value.heightCm = 178;
+    }
+  }
+}
 
 function setGoal(selectedGoal) {
   form.value.goal = selectedGoal;
@@ -332,8 +355,9 @@ watch(
   () => props.initialProfile,
   (val) => {
     if (val) {
+      const defaultName = (val.gender === 'female') ? 'Maria' : 'João';
       form.value = {
-        userName: val.userName || 'Atleta',
+        userName: val.userName || defaultName,
         goal: val.goal || 'hypertrophy',
         gender: val.gender || 'male',
         ageYears: val.ageYears || 25,

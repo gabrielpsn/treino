@@ -7,6 +7,7 @@ export const EXERCISE_CATALOG = [
   // --- PEITORAL ---
   {
     id: 'supino_reto_barra',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Bench_Press_-_Medium_Grip/0.jpg',
     name: 'Supino Reto com Barra',
     muscle: 'peito',
     pattern: 'push_horizontal',
@@ -18,6 +19,7 @@ export const EXERCISE_CATALOG = [
   },
   {
     id: 'supino_reto_halteres',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_Bench_Press/0.jpg',
     name: 'Supino Reto com Halteres',
     muscle: 'peito',
     pattern: 'push_horizontal',
@@ -29,6 +31,7 @@ export const EXERCISE_CATALOG = [
   },
   {
     id: 'supino_inclinado_halteres',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Incline_Dumbbell_Press/0.jpg',
     name: 'Supino Inclinado com Halteres',
     muscle: 'peito',
     pattern: 'push_incline',
@@ -40,6 +43,7 @@ export const EXERCISE_CATALOG = [
   },
   {
     id: 'voador_peck_deck',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Butterfly/0.jpg',
     name: 'Voador / Peck Deck',
     muscle: 'peito',
     pattern: 'fly',
@@ -51,6 +55,7 @@ export const EXERCISE_CATALOG = [
   },
   {
     id: 'crucifixo_halteres',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Decline_Dumbbell_Flyes/0.jpg',
     name: 'Crucifixo Reto / Inclinado',
     muscle: 'peito',
     pattern: 'fly',
@@ -62,6 +67,7 @@ export const EXERCISE_CATALOG = [
   },
   {
     id: 'flexao_solo',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Pushups/0.jpg',
     name: 'Flexão de Braços (Push-up)',
     muscle: 'peito',
     pattern: 'push_horizontal',
@@ -75,6 +81,7 @@ export const EXERCISE_CATALOG = [
   // --- OMBROS ---
   {
     id: 'desenvolvimento_halteres',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_Shoulder_Press/0.jpg',
     name: 'Desenvolvimento com Halteres',
     muscle: 'ombro',
     pattern: 'push_vertical',
@@ -86,6 +93,7 @@ export const EXERCISE_CATALOG = [
   },
   {
     id: 'desenvolvimento_maquina',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Machine_Shoulder_Military_Press/0.jpg',
     name: 'Desenvolvimento na Máquina',
     muscle: 'ombro',
     pattern: 'push_vertical',
@@ -97,6 +105,7 @@ export const EXERCISE_CATALOG = [
   },
   {
     id: 'elevacao_lateral_halteres',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Side_Lateral_Raise/0.jpg',
     name: 'Elevação Lateral com Halteres',
     muscle: 'ombro',
     pattern: 'lateral_raise',
@@ -108,6 +117,7 @@ export const EXERCISE_CATALOG = [
   },
   {
     id: 'elevacao_lateral_polia',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Cable_Seated_Lateral_Raise/0.jpg',
     name: 'Elevação Lateral na Polia',
     muscle: 'ombro',
     pattern: 'lateral_raise',
@@ -119,6 +129,7 @@ export const EXERCISE_CATALOG = [
   },
   {
     id: 'crucifixo_inverso',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Rear_Delt_Row/0.jpg',
     name: 'Crucifixo Inverso (Deltóide Posterior)',
     muscle: 'ombro',
     pattern: 'rear_delt',
@@ -132,6 +143,7 @@ export const EXERCISE_CATALOG = [
   // --- COSTAS ---
   {
     id: 'puxada_frontal_polia',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Wide-Grip_Lat_Pulldown/0.jpg',
     name: 'Puxada Frontal na Polia',
     muscle: 'costas',
     pattern: 'pull_vertical',
@@ -143,6 +155,7 @@ export const EXERCISE_CATALOG = [
   },
   {
     id: 'barra_fixa',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Pullups/0.jpg',
     name: 'Barra Fixa (Pronada ou Supinada)',
     muscle: 'costas',
     pattern: 'pull_vertical',
@@ -154,6 +167,7 @@ export const EXERCISE_CATALOG = [
   },
   {
     id: 'remada_baixa_triangulo',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Seated_Cable_Rows/0.jpg',
     name: 'Remada Baixa Sentada (Triângulo)',
     muscle: 'costas',
     pattern: 'pull_horizontal',
@@ -165,6 +179,7 @@ export const EXERCISE_CATALOG = [
   },
   {
     id: 'remada_curvada_halteres',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Bent_Over_Two-Dumbbell_Row/0.jpg',
     name: 'Remada Curvada com Halteres',
     muscle: 'costas',
     pattern: 'pull_horizontal',
@@ -176,6 +191,7 @@ export const EXERCISE_CATALOG = [
   },
   {
     id: 'remada_articulada_apoiada',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Seated_One-arm_Cable_Pulley_Rows/0.jpg',
     name: 'Remada Apoiada no Banco / Máquina',
     muscle: 'costas',
     pattern: 'pull_horizontal',
@@ -187,6 +203,7 @@ export const EXERCISE_CATALOG = [
   },
   {
     id: 'pulldown_corda',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Rope_Straight-Arm_Pulldown/0.jpg',
     name: 'Pulldown na Polia com Corda',
     muscle: 'costas',
     pattern: 'lat_isolation',
@@ -200,6 +217,7 @@ export const EXERCISE_CATALOG = [
   // --- TRAPÉZIO ---
   {
     id: 'encolhimento_halteres',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_Shrug/0.jpg',
     name: 'Encolhimento com Halteres (Trapézio)',
     muscle: 'trapezio',
     pattern: 'shrug',
@@ -211,6 +229,7 @@ export const EXERCISE_CATALOG = [
   },
   {
     id: 'encolhimento_barra_smith',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Shrug/0.jpg',
     name: 'Encolhimento com Barra / Smith',
     muscle: 'trapezio',
     pattern: 'shrug',
@@ -224,6 +243,7 @@ export const EXERCISE_CATALOG = [
   // --- BRAÇOS (BÍCEPS / TRÍCEPS / ANTEBRAÇO) ---
   {
     id: 'rosca_direta_w',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Curl/0.jpg',
     name: 'Rosca Direta (Barra W ou Halteres)',
     muscle: 'biceps',
     pattern: 'biceps_curl',
@@ -235,6 +255,7 @@ export const EXERCISE_CATALOG = [
   },
   {
     id: 'rosca_martelo',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Cable_Hammer_Curls_-_Rope_Attachment/0.jpg',
     name: 'Rosca Martelo com Halteres',
     muscle: 'biceps',
     pattern: 'biceps_curl',
@@ -246,6 +267,7 @@ export const EXERCISE_CATALOG = [
   },
   {
     id: 'rosca_scott',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Cable_Preacher_Curl/0.jpg',
     name: 'Rosca Scott (Máquina ou Banco)',
     muscle: 'biceps',
     pattern: 'biceps_curl',
@@ -257,6 +279,7 @@ export const EXERCISE_CATALOG = [
   },
   {
     id: 'triceps_corda_pulley',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Triceps_Pushdown_-_Rope_Attachment/0.jpg',
     name: 'Tríceps Pulley (Corda ou Barra)',
     muscle: 'triceps',
     pattern: 'triceps_extension',
@@ -268,6 +291,7 @@ export const EXERCISE_CATALOG = [
   },
   {
     id: 'triceps_frances_haltere',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_One-Arm_Triceps_Extension/0.jpg',
     name: 'Tríceps Francês Unilateral / Bilateral',
     muscle: 'triceps',
     pattern: 'triceps_overhead',
@@ -279,6 +303,7 @@ export const EXERCISE_CATALOG = [
   },
   {
     id: 'triceps_banco',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Bench_Dips/0.jpg',
     name: 'Tríceps Mergulho no Banco',
     muscle: 'triceps',
     pattern: 'triceps_extension',
@@ -292,6 +317,7 @@ export const EXERCISE_CATALOG = [
   // --- PERNAS & GLÚTEOS ---
   {
     id: 'agachamento_livre',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Full_Squat/0.jpg',
     name: 'Agachamento Livre com Barra',
     muscle: 'quadriceps',
     pattern: 'squat',
@@ -303,6 +329,7 @@ export const EXERCISE_CATALOG = [
   },
   {
     id: 'leg_press_45',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Leg_Press/0.jpg',
     name: 'Leg Press 45°',
     muscle: 'quadriceps',
     pattern: 'leg_press',
@@ -314,6 +341,7 @@ export const EXERCISE_CATALOG = [
   },
   {
     id: 'agachamento_goblet',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Goblet_Squat/0.jpg',
     name: 'Agachamento Goblet (com Haltere)',
     muscle: 'quadriceps',
     pattern: 'squat',
@@ -325,6 +353,7 @@ export const EXERCISE_CATALOG = [
   },
   {
     id: 'cadeira_extensora',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Leg_Extensions/0.jpg',
     name: 'Cadeira Extensora',
     muscle: 'quadriceps',
     pattern: 'leg_extension',
@@ -336,6 +365,7 @@ export const EXERCISE_CATALOG = [
   },
   {
     id: 'mesa_flexora',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Lying_Leg_Curls/0.jpg',
     name: 'Mesa ou Cadeira Flexora',
     muscle: 'posterior',
     pattern: 'leg_curl',
@@ -347,6 +377,7 @@ export const EXERCISE_CATALOG = [
   },
   {
     id: 'stiff_halteres',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Stiff-Legged_Dumbbell_Deadlift/0.jpg',
     name: 'Stiff com Halteres ou Barra',
     muscle: 'posterior',
     pattern: 'hinge',
@@ -358,6 +389,7 @@ export const EXERCISE_CATALOG = [
   },
   {
     id: 'elevacao_pelvica',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Hip_Thrust/0.jpg',
     name: 'Elevação Pélvica (Hip Thrust)',
     muscle: 'gluteos',
     pattern: 'hip_thrust',
@@ -369,6 +401,7 @@ export const EXERCISE_CATALOG = [
   },
   {
     id: 'panturrilha_em_pe',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Standing_Calf_Raises/0.jpg',
     name: 'Panturrilha em Pé (Máquina ou Degrau)',
     muscle: 'panturrilha',
     pattern: 'calf_raise',
@@ -382,6 +415,7 @@ export const EXERCISE_CATALOG = [
   // --- CORE / ABDÔMEN ---
   {
     id: 'abdominal_supra',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Crunches/0.jpg',
     name: 'Abdominal Supra (Solo ou Declinado)',
     muscle: 'core',
     pattern: 'crunch',
@@ -393,6 +427,7 @@ export const EXERCISE_CATALOG = [
   },
   {
     id: 'prancha_isometrica',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Plank/0.jpg',
     name: 'Prancha Isométrica',
     muscle: 'core',
     pattern: 'plank',
@@ -404,6 +439,7 @@ export const EXERCISE_CATALOG = [
   },
   {
     id: 'prancha_modificada_joelhos',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Plank/0.jpg',
     name: 'Prancha Modificada (Joelhos Apoiados)',
     muscle: 'core',
     pattern: 'plank',
@@ -417,6 +453,7 @@ export const EXERCISE_CATALOG = [
   // --- GLÚTEOS / QUADRIL (ESPECÍFICOS) ---
   {
     id: 'cadeira_abdutora',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Thigh_Abductor/0.jpg',
     name: 'Cadeira Abdutora (Tronco Inclinado)',
     muscle: 'gluteos',
     pattern: 'abduction',
@@ -430,6 +467,7 @@ export const EXERCISE_CATALOG = [
   // --- CARDIO ESTRATÉGICO & BAIXO IMPACTO ---
   {
     id: 'esteira_inclinada',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Walking_Treadmill/0.jpg',
     name: 'Esteira Inclinada (Caminhada 4-5 km/h)',
     muscle: 'cardio',
     pattern: 'cardio_incline',
@@ -441,6 +479,7 @@ export const EXERCISE_CATALOG = [
   },
   {
     id: 'bike_ergometrica',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Recumbent_Bike/0.jpg',
     name: 'Bicicleta Ergométrica (Ritmo Moderado)',
     muscle: 'cardio',
     pattern: 'cardio_bike',
@@ -452,6 +491,7 @@ export const EXERCISE_CATALOG = [
   },
   {
     id: 'eliptico_transport',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Elliptical_Trainer/0.jpg',
     name: 'Elíptico / Transport (Zero Impacto)',
     muscle: 'cardio',
     pattern: 'cardio_eliptico',
@@ -463,6 +503,7 @@ export const EXERCISE_CATALOG = [
   },
   {
     id: 'meta_passos_diarios',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Trail_Running_Walking/0.jpg',
     name: 'Meta Diária de Passos no Celular',
     muscle: 'cardio',
     pattern: 'steps',

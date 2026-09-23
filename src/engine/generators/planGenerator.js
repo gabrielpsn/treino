@@ -14,7 +14,8 @@ import { MEAL_TEMPLATES, WEIGHT_LOSS_MEAL_TEMPLATES, NATURAL_SUPPLEMENTS } from 
  */
 export function buildPersonalizedPlan(userProfile) {
   const goal = userProfile.goal || 'hypertrophy';
-  const userName = userProfile.userName || 'Atleta';
+  const defaultName = userProfile.gender === 'female' ? 'Maria' : 'João';
+  const userName = userProfile.userName || defaultName;
 
   // 1. Cálculos Fisiológicos
   const bmr = calculateBMR(userProfile);
