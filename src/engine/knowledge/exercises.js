@@ -512,6 +512,231 @@ export const EXERCISE_CATALOG = [
     defaultSeries: '7.000 a 9.000 passos',
     rest: 'Ao longo do dia',
     tips: 'Garante o gasto calórico não-exercício (NEAT) sustentável.'
+  },
+
+  // =========================================================================
+  // COMPLEMENTO PARA TREINO EM CASA E PARA RESTRIÇÕES ARTICULARES
+  // =========================================================================
+  // Todos os exercícios acima vivem no topo do catálogo de propósito. Como
+  // getSafeExercise devolve o PRIMEIRO match encontrado, manter estes aqui no
+  // fim garante que nenhum plano já gerado mude: eles só entram quando não
+  // existe nenhuma alternativa segura, exatamente a situação em que antes o
+  // slot era simplesmente omitido.
+  //
+  // Não têm imageUrl de propósito: os URLs do catálogo apontam para
+  // free-exercise-db e não existe arquivo correspondente para banda, elástico
+  // ou movements isométricos. Link inventado quebraria em produção; a dica
+  // textual cobre o caso sem inventar asset.
+
+  // --- QUADRÍCEPS SEM CARGA ARTICULAR (essencial para dor no joelho) ---
+  {
+    id: 'agachamento_isometrico_parede',
+    name: 'Agachamento Isométrico na Parede (Wall Sit)',
+    muscle: 'quadriceps',
+    pattern: 'leg_extension',
+    equipment: 'home',
+    jointStress: [],
+    defaultSeries: '4x 20-45s',
+    rest: '60s',
+    tips: 'Apoie as costas na parede e desça até 90° sem ultrapassar os joelhos dos pés. É o principal construtor de quadríceps para quem tem dor no joelho: a carga é estática e não há impacto.'
+  },
+  {
+    id: 'extensora_uma_perna',
+    name: 'Extensora de Perna Unilateral',
+    muscle: 'quadriceps',
+    pattern: 'leg_extension',
+    equipment: 'gym_or_home',
+    jointStress: [],
+    defaultSeries: '3x 12-15 reps',
+    rest: '45s',
+    tips: 'Com elástico no pé, estenda o joelho de uma perna por vez. A unilateralidade corrige assimetrias e a carga baixa poupa a articulação.'
+  },
+  {
+    id: 'deadlift_banda',
+    name: 'Deadlift com Elástico',
+    muscle: 'posterior',
+    pattern: 'hinge',
+    equipment: 'home',
+    jointStress: [],
+    defaultSeries: '3x 15 reps',
+    rest: '60s',
+    tips: 'Quadril para trás, coluna neutra e tronco inclinado, como no stiff. Substitui a carga livre em quem tem restrição na lombar.'
+  },
+  {
+    id: 'nordic_curl',
+    name: 'Nordic Curl',
+    muscle: 'posterior',
+    pattern: 'leg_curl',
+    equipment: 'home',
+    jointStress: [],
+    defaultSeries: '3x 6-10 reps',
+    rest: '90s',
+    tips: 'Ajoelhado, desça lentamente contando até 5 e volte com o empurrão de outra pessoa ou apoio. Não carrega a coluna nem o joelho: é a melhor opção de isquiotibiais em casa.'
+  },
+  {
+    id: 'leg_curl_slider',
+    name: 'Mesa Flexora com Slider (Piso)',
+    muscle: 'posterior',
+    pattern: 'leg_curl',
+    equipment: 'home',
+    jointStress: [],
+    defaultSeries: '3x 10-15 reps',
+    rest: '60s',
+    tips: 'Deitado de barriga para baixo, deslize o calcanhar puxando o quadril para dentro. Alternativa doméstica à mesa flexora.'
+  },
+  {
+    id: 'afundo_bulgarian',
+    name: 'Afundo Búlgaro',
+    muscle: 'quadriceps',
+    pattern: 'squat',
+    equipment: 'gym_or_home',
+    jointStress: ['joelho'],
+    defaultSeries: '3x 10-12 reps',
+    rest: '90s',
+    tips: 'Pé de trás elevado em um banco, desça controlando. Muito eficiente, mas exige joelho saudável — se houver dor, prefira o agachamento na parede.'
+  },
+  {
+    id: 'elevacao_gluteo_banda',
+    name: 'Elevação Pélvica com Elástico',
+    muscle: 'gluteos',
+    pattern: 'hip_thrust',
+    equipment: 'home',
+    jointStress: [],
+    defaultSeries: '4x 12-15 reps',
+    rest: '60s',
+    tips: 'Costas no chão, elástico acima dos joelhos e empurre o quadril para o teto. Ativa glúteo médio, que é o que segura o joelho na corrida.'
+  },
+  {
+    id: 'clam_shell_banda',
+    name: 'Clam Shell com Elástico',
+    muscle: 'gluteos',
+    pattern: 'abduction',
+    equipment: 'home',
+    jointStress: [],
+    defaultSeries: '3x 15 reps cada perna',
+    rest: '45s',
+    tips: 'Deitado de lado, joelhos dobrados e pés juntos: abra o joelho de cima como uma concha. Substitui a cadeira abdutora em casa.'
+  },
+  {
+    id: 'passada_lateral',
+    name: 'Passada Lateral (Lateral Shuffle)',
+    muscle: 'cardio',
+    pattern: 'cardio_bike',
+    equipment: 'home',
+    jointStress: [],
+    defaultSeries: '3x 30s',
+    rest: '30s',
+    tips: 'Agachado em semiposição, salte de lado para o outro. Cardio sem impacto e sem machines.'
+  },
+  {
+    id: 'caminhada_rapida',
+    name: 'Caminhada Rápida',
+    muscle: 'cardio',
+    pattern: 'cardio_incline',
+    equipment: 'home',
+    jointStress: [],
+    defaultSeries: '25-35 min',
+    rest: 'Contínuo',
+    tips: 'Inclinação não é obrigatória sem esteira: bastam ritmo de passo rápido e terreno em subida. Alternativa doméstica à esteira inclinada.'
+  },
+  {
+    id: 'pular_corda',
+    name: 'Pular Corda',
+    muscle: 'cardio',
+    pattern: 'cardio_eliptico',
+    equipment: 'home',
+    jointStress: ['joelho', 'quadril'],
+    defaultSeries: '3x 2 min',
+    rest: '45s',
+    tips: 'Aterrissagem repetida no mesmo ponto: se você tem dor no joelho ou no quadril, prefira caminhada rápida ou bicicleta.'
+  },
+  {
+    id: 'puxada_banda',
+    name: 'Puxada de Elástico no Chão',
+    muscle: 'costas',
+    pattern: 'pull_vertical',
+    equipment: 'home',
+    jointStress: [],
+    defaultSeries: '3x 12-15 reps',
+    rest: '60s',
+    tips: 'Sente-se com a banda presa acima da porta e puxe em direção ao quadril. Substitui a barra fixa com carga baixa.'
+  },
+  {
+    id: 'remo_baixo_banda',
+    name: 'Remada Baixa com Elástico',
+    muscle: 'costas',
+    pattern: 'pull_horizontal',
+    equipment: 'home',
+    jointStress: [],
+    defaultSeries: '3x 12-15 reps',
+    rest: '60s',
+    tips: 'Quadril flexionado, coluna neutra e elástico na altura do abdômen. Sem curvatura da lombar, que é o erro mais comum na remada.'
+  },
+  {
+    id: 'remo_uma_mao_banda',
+    name: 'Remada unilateral com Elástico',
+    muscle: 'costas',
+    pattern: 'pull_horizontal',
+    equipment: 'home',
+    jointStress: [],
+    defaultSeries: '3x 12 reps cada lado',
+    rest: '45s',
+    tips: 'Mão apoiada no banco e puxa com o outro braço. Corrige a lateralidade e entrela a musculatura das costas.'
+  },
+  {
+    id: 'pullover_banda',
+    name: 'Pullover com Elástico',
+    muscle: 'costas',
+    pattern: 'lat_isolation',
+    equipment: 'home',
+    jointStress: [],
+    defaultSeries: '3x 12-15 reps',
+    rest: '60s',
+    tips: 'Deitado de costas, braços quase estendidos, leve o elástico em arco até os quadris. Isola o dorsal sem carga na coluna.'
+  },
+  {
+    id: 'triceps_banda',
+    name: 'Tríceps na Corda com Elástico',
+    muscle: 'triceps',
+    pattern: 'triceps_extension',
+    equipment: 'home',
+    jointStress: [],
+    defaultSeries: '3x 12-15 reps',
+    rest: '45s',
+    tips: 'Cotovelos colados ao corpo, estenda o antebraço contra a tensão da banda. Não gera pressão no ombro como o apoio no banco.'
+  },
+  {
+    id: 'triceps_banda_alongado',
+    name: 'Tríceps Alongado com Elástico',
+    muscle: 'triceps',
+    pattern: 'triceps_overhead',
+    equipment: 'home',
+    jointStress: [],
+    defaultSeries: '3x 12-15 reps',
+    rest: '60s',
+    tips: 'Costas retas, banda atrás da cabeça e cotovelos apontando para a frente. Pegada neutra e carga baixa reduzem a tensão de cotovelo.'
+  },
+  {
+    id: 'crucifixo_banda',
+    name: 'Crucifixo com Elástico',
+    muscle: 'peito',
+    pattern: 'fly',
+    equipment: 'home',
+    jointStress: [],
+    defaultSeries: '3x 12-15 reps',
+    rest: '45s',
+    tips: 'Cotovelos levemente flexionados, abra as mãos até sentir o peitoral. Movimento controlado e amplitude parcial, então o ombro fica descansado.'
+  },
+  {
+    id: 'flexao_inclinada_banco',
+    name: 'Flexão Inclinada no Banco',
+    muscle: 'peito',
+    pattern: 'push_incline',
+    equipment: 'gym_or_home',
+    jointStress: [],
+    defaultSeries: '3x 10-15 reps',
+    rest: '60s',
+    tips: 'As mãos mais altas que os pés reduzem a carga no ombro. É a inclinate que substitui o supino inclinado para quem sente dor no ombro.'
   }
 ];
 

@@ -1,17 +1,58 @@
 import { EXERCISE_CATALOG } from '../knowledge/exercises.js';
 
 /**
+ * Um exercício é inseguro quando ele sobrecarrega uma articulação que o usuário
+ * declarou estar lesionada. Este é o filtro mais importante do engine: splits
+ * gerados nunca devem sugerir movimento contra uma restrição declarada.
+ */
+export function conflictsWithRestrictions(exercise, restrictions = []) {
+  if (!exercise) return true;
+  if (!Array.isArray(restrictions) || restrictions.length === 0) return false;
+  return exercise.jointStress.some(j => restrictions.includes(j));
+}
+
+/**
+ * Verifica se o exercício pode ser executado com o equipamento informado.
+ * Quem treina em casa não deve receber máquinas exclusivas de academia.
+ */
+export function matchesEquipment(exercise, equipment = 'gym') {
+  if (!exercise) return false;
+  if (equipment === 'home' && exercise.equipment === 'gym') return false;
+  return true;
+}
+
+/**
+ * Verdadeiro quando o exercício é seguro e executável no contexto do usuário.
+ */
+export function isExerciseSafe(exercise, { restrictions = [], equipment = 'gym' } = {}) {
+  return matchesEquipment(exercise, equipment) && !conflictsWithRestrictions(exercise, restrictions);
+}
+
+/**
+ * Filtra uma lista de candidatos devolvendo apenas os seguros para o usuário,
+ * preservando a ordem original. É a base compartilhada entre o gerador de planos
+ * e o modal de substituição de exercícios, para que as duas telas nunca divirjam.
+ */
+export function filterSafeExercises(candidates = [], { restrictions = [], equipment = 'gym' } = {}) {
+  return candidates.filter(ex => isExerciseSafe(ex, { restrictions, equipment }));
+}
+
+/**
  * Filtra exercícios com base nas restrições articulares, equipamento disponível
  * e garante que não repita exercícios já selecionados no split (excludeIds).
+ *
+ * A cascata vai do match mais específico ao mais flexível, mas NUNCA entrega um
+ * exercício que conflite com uma restrição articular declarada: nesse caso
+ * retorna null e o chamador registra a ausência no lugar de inventar um
+ * movimento inseguro.
  */
-export function getSafeExercise(targetMuscle, pattern, restrictions = [], equipment = 'gym', excludeIds = []) {
+export function getSafeExercise(targetMuscle, pattern, restrictions = [], equipment = 'gym', excludeIds = [], catalog = EXERCISE_CATALOG) {
   // 1. Prioridade exata: músculo + padrão + sem restrições + equipamento correto + não excluído
-  const exactMatches = EXERCISE_CATALOG.filter(ex => {
+  const exactMatches = catalog.filter(ex => {
     if (excludeIds.includes(ex.id)) return false;
     if (targetMuscle && ex.muscle !== targetMuscle) return false;
     if (pattern && ex.pattern !== pattern) return false;
-    if (equipment === 'home' && ex.equipment === 'gym') return false;
-    if (ex.jointStress.some(j => restrictions.includes(j))) return false;
+    if (!isExerciseSafe(ex, { restrictions, equipment })) return false;
     return true;
   });
 
@@ -20,11 +61,10 @@ export function getSafeExercise(targetMuscle, pattern, restrictions = [], equipm
   }
 
   // 2. Se não encontrou pelo pattern exato, busca pelo músculo sem restrições e não excluído
-  const muscleMatches = EXERCISE_CATALOG.filter(ex => {
+  const muscleMatches = catalog.filter(ex => {
     if (excludeIds.includes(ex.id)) return false;
     if (targetMuscle && ex.muscle !== targetMuscle) return false;
-    if (equipment === 'home' && ex.equipment === 'gym') return false;
-    if (ex.jointStress.some(j => restrictions.includes(j))) return false;
+    if (!isExerciseSafe(ex, { restrictions, equipment })) return false;
     return true;
   });
 
@@ -32,28 +72,28 @@ export function getSafeExercise(targetMuscle, pattern, restrictions = [], equipm
     return muscleMatches[0];
   }
 
-  // 3. Fallback flexibilizando equipamento mas respeitando restrições articulares
-  const safeFallback = EXERCISE_CATALOG.find(ex =>
+  // 3. Fallback flexibilizando o equipamento, mas NUNCA as restrições articulares.
+  // Exige o equipamento no trecho final para não empurrar máquina de academia
+  // para quem só tem peso de casa.
+  const restrictedToEquipment = catalog.find(ex =>
     !excludeIds.includes(ex.id) &&
     ex.muscle === targetMuscle &&
-    !ex.jointStress.some(j => restrictions.includes(j))
+    matchesEquipment(ex, equipment) &&
+    !conflictsWithRestrictions(ex, restrictions)
   );
 
-  if (safeFallback) return safeFallback;
-
-  // 4. Último recurso: qualquer um do músculo não excluído
-  return EXERCISE_CATALOG.find(ex => !excludeIds.includes(ex.id) && ex.muscle === targetMuscle) || null;
+  return restrictedToEquipment || null;
 }
 
 /**
  * Helper para preencher uma lista de exercícios acumulando os IDs para evitar duplicatas
  */
-function buildExerciseList(configs, restrictions, equipment, seriesCount) {
+function buildExerciseList(configs, restrictions, equipment, seriesCount, catalog) {
   const list = [];
   const excludeIds = [];
 
   for (const cfg of configs) {
-    const ex = getSafeExercise(cfg.muscle, cfg.pattern, restrictions, equipment, excludeIds);
+    const ex = getSafeExercise(cfg.muscle, cfg.pattern, restrictions, equipment, excludeIds, catalog);
     if (ex) {
       excludeIds.push(ex.id);
       list.push({
@@ -61,6 +101,12 @@ function buildExerciseList(configs, restrictions, equipment, seriesCount) {
         defaultSeries: cfg.customSeries || (cfg.muscle === 'cardio' ? ex.defaultSeries : seriesCount),
         rest: cfg.customRest || ex.rest
       });
+    } else {
+      // Não substitui por movimento inseguro: registra e segue sem o slot.
+      console.warn(
+        `[workoutGenerator] Nenhum exercício seguro para "${cfg.muscle}/${cfg.pattern}" ` +
+        `com equipamento="${equipment}" e restrições=[${restrictions.join(', ')}]. Slot omitido.`
+      );
     }
   }
 
@@ -76,7 +122,10 @@ export function generateWorkoutSplit(profile) {
     daysPerWeek = 4,
     restrictions = [],
     equipment = 'gym',
-    experienceLevel = 'intermediate'
+    experienceLevel = 'intermediate',
+    // Catálogo já mesclado (embutido + exercícios do usuário). Quando não vem,
+    // usa só o embutido — o comportamento de fábrica continua idêntico.
+    catalog = EXERCISE_CATALOG
   } = profile;
 
   const splits = [];
@@ -104,7 +153,7 @@ export function generateWorkoutSplit(profile) {
       subtitle: 'Pernas completas, glúteos e abdômen com foco em queima calórica basal',
       color: 'rose',
       accentBg: 'bg-rose-500/10 border-rose-500/20 text-rose-300',
-      exercises: buildExerciseList(femaleExercisesA, restrictions, equipment, '3x 12-15 reps')
+      exercises: buildExerciseList(femaleExercisesA, restrictions, equipment, '3x 12-15 reps', catalog)
     });
 
     // Treino B: Superiores & Costas (Postura, Lombar & Firmeza)
@@ -124,7 +173,7 @@ export function generateWorkoutSplit(profile) {
       subtitle: 'Costas, Ombros e Braços firmes. Melhora postura e alivia lombar',
       color: 'indigo',
       accentBg: 'bg-indigo-500/10 border-indigo-500/20 text-indigo-300',
-      exercises: buildExerciseList(femaleExercisesB, restrictions, equipment, '3x 12-15 reps')
+      exercises: buildExerciseList(femaleExercisesB, restrictions, equipment, '3x 12-15 reps', catalog)
     });
 
     // Treino C / Cardio Estratégico (Sem impacto)
@@ -141,10 +190,10 @@ export function generateWorkoutSplit(profile) {
       subtitle: 'Gasto calórico aeróbico sem impacto prejudicial para os joelhos e articulações',
       color: 'sky',
       accentBg: 'bg-sky-500/10 border-sky-500/20 text-sky-300',
-      exercises: buildExerciseList(femaleExercisesCardio, restrictions, equipment, '20-30 min')
+      exercises: buildExerciseList(femaleExercisesCardio, restrictions, equipment, '20-30 min', catalog)
     });
 
-    const weekDays = generateWeightLossSchedule(daysPerWeek, splits);
+    const weekDays = generateWeightLossSchedule(daysPerWeek);
     return { splits, weekDays };
   }
 
@@ -167,7 +216,7 @@ export function generateWorkoutSplit(profile) {
         { muscle: 'ombro', pattern: 'lateral_raise' },
         { muscle: 'triceps', pattern: 'triceps_extension' },
         { muscle: 'triceps', pattern: 'triceps_overhead' }
-      ], restrictions, equipment, seriesCount)
+      ], restrictions, equipment, seriesCount, catalog)
     });
 
     splits.push({
@@ -183,7 +232,7 @@ export function generateWorkoutSplit(profile) {
         { muscle: 'ombro', pattern: 'rear_delt' },
         { muscle: 'biceps', pattern: 'biceps_curl' },
         { muscle: 'biceps', pattern: 'biceps_curl' } // O excludeIds garante variação (ex: martelo vs direta)
-      ], restrictions, equipment, seriesCount)
+      ], restrictions, equipment, seriesCount, catalog)
     });
 
     splits.push({
@@ -199,7 +248,7 @@ export function generateWorkoutSplit(profile) {
         { muscle: 'gluteos', pattern: 'hip_thrust' },
         { muscle: 'panturrilha', pattern: 'calf_raise' },
         { muscle: 'core', pattern: 'crunch' }
-      ], restrictions, equipment, seriesCount)
+      ], restrictions, equipment, seriesCount, catalog)
     });
 
   } else if (daysPerWeek === 4) {
@@ -218,7 +267,7 @@ export function generateWorkoutSplit(profile) {
         { muscle: 'ombro', pattern: 'lateral_raise' },
         { muscle: 'biceps', pattern: 'biceps_curl' },
         { muscle: 'triceps', pattern: 'triceps_extension' }
-      ], restrictions, equipment, seriesCount)
+      ], restrictions, equipment, seriesCount, catalog)
     });
 
     splits.push({
@@ -234,7 +283,7 @@ export function generateWorkoutSplit(profile) {
         { muscle: 'posterior', pattern: 'leg_curl' },
         { muscle: 'panturrilha', pattern: 'calf_raise' },
         { muscle: 'core', pattern: 'crunch' }
-      ], restrictions, equipment, seriesCount)
+      ], restrictions, equipment, seriesCount, catalog)
     });
 
     splits.push({
@@ -251,7 +300,7 @@ export function generateWorkoutSplit(profile) {
         { muscle: 'ombro', pattern: 'rear_delt' },
         { muscle: 'triceps', pattern: 'triceps_overhead' },
         { muscle: 'biceps', pattern: 'biceps_curl' }
-      ], restrictions, equipment, seriesCount)
+      ], restrictions, equipment, seriesCount, catalog)
     });
 
     splits.push({
@@ -267,7 +316,7 @@ export function generateWorkoutSplit(profile) {
         { muscle: 'quadriceps', pattern: 'leg_press' },
         { muscle: 'panturrilha', pattern: 'calf_raise' },
         { muscle: 'core', pattern: 'plank' }
-      ], restrictions, equipment, seriesCount)
+      ], restrictions, equipment, seriesCount, catalog)
     });
 
   } else {
@@ -286,7 +335,7 @@ export function generateWorkoutSplit(profile) {
         { muscle: 'ombro', pattern: 'lateral_raise' },
         { muscle: 'triceps', pattern: 'triceps_extension' },
         { muscle: 'triceps', pattern: 'triceps_overhead' }
-      ], restrictions, equipment, seriesCount)
+      ], restrictions, equipment, seriesCount, catalog)
     });
 
     splits.push({
@@ -302,7 +351,7 @@ export function generateWorkoutSplit(profile) {
         { muscle: 'ombro', pattern: 'rear_delt' },
         { muscle: 'biceps', pattern: 'biceps_curl' },
         { muscle: 'biceps', pattern: 'biceps_curl' }
-      ], restrictions, equipment, seriesCount)
+      ], restrictions, equipment, seriesCount, catalog)
     });
 
     splits.push({
@@ -318,7 +367,7 @@ export function generateWorkoutSplit(profile) {
         { muscle: 'gluteos', pattern: 'hip_thrust' },
         { muscle: 'panturrilha', pattern: 'calf_raise' },
         { muscle: 'core', pattern: 'crunch' }
-      ], restrictions, equipment, seriesCount)
+      ], restrictions, equipment, seriesCount, catalog)
     });
   }
 
@@ -326,7 +375,7 @@ export function generateWorkoutSplit(profile) {
   return { splits, weekDays };
 }
 
-function generateWeightLossSchedule(daysPerWeek, splits) {
+function generateWeightLossSchedule(daysPerWeek) {
   const schedule = [
     { id: 'seg', label: 'Segunda', workout: 'Treino A (Pernas) + 20m Cardio' },
     { id: 'ter', label: 'Terça', workout: 'Treino B (Superiores) + 20m Cardio' },
@@ -352,6 +401,23 @@ function generateWeightLossSchedule(daysPerWeek, splits) {
     schedule[3].workout = 'Treino A (Inferiores)';
     schedule[4].workout = 'Treino B (Superiores)';
     schedule[5].workout = 'Cardio Estratégico';
+    schedule[6].workout = 'Descanso';
+  } else if (daysPerWeek === 5) {
+    schedule[0].workout = 'Treino A (Inferiores) + Cardio';
+    schedule[1].workout = 'Treino B (Superiores) + Cardio';
+    schedule[2].workout = 'Caminhada Livre (40 min)';
+    schedule[3].workout = 'Treino C (Cardio Estratégico)';
+    schedule[4].workout = 'Treino A (Inferiores) + Cardio';
+    schedule[5].workout = 'Treino B (Superiores)';
+    schedule[6].workout = 'Descanso';
+  } else {
+    // 6+ dias: alterna os 3 splits com um dia de descanso no domingo.
+    schedule[0].workout = 'Treino A (Inferiores) + Cardio';
+    schedule[1].workout = 'Treino B (Superiores) + Cardio';
+    schedule[2].workout = 'Treino C (Cardio Estratégico)';
+    schedule[3].workout = 'Treino A (Inferiores) + Cardio';
+    schedule[4].workout = 'Treino B (Superiores) + Cardio';
+    schedule[5].workout = 'Treino C (Cardio Estratégico)';
     schedule[6].workout = 'Descanso';
   }
 

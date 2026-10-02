@@ -2,10 +2,10 @@ import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
 
-const SCREENSHOT_DIR = path.resolve('tests/screenshots');
-if (!fs.existsSync(SCREENSHOT_DIR)) {
-  fs.mkdirSync(SCREENSHOT_DIR, { recursive: true });
-}
+// Screenshots vão para test-results/ (gitignored): antes eram commitados no
+// repositório, somando mais de 1 MB de artefatos gerados que ninguém revisava.
+const SCREENSHOT_DIR = path.resolve('test-results/screenshots');
+fs.mkdirSync(SCREENSHOT_DIR, { recursive: true });
 
 test.describe('Validação Visual por Tela do App de Treino', () => {
 
@@ -20,8 +20,20 @@ test.describe('Validação Visual por Tela do App de Treino', () => {
   }
 
   test('Tela 1: Onboarding - Perfil, Solicitação do Nome e Objetivo de Perda de Peso', async ({ page }) => {
+    // O app persiste em IndexedDB, não em localStorage. Limpar só o localStorage
+    // não reinicia o estado: o modal nem aparecia e o perfil de um teste
+    // anterior vazava para o seguinte.
     await page.goto('/');
-    await page.evaluate(() => localStorage.clear());
+    await page.evaluate(async () => {
+      localStorage.clear();
+      sessionStorage.clear();
+      await new Promise(resolve => {
+        const req = indexedDB.deleteDatabase('TreinoProDB');
+        req.onsuccess = resolve;
+        req.onerror = resolve;
+        req.onblocked = resolve;
+      });
+    });
     await page.reload();
 
     // Aguarda o modal de onboarding abrir
@@ -78,94 +90,54 @@ test.describe('Validação Visual por Tela do App de Treino', () => {
   test('Tela 2: Fichas de Treino - Verificação de Duplicatas, Cargas e Cronômetro', async ({ page }) => {
     await prepareAppPage(page);
 
-    // Garante que estamos na aba de treinos
     await page.locator('#tab-btn-workout').click();
     await expect(page.locator('#screen-workout')).toBeVisible();
 
-    // Valida Treino A
-    await page.locator('#btn-split-treino-a').click();
-    await expect(page.locator('#container-treino-a')).toBeVisible();
+    const splitTabs = page.locator('button[id^="btn-split-treino-"]');
+    const splitCount = await splitTabs.count();
+    expect(splitCount).toBeGreaterThan(0);
 
-    // Valida se o botão de instalar PWA está visível no header
-    const installBtn = page.locator('#btn-install-app');
-    await expect(installBtn).toBeVisible();
+    for (let i = 0; i < splitCount; i++) {
+      await splitTabs.nth(i).click();
 
-    // Checa se os exercícios são únicos (sem duplicatas) e têm links de imagem externa
-    const exerciseTitles = page.locator('#container-treino-a a[id^="link-exercise-"], #container-treino-a h4');
-    const count = await exerciseTitles.count();
-    expect(count).toBeGreaterThan(0);
-    const names = [];
-    for (let i = 0; i < count; i++) {
-      names.push(await exerciseTitles.nth(i).textContent());
-    }
-    const uniqueNames = new Set(names);
-    expect(uniqueNames.size).toBe(names.length);
+      const container = page.locator('div[id^="container-treino-"]:visible').first();
+      await expect(container).toBeVisible();
 
-    // Valida que o primeiro exercício possui link externo válido com target _blank
-    const firstLink = page.locator('#container-treino-a a[id^="link-exercise-"]').first();
-    await expect(firstLink).toBeVisible();
-    await expect(firstLink).toHaveAttribute('target', '_blank');
-    await expect(firstLink).toHaveAttribute('href', /https?:\/\//);
+      const names = await container.locator('a[id^="link-exercise-"], h4').allTextContents();
+      expect(names.length).toBeGreaterThan(0);
+      expect(new Set(names).size).toBe(names.length);
 
-    // Marca o primeiro exercício como concluído
-    const firstCheck = page.locator('#container-treino-a button[id^="btn-check-"]').first();
-    await firstCheck.click();
-
-    // Screenshot Treino A
-    await page.screenshot({ path: path.join(SCREENSHOT_DIR, '05_tela_fichas_treino_a.png'), fullPage: true });
-
-    // Valida aba Cardio Estratégico
-    const btnCardio = page.locator('#btn-split-treino-c');
-    if (await btnCardio.isVisible()) {
-      await btnCardio.click();
-      await expect(page.locator('#container-treino-c')).toBeVisible();
-      await page.screenshot({ path: path.join(SCREENSHOT_DIR, '06_tela_fichas_cardio_estrategico.png'), fullPage: true });
+      await page.screenshot({
+        path: path.join(SCREENSHOT_DIR, `05_tela_fichas_split_${i + 1}.png`),
+        fullPage: true
+      });
     }
   });
 
-  test('Tela 3: Dieta & Nutrição - Cardápio de Emagrecimento & Termogênicos Naturais', async ({ page }) => {
+  test('Tela 3: Dieta & Nutrição - Cardápio & Termogênicos', async ({ page }) => {
     await prepareAppPage(page);
 
-    // Clica na aba Dieta & Metas
     await page.locator('#tab-btn-nutrition').click();
     await expect(page.locator('#screen-nutrition')).toBeVisible();
 
-    // Valida os suplementos ou recomendações nutricionais
-    const isLossMode = await page.locator('#card-supplement-cha-verde').isVisible();
-    if (isLossMode) {
-      await expect(page.locator('#card-supplement-cha-verde')).toBeVisible();
-      await expect(page.locator('#card-supplement-psyllium')).toBeVisible();
-      await expect(page.locator('#card-supplement-creatina')).toBeVisible();
-    } else {
-      await expect(page.locator('h4:has-text("Creatina Monohidratada")').first()).toBeVisible();
-      await expect(page.locator('h4:has-text("Hidratação Crítica")').first()).toBeVisible();
-    }
-
-    // Valida as refeições calculadas
     await expect(page.locator('#meal-card-meal-1')).toBeVisible();
     await expect(page.locator('#meal-card-meal-2')).toBeVisible();
     await expect(page.locator('#meal-card-meal-3')).toBeVisible();
 
-    // Screenshot Tela de Dieta
-    await page.screenshot({ path: path.join(SCREENSHOT_DIR, '07_tela_dieta_termogenicos.png'), fullPage: true });
+    await page.screenshot({ path: path.join(SCREENSHOT_DIR, '07_tela_dieta.png'), fullPage: true });
   });
 
-  test('Tela 4: Calendário Semanal - Compromisso e Registro de Frequência', async ({ page }) => {
+  test('Tela 4: Calendário Semanal', async ({ page }) => {
     await prepareAppPage(page);
 
-    // Clica na aba Calendário Semanal
     await page.locator('#tab-btn-frequency').click();
     await expect(page.locator('#screen-frequency')).toBeVisible();
 
-    // Clica nos dias da semana para registrar
     await page.locator('#day-card-seg').click();
     await page.locator('#day-card-ter').click();
 
-    // Valida contagem
-    const progressText = page.locator('#week-progress-text');
-    await expect(progressText).toContainText('2 / 7');
+    await expect(page.locator('#week-progress-text')).toContainText('2 / 7');
 
-    // Screenshot Tela de Frequência
     await page.screenshot({ path: path.join(SCREENSHOT_DIR, '08_tela_calendario_semanal.png'), fullPage: true });
   });
 

@@ -8,11 +8,6 @@ export const MEAL_TEMPLATES = [
     title: '1. Café da Manhã Energético',
     tag: 'Desjejum Anabólico',
     description: 'Quebra de jejum com proteínas de alto valor biológico e carboidratos complexos.',
-    basePortions: {
-      eggs: 3, // ovos
-      breadSlices: 2, // fatias pão integral
-      fruitGrams: 120 // banana ou mamão
-    },
     buildText: (ratio = 1) => {
       const eggs = Math.round(3 * ratio);
       const fruit = Math.round(120 * ratio);
@@ -24,11 +19,6 @@ export const MEAL_TEMPLATES = [
     title: '2. Almoço Construtor',
     tag: 'Pico Anabólico & Creatina',
     description: 'Refeição principal de alta densidade nutricional, micronutrientes e absorção de creatina.',
-    basePortions: {
-      proteinGrams: 160,
-      carbGrams: 200,
-      beansGrams: 100
-    },
     buildText: (ratio = 1, creatinaGrams = 5) => {
       const meat = Math.round(160 * ratio);
       const rice = Math.round(200 * ratio);
@@ -40,10 +30,6 @@ export const MEAL_TEMPLATES = [
     title: '3. Pré-Treino Natural (45-60m antes)',
     tag: 'Energia & Foco',
     description: 'Glicogênio rápido de fácil digestão gastrointestinal com cafeína para foco neuromuscular.',
-    basePortions: {
-      oatsGrams: 30,
-      honeyGrams: 15
-    },
     buildText: (ratio = 1) => {
       const oats = Math.round(30 * ratio);
       return `1 banana média amassada com ${oats}g de aveia em flocos e 1 colher de mel + 1 xícara (150ml) de café preto puro sem açúcar (cafeína pré-treino).`;
@@ -54,10 +40,6 @@ export const MEAL_TEMPLATES = [
     title: '4. Jantar / Pós-Treino',
     tag: 'Reconstrução Muscular',
     description: 'Reposição completa dos estoques de glicogênio depletados e síntese proteica noturna.',
-    basePortions: {
-      proteinGrams: 160,
-      carbGrams: 200
-    },
     buildText: (ratio = 1) => {
       const meat = Math.round(160 * ratio);
       const carb = Math.round(200 * ratio);
@@ -69,14 +51,22 @@ export const MEAL_TEMPLATES = [
     title: '5. Ceia Noturna (Opcional)',
     tag: 'Anti-catabolismo',
     description: 'Digestão lenta e liberação gradual de aminoácidos durante as 7-8 horas de sono.',
-    basePortions: {
-      eggs: 2
-    },
     buildText: (ratio = 1) => {
       return `2 ovos cozidos ou 1 iogurte natural / leite com 1 colher de pasta de amendoim 100% integral.`;
     }
   }
 ];
+
+/**
+ * Escala uma faixa de gramas em torno de uma porção de referência (1.0 = cardápio base).
+ * Usado no déficit para que um usuário de 1400 kcal não receba exatamente as mesmas
+ * porções de um usuário de 2400 kcal.
+ */
+function scaleGrams(min, max, ratio = 1) {
+  const lo = Math.round((min * ratio) / 5) * 5;
+  const hi = Math.round((max * ratio) / 5) * 5;
+  return lo === hi ? `${lo}g` : `${lo}g a ${hi}g`;
+}
 
 export const WEIGHT_LOSS_MEAL_TEMPLATES = [
   {
@@ -84,28 +74,32 @@ export const WEIGHT_LOSS_MEAL_TEMPLATES = [
     title: '1. Café da Manhã (Saciedade & Energia)',
     tag: '~320 kcal',
     description: 'Garante proteína logo pela manhã, evitando ataques de fome e ansiedade por doces antes do almoço.',
-    buildText: () => '2 ovos inteiros mexidos (com orégano e pouco azeite) + 1 fatia de pão integral 100% ou 1 fatia média de melão/mamão + 1 xícara de café preto ou café com leite desnatado.'
+    buildText: (ratio = 1) => `2 ovos inteiros mexidos (com orégano e pouco azeite) + 1 fatia de pão integral 100% ou 1 fatia média de melão/mamão + 1 xícara de café preto ou café com leite desnatado.${ratio > 1.05 ? ' Reforce com 1 scoop de proteína em pó se a fome aparecer cedo.' : ''}`
   },
   {
     order: 2,
     title: '2. Almoço Nutritivo (Alta Saciedade)',
     tag: '~450 kcal',
     description: 'Combinação rica em fibras e aminoácidos para alimentar os músculos e queimar gordura visceral.',
-    buildText: (ratio = 1, creatinaGrams = 3) => `1 filé médio (120g a 140g) de peito de frango, carne magra (patinho) ou peixe + 3 a 4 colheres de sopa de arroz integral + 1 concha rasa de feijão + Prato farto de salada verde (alface, rúcula, pepino, tomate) com 1 colher de chá de azeite extra virgem. + Creatina (${creatinaGrams}g).`
+    buildText: (ratio = 1, creatinaGrams = 3) => {
+      const proteina = scaleGrams(120, 140, ratio);
+      const arroz = ratio < 0.95 ? '2 a 3 colheres de sopa' : ratio > 1.1 ? '4 a 5 colheres de sopa' : '3 a 4 colheres de sopa';
+      return `1 filé médio (${proteina}) de peito de frango, carne magra (patinho) ou peixe + ${arroz} de arroz integral + 1 concha rasa de feijão + Prato farto de salada verde (alface, rúcula, pepino, tomate) com 1 colher de chá de azeite extra virgem. + Creatina (${creatinaGrams}g).`;
+    }
   },
   {
     order: 3,
     title: '3. Lanche da Tarde Anti-Fome',
     tag: '~220 kcal',
     description: 'A chia e o iogurte retardam a digestão e impedem compulsão alimentar no fim da tarde/início da noite.',
-    buildText: () => '1 pote (150g a 170g) de iogurte natural desnatado com 1 colher de sopa de sementes de chia ou farelo de aveia + 1 maçã média picada com canela em pó.'
+    buildText: (ratio = 1) => `1 pote (${scaleGrams(150, 170, ratio)}) de iogurte natural desnatado com 1 colher de sopa de sementes de chia ou farelo de aveia + ${ratio > 1.05 ? '1 maçã média' : 'meia maçã média'} picada com canela em pó.`
   },
   {
     order: 4,
     title: '4. Jantar Leve & Digestivo',
     tag: '~350 kcal',
     description: 'Redução de carboidratos pesados à noite para otimizar o hormônio de crescimento (GH) e queima lipídica noturna.',
-    buildText: () => 'Omelete de 2 ovos com legumes (cenoura ralada, abobrinha, espinafre) OU 120g de frango desfiado com 150g de legumes cozidos no vapor (brócolis, couve-flor, abóbora) + salada crua à vontade.'
+    buildText: (ratio = 1) => `Omelete de 2 ovos com legumes (cenoura ralada, abobrinha, espinafre) OU ${scaleGrams(120, 120, ratio)} de frango desfiado com ${scaleGrams(150, 150, ratio)} de legumes cozidos no vapor (brócolis, couve-flor, abóbora) + salada crua à vontade.`
   },
   {
     order: 5,

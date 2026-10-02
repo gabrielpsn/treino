@@ -40,8 +40,7 @@ export function calculateTargetCalories(tdee, experienceLevel = 'intermediate', 
   return tdee + surplus;
 }
 
-// Mantém retrocompatibilidade caso algo ainda chame calculateSurplusCalories
-export const calculateSurplusCalories = calculateTargetCalories;
+
 
 // 4. Divisão de Macronutrientes (Hipertrofia ou Perda de Peso)
 export function calculateMacros(targetCalories, weightKg, experienceLevel = 'intermediate', goal = 'hypertrophy') {

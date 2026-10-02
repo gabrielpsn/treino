@@ -10,7 +10,21 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+out
 *.local
+
+# Testes
+test-results
+playwright-report
+blob-report
+playwright/.cache
+coverage
+
+# Cloudflare
+.wrangler
+
+# Protótipos HTML superseded (mantidos só no histórico do git)
+# scripts de referência usados antes da migração para Vue.
 
 # Editor directories and files
 .vscode/*

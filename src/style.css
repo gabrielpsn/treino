@@ -4,11 +4,16 @@
   body {
     font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     -webkit-tap-highlight-color: transparent;
-    user-select: none;
   }
 
-  input, textarea, select {
-    user-select: text;
+  /*
+   * foco visível e consistente para navegação por teclado.
+   * O app removeu o contorno padrão do Tailwind em vários botões, então o
+   * anel precisa vir daqui para não deixar a navegação por teclado cega.
+   */
+  :focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
   }
 }
 
@@ -36,9 +41,4 @@ input[type="number"] {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #334155;
-}
-
-/* Animações suaves */
-.transition-smooth {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }

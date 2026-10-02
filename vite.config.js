@@ -4,20 +4,28 @@ import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
+  // O app é servido na raiz do domínio; fixar isso evita que o base mude
+  // silenciosamente e quebre o escopo do service worker.
+  base: '/',
   plugins: [
     vue(),
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'pwa-192x192.svg', 'pwa-192x192.png', 'pwa-512x512.png'],
+      includeAssets: ['favicon.svg', 'pwa-192x192.svg', 'pwa-192x192.png', 'pwa-512x512.png', 'pwa-512x512.svg'],
       manifest: {
-        name: 'Guia de Hipertrofia & Treino',
+        // O app serve hipertrofia E emagrecimento; o manifest antigo só citava hipertrofia.
+        name: 'TreinoPro — Treino & Dieta Personalizados',
         short_name: 'TreinoPro',
-        description: 'App de treino e nutrição inteligente focado em hipertrofia com progressão de cargas',
+        description: 'Plano de treino, carga, dieta e evolução personalizados para hipertrofia ou emagrecimento',
+        lang: 'pt-BR',
+        dir: 'ltr',
         theme_color: '#090d16',
         background_color: '#020617',
         display: 'standalone',
         orientation: 'portrait',
+        start_url: '/',
+        scope: '/',
         icons: [
           {
             src: 'pwa-192x192.svg',
@@ -36,6 +44,12 @@ export default defineConfig({
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any maskable'
+          },
+          {
+            src: 'pwa-512x512.svg',
+            sizes: 'any',
+            type: 'image/svg+xml',
+            purpose: 'any'
           }
         ]
       }
