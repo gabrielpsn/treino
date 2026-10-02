@@ -59,6 +59,16 @@
           </button>
           
           <button 
+            id="btn-import-backup"
+            @click="openBackupFilePicker"
+            class="text-xs text-slate-400 hover:text-white p-2 rounded-xl border border-slate-800 hover:border-slate-700 transition-colors"
+            title="Restaurar backup"
+          >
+            <span aria-hidden="true">📂</span>
+            <span class="sr-only">Restaurar backup</span>
+          </button>
+
+          <button 
             id="btn-export-backup"
             @click="handleExportJSON" 
             class="text-xs text-slate-400 hover:text-white p-2 rounded-xl border border-slate-800 hover:border-slate-700 transition-colors"
@@ -67,6 +77,17 @@
             <span aria-hidden="true">💾</span>
             <span class="sr-only">Exportar dados (backup)</span>
           </button>
+
+          <!-- input escondido: o botão acima é o alvo real, para o seletor de
+               arquivo nativo não aparecer na interface -->
+          <input
+            id="input-backup-file"
+            ref="backupFileInput"
+            type="file"
+            accept="application/json,.json"
+            class="sr-only"
+            @change="handleBackupFileSelected"
+          />
         </div>
 
       </div>
@@ -736,11 +757,21 @@
       @close="isCustomExercisesOpen = false"
     />
 
+    <!-- Restauração de backup -->
+    <BackupImportModal
+      :is-open="isBackupImportOpen"
+      :backup="pendingBackupSummary ? { summary: pendingBackupSummary } : null"
+      :file-name="pendingBackupFileName"
+      :warnings="pendingBackupWarnings"
+      @confirm="confirmBackupImport"
+      @close="closeBackupImport"
+    />
+
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue';
+import { ref, shallowRef, computed, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import confetti from 'canvas-confetti';
 import { db, buildWeekCheckId, getCurrentWeekKey, migrateLegacyWeeklyChecks, migrateLegacyLogsToSession } from './db';
 import { openSession, recordSet, listSessions, getLastSetsForExercises, getOpenSessionIds, closeSession } from './db/sessions';
@@ -751,12 +782,21 @@ import HistoryPanel from './components/HistoryPanel.vue';
 import RestTimer from './components/RestTimer.vue';
 import ExercisePickerModal from './components/ExercisePickerModal.vue';
 import CustomExercisesModal from './components/CustomExercisesModal.vue';
+import BackupImportModal from './components/BackupImportModal.vue';
 import {
   buildFullCatalog,
   listCustomExercises,
   saveCustomExercise,
   deleteCustomExercise
 } from './db/customExercises';
+import {
+  buildBackup,
+  backupFileName,
+  summarizeBackup,
+  parseBackupText,
+  restoreBackup,
+  hasBackupData
+} from './db/backup';
 
 // Estados Globais
 const currentMainTab = ref('workout');
@@ -808,6 +848,18 @@ const isCustomExercisesOpen = ref(false);
 const customExercisePreset = ref(null);
 const isAdderOpen = ref(false);
 const selectedSplitForAdd = ref(null);
+
+// Restauração de backup: o arquivo é lido e validado antes de qualquer escrita,
+// e o modal de confirmação só recebe o backup já normalizado.
+const backupFileInput = ref(null);
+const isBackupImportOpen = ref(false);
+// `shallowRef` e não `ref`: um `ref` normal embrulha o backup num Proxy reativo,
+// e o IndexedDB não sabe clonar Proxy — o restore falharia com DataCloneError
+// bem depois de o usuário confirmar.
+const pendingBackup = shallowRef(null);
+const pendingBackupSummary = ref(null);
+const pendingBackupFileName = ref('');
+const pendingBackupWarnings = ref([]);
 
 // Grupo muscular aberto no seletor de adição. Vem de um exercício já presente na
 // ficha, então o seletor já nasce com o grupo e as restrições já aplicadas.
@@ -1512,20 +1564,100 @@ async function resetAllProgress() {
 }
 
 async function handleExportJSON() {
-  const backup = {
-    userProfile: userProfile.value,
-    activePlan: activePlan.value,
-    workoutLogs: workoutLogs.value,
-    weeklyChecks: weeklyChecks.value,
-    sessions: await listSessions({ limit: Number.MAX_SAFE_INTEGER, includeSets: true }),
-    exportedAt: new Date().toISOString()
-  };
+  // Lê do banco, e não dos refs da tela: o arquivo precisa ser um retrato do que
+  // está salvo, incluindo exercícios próprios e séries que a tela ainda não teve
+  // chance de recarregar.
+  const backup = await buildBackup();
+
   const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `treino-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  a.download = backupFileName();
   a.click();
   URL.revokeObjectURL(url);
+}
+
+// ---------------------------------------------------------------------------
+// Restauração de backup
+// ---------------------------------------------------------------------------
+
+function openBackupFilePicker() {
+  backupFileInput.value?.click();
+}
+
+async function handleBackupFileSelected(event) {
+  const file = event.target.files?.[0];
+  // O input é zerado de propósito: sem isso, escolher o mesmo arquivo duas vezes
+  // seguidas não dispara o evento change e o usuário não consegue restaurar.
+  event.target.value = '';
+  if (!file) return;
+
+  let text;
+  try {
+    text = await file.text();
+  } catch (err) {
+    reportStorageError('Não foi possível ler o arquivo de backup.', err);
+    return;
+  }
+
+  const parsed = parseBackupText(text);
+  if (!parsed.ok) {
+    reportStorageError(`Backup inválido: ${parsed.error}`, null);
+    return;
+  }
+
+  if (!hasBackupData(parsed.backup)) {
+    reportStorageError('Este arquivo de backup não tem perfil, plano nem histórico para restaurar.', null);
+    return;
+  }
+
+  // Nada é gravado ainda: a confirmação mostra o que será substituído.
+  pendingBackup.value = parsed.backup;
+  pendingBackupSummary.value = summarizeBackup(parsed.backup);
+  pendingBackupFileName.value = file.name;
+  pendingBackupWarnings.value = parsed.warnings;
+  isBackupImportOpen.value = true;
+}
+
+function closeBackupImport() {
+  isBackupImportOpen.value = false;
+  pendingBackup.value = null;
+  pendingBackupSummary.value = null;
+  pendingBackupFileName.value = '';
+  pendingBackupWarnings.value = [];
+}
+
+async function confirmBackupImport() {
+  const backup = pendingBackup.value;
+  if (!backup) return;
+
+  // O modal sai antes da escrita: se a restauração demorar, o usuário não fica
+  // preso numa tela que promete "substituir dados" enquanto isso já acontece.
+  closeBackupImport();
+
+  const counts = await persistOrReport('Não foi possível restaurar o backup.', () =>
+    restoreBackup(backup)
+  );
+  if (!counts) return;
+
+  // O estado em memória era do aparelho anterior. Recarregar tudo do disco é o
+  // que garante que nenhuma tela mostre resíduo do backup anterior — inclusive
+  // as séries abertas, que sem isso voltariam a ser anexadas à sessão antiga.
+  await rehydrateAfterRestore();
+}
+
+async function rehydrateAfterRestore() {
+  openSessionBySplit.value = {};
+  lastSets.value = {};
+  workoutLogs.value = {};
+  weeklyChecks.value = {};
+  historySessions.value = [];
+  currentMainTab.value = 'workout';
+
+  await loadCustomExercises();
+  const profileRecord = await db.user_profile.get('current_user');
+  await hydrateFromDatabase(profileRecord);
+  await loadHistory();
 }
 </script>
