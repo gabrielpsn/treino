@@ -79,21 +79,58 @@ test('Reordenar: as pontas ficam sem ação para não sair da lista', async ({ p
   await expect(container.locator(`#btn-down-${ids[ids.length - 1]}`)).toBeDisabled();
 });
 
-test('Remover: tira o exercício da ficha e sobrevive ao reload', async ({ page }) => {
+test('Remover: pede confirmação e só remove depois dela', async ({ page }) => {
   await onboardHome(page, 'Editor Ficha Remove');
   const { splitId, container, ids } = await openFirstSplit(page);
   const removed = ids[2];
 
   await container.locator(`#btn-remove-${removed}`).click();
 
+  // A confirmação precisa aparecer: remover apaga o log de cargas do exercício,
+  // então não pode ser um toque só.
+  const confirmBox = page.locator(`#confirm-remove-${removed}`);
+  await expect(confirmBox).toBeVisible();
+  await expect(confirmBox).toContainText('histórico');
+  await expect(container.locator(`#exercise-card-${removed}`)).toBeVisible();
+  await expect.poll(() => orderInContainer(page, splitId)).toEqual(ids);
+
+  await container.locator(`#btn-confirm-remove-${removed}`).click();
+
   await expect.poll(() => orderInContainer(page, splitId)).toEqual([ids[0], ids[1], ...ids.slice(3)]);
   await expect(container.locator(`#exercise-card-${removed}`)).toHaveCount(0);
+  await expect(confirmBox).toHaveCount(0);
 
   await page.reload();
   await page.locator('#tab-btn-workout').click();
   await expect
     .poll(() => orderInContainer(page, splitId), { timeout: 5000 })
     .toEqual([ids[0], ids[1], ...ids.slice(3)]);
+});
+
+test('Remover: cancelar mantém o exercício na ficha', async ({ page }) => {
+  await onboardHome(page, 'Editor Ficha Cancela');
+  const { splitId, container, ids } = await openFirstSplit(page);
+
+  await container.locator(`#btn-remove-${ids[1]}`).click();
+  await expect(page.locator(`#confirm-remove-${ids[1]}`)).toBeVisible();
+
+  await container.locator(`#btn-cancel-remove-${ids[1]}`).click();
+
+  await expect(page.locator(`#confirm-remove-${ids[1]}`)).toHaveCount(0);
+  await expect.poll(() => orderInContainer(page, splitId)).toEqual(ids);
+});
+
+test('Remover: a confirmação abre um por vez', async ({ page }) => {
+  // Dois "¿remover?" abertos viram um quebra-cabeça de botões na tela.
+  await onboardHome(page, 'Editor Ficha Unico');
+  const { container, ids } = await openFirstSplit(page);
+
+  await container.locator(`#btn-remove-${ids[1]}`).click();
+  await expect(page.locator(`#confirm-remove-${ids[1]}`)).toBeVisible();
+
+  await container.locator(`#btn-remove-${ids[2]}`).click();
+  await expect(page.locator(`#confirm-remove-${ids[2]}`)).toBeVisible();
+  await expect(page.locator(`#confirm-remove-${ids[1]}`)).toHaveCount(0);
 });
 
 test('Adicionar: exercício do seletor entra no fim da ficha', async ({ page }) => {
@@ -182,6 +219,7 @@ test('Editor: mudanças combinadas de adicionar, mover e remover', async ({ page
   await expect.poll(() => orderInContainer(page, splitId)).toEqual(withMove);
 
   await container.locator(`#btn-remove-${ids[0]}`).click();
+  await container.locator(`#btn-confirm-remove-${ids[0]}`).click();
   await expect.poll(() => orderInContainer(page, splitId)).toEqual(withMove.slice(1));
 
   await page.reload();

@@ -1,30 +1,40 @@
 <template>
   <div class="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-amber-500 selection:text-slate-950">
     
-    <!-- Header Fixo Estilo App Mobile/PWA -->
-    <header class="border-b border-slate-800 bg-slate-900/70 backdrop-blur sticky top-0 z-30 transition-all">
-      <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+    <!--
+      Cabeçalho e barra de abas.
+
+      Antes cada um era sticky com deslocamento fixo em pixel (top-57px e
+      top-93px). Esse número só funciona se a altura do cabeçalho for constante,
+      e ela não é: no celular o título quebra e as ações encolhem. Resultado: a
+      barra de abas subia por baixo do cabeçalho e o conteúdo passava por cima
+      dos dois. Agora só a barra de abas gruda (`top-0`), o cabeçalho rola
+      junto com a página e não existe mais deslocamento para errar — nem no
+      celular, nem quando o título quebra em duas linhas.
+    -->
+    <header class="border-b border-slate-800 bg-slate-900/70 backdrop-blur">
+      <div class="max-w-5xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
         
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-3 min-w-0">
           <div 
             :class="isWeightLoss ? 'bg-gradient-to-tr from-rose-600 to-rose-400 shadow-rose-500/20 text-white' : 'bg-gradient-to-tr from-amber-600 to-amber-400 shadow-amber-500/20 text-slate-950'"
-            class="w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg font-black text-lg transition-colors"
+            class="w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg font-black text-lg transition-colors flex-shrink-0"
           >
             {{ isWeightLoss ? '🔥' : '⚡' }}
           </div>
-          <div>
+          <div class="min-w-0">
             <div class="flex items-center gap-2">
-              <h1 id="app-title" class="text-base sm:text-lg font-black tracking-tight text-white uppercase">
+              <h1 id="app-title" class="text-base sm:text-lg font-black tracking-tight text-white uppercase truncate">
                 {{ isWeightLoss ? 'Emagrecimento Saudável' : 'Hipertrofia Pro' }}
               </h1>
               <span 
                 :class="isWeightLoss ? 'bg-rose-500/20 text-rose-400 border-rose-500/30' : 'bg-amber-500/20 text-amber-400 border-amber-500/30'"
-                class="text-[10px] px-2 py-0.5 rounded-full font-bold border"
+                class="text-[10px] px-2 py-0.5 rounded-full font-bold border flex-shrink-0"
               >
                 {{ isWeightLoss ? 'Definição' : 'PWA' }}
               </span>
             </div>
-            <p id="app-user-subtitle" class="text-xs text-slate-400 flex items-center gap-1.5 flex-wrap">
+            <p id="app-user-subtitle" class="text-xs text-slate-400 flex items-center gap-1.5 truncate">
               <span class="text-slate-200 font-semibold">Olá, {{ userProfile?.userName || 'Atleta' }} 👋</span>
               <span>•</span>
               <span :class="isWeightLoss ? 'text-rose-400' : 'text-amber-400'" class="font-medium">{{ userProfile?.weightKg }} kg</span>
@@ -35,13 +45,13 @@
         </div>
 
         <!-- Ações do Header -->
-        <div class="flex items-center gap-2">
+        <div class="header-actions">
           <!-- Botão PWA Instalar / Atalho -->
           <button 
             id="btn-install-app"
             @click="handleInstallPWA"
             :class="isWeightLoss ? 'bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border-rose-500/40' : 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border-amber-500/40'"
-            class="text-xs border px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 font-bold shadow-sm"
+            class="header-btn text-xs border rounded-xl transition-all flex items-center gap-1.5 font-bold shadow-sm"
             title="Instalar App ou Criar Atalho na Tela Inicial"
           >
             <span aria-hidden="true">📲</span>
@@ -51,7 +61,7 @@
           <button 
             id="btn-adjust-profile"
             @click="isOnboardingOpen = true"
-            class="text-xs bg-slate-800/80 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 font-medium"
+            class="header-btn text-xs bg-slate-800/80 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl transition-all flex items-center gap-1.5 font-medium"
             title="Ajustar Perfil & Recalcular"
           >
             <span aria-hidden="true">⚙️</span>
@@ -61,7 +71,7 @@
           <button 
             id="btn-import-backup"
             @click="openBackupFilePicker"
-            class="text-xs text-slate-400 hover:text-white p-2 rounded-xl border border-slate-800 hover:border-slate-700 transition-colors"
+            class="header-btn text-xs text-slate-400 hover:text-white rounded-xl border border-slate-800 hover:border-slate-700 transition-colors"
             title="Restaurar backup"
           >
             <span aria-hidden="true">📂</span>
@@ -71,7 +81,7 @@
           <button 
             id="btn-export-backup"
             @click="handleExportJSON" 
-            class="text-xs text-slate-400 hover:text-white p-2 rounded-xl border border-slate-800 hover:border-slate-700 transition-colors"
+            class="header-btn text-xs text-slate-400 hover:text-white rounded-xl border border-slate-800 hover:border-slate-700 transition-colors"
             title="Exportar Dados (Backup)"
           >
             <span aria-hidden="true">💾</span>
@@ -94,10 +104,7 @@
     </header>
 
     <!-- Navegação por Abas Principais (Treino, Nutrição, Frequência) -->
-    <nav
-      class="border-b border-slate-800 bg-slate-900/40 sticky z-20 backdrop-blur"
-      :class="storageError ? 'top-[93px]' : 'top-[57px]'"
-    >
+    <nav class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-30 shadow-lg shadow-slate-950/40">
       <div class="max-w-5xl mx-auto px-4 flex items-center justify-between gap-2 overflow-x-auto py-2">
         <div class="flex items-center gap-2" role="tablist" aria-label="Seções do aplicativo">
 <button 
@@ -107,7 +114,7 @@
               aria-controls="screen-workout"
               @click="currentMainTab = 'workout'"
               :class="currentMainTab === 'workout' ? (isWeightLoss ? 'bg-rose-500 text-white font-bold shadow-md shadow-rose-500/20' : 'bg-amber-500 text-slate-950 font-bold shadow-md shadow-amber-500/20') : 'text-slate-400 hover:text-white hover:bg-slate-800/60'"
-              class="px-4 py-2 rounded-xl text-xs md:text-sm transition-all flex items-center gap-2 flex-shrink-0"
+              class="tap-btn px-4 py-2 rounded-xl text-xs md:text-sm transition-all flex items-center gap-2 flex-shrink-0"
             >
             <span>🏋️</span> Fichas de Treino
           </button>
@@ -119,7 +126,7 @@
               aria-controls="screen-nutrition"
               @click="currentMainTab = 'nutrition'"
             :class="currentMainTab === 'nutrition' ? (isWeightLoss ? 'bg-rose-500 text-white font-bold shadow-md shadow-rose-500/20' : 'bg-amber-500 text-slate-950 font-bold shadow-md shadow-amber-500/20') : 'text-slate-400 hover:text-white hover:bg-slate-800/60'"
-            class="px-4 py-2 rounded-xl text-xs md:text-sm transition-all flex items-center gap-2 flex-shrink-0"
+            class="tap-btn px-4 py-2 rounded-xl text-xs md:text-sm transition-all flex items-center gap-2 flex-shrink-0"
           >
             <span>🥗</span> Dieta & Metas
           </button>
@@ -131,7 +138,7 @@
               aria-controls="screen-frequency"
               @click="currentMainTab = 'frequency'"
             :class="currentMainTab === 'frequency' ? (isWeightLoss ? 'bg-rose-500 text-white font-bold shadow-md shadow-rose-500/20' : 'bg-amber-500 text-slate-950 font-bold shadow-md shadow-amber-500/20') : 'text-slate-400 hover:text-white hover:bg-slate-800/60'"
-            class="px-4 py-2 rounded-xl text-xs md:text-sm transition-all flex items-center gap-2 flex-shrink-0"
+            class="tap-btn px-4 py-2 rounded-xl text-xs md:text-sm transition-all flex items-center gap-2 flex-shrink-0"
           >
             <span>📅</span> Calendário Semanal
           </button>
@@ -143,7 +150,7 @@
               aria-controls="screen-history"
               @click="openHistoryTab"
               :class="currentMainTab === 'history' ? (isWeightLoss ? 'bg-rose-500 text-white font-bold shadow-md shadow-rose-500/20' : 'bg-amber-500 text-slate-950 font-bold shadow-md shadow-amber-500/20') : 'text-slate-400 hover:text-white hover:bg-slate-800/60'"
-              class="px-4 py-2 rounded-xl text-xs md:text-sm transition-all flex items-center gap-2 flex-shrink-0"
+              class="tap-btn px-4 py-2 rounded-xl text-xs md:text-sm transition-all flex items-center gap-2 flex-shrink-0"
             >
             <span>📈</span> Histórico
           </button>
@@ -152,7 +159,7 @@
         <button 
           id="btn-reset-weights"
           @click="resetAllProgress"
-          class="text-xs text-slate-500 hover:text-rose-400 transition-colors px-2 py-1 flex-shrink-0"
+          class="tap-btn text-xs text-slate-500 hover:text-rose-400 transition-colors px-2 py-1 flex-shrink-0"
         >
           Zerar Histórico
         </button>
@@ -274,14 +281,14 @@
             <p class="text-xs text-slate-400">Anote os pesos de hoje. O app salva automaticamente e exibe seu histórico para o próximo treino.</p>
           </div>
 
-          <div class="flex items-center gap-1.5 bg-slate-900 p-1.5 rounded-2xl border border-slate-800">
+          <div class="flex flex-wrap items-center gap-1.5 bg-slate-900 p-1.5 rounded-2xl border border-slate-800">
             <button 
               v-for="split in activePlan?.workoutSplits" 
               :key="split.id"
               :id="`btn-split-${split.id}`"
               @click="currentSplitTab = split.id"
               :class="currentSplitTab === split.id ? (isWeightLoss ? 'bg-rose-500 text-white font-black shadow' : 'bg-amber-500 text-slate-950 font-black shadow') : 'text-slate-400 hover:text-white'"
-              class="px-3.5 py-1.5 rounded-xl text-xs md:text-sm font-bold transition-all"
+              class="tap-btn px-3.5 py-1.5 rounded-xl text-xs md:text-sm font-bold transition-all"
             >
               {{ split.title.split(' ')[0] }} {{ split.title.split(' ')[1] }}
             </button>
@@ -290,7 +297,7 @@
               type="button"
               id="btn-open-custom-exercises"
               @click="openCustomExercises"
-              class="px-3 py-1.5 rounded-xl text-xs font-bold border border-slate-700 text-slate-300 hover:text-white hover:border-slate-500 transition-all"
+              class="tap-btn px-3 py-1.5 rounded-xl text-xs font-bold border border-slate-700 text-slate-300 hover:text-white hover:border-slate-500 transition-all"
               title="Criar e gerenciar seus próprios exercícios"
             >
               + Meus exercícios
@@ -301,12 +308,52 @@
               type="button"
               id="btn-finish-session"
               @click="finishCurrentSession"
-              class="px-3 py-1.5 rounded-xl text-xs font-bold border border-slate-700 text-slate-300 hover:text-white hover:border-slate-500 transition-all ml-1"
+              class="tap-btn px-3 py-1.5 rounded-xl text-xs font-bold border border-slate-700 text-slate-300 hover:text-white hover:border-slate-500 transition-all ml-1"
               title="Encerrar este treino e registrá-lo no histórico"
             >
               ✓ Concluir treino
             </button>
+
+            <!--
+              Geração por IA. Fica aqui, ao lado das abas de ficha, porque é
+              uma decisão sobre o treino — não um ajuste de preferências. Só
+              aparece com perfil salvo: a ficha é montada a partir dele.
+            -->
+            <button
+              v-if="userProfile"
+              type="button"
+              id="btn-generate-ai-plan"
+              @click="generatePlanWithAi"
+              :disabled="isAiPlanLoading"
+              class="tap-btn px-3 py-1.5 rounded-xl text-xs font-bold border transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              :class="isAiPlanLoading
+                ? 'border-slate-700 text-slate-400'
+                : 'border-sky-500/50 text-sky-300 hover:text-white hover:border-sky-400'"
+              :title="isAiPlanLoading ? 'Gerando ficha com IA...' : 'Gerar a ficha e as metas com IA (Gemini)'"
+            >
+              <span aria-hidden="true">{{ isAiPlanLoading ? '⏳' : '🤖' }}</span>
+              {{ isAiPlanLoading ? 'Gerando...' : 'Gerar com IA' }}
+            </button>
           </div>
+
+          <!-- Origem do plano e retorno da IA. Sem isso o usuário não sabe se
+               está olhando para a fórmula ou para uma sugestão de modelo. -->
+          <p
+            id="ai-plan-status"
+            role="status"
+            aria-live="polite"
+            class="w-full text-xs leading-relaxed"
+            :class="aiPlanMessage?.tone === 'error' ? 'text-rose-300' : (aiPlanMessage ? 'text-sky-300' : 'text-slate-400')"
+          >
+            <template v-if="aiPlanMessage">{{ aiPlanMessage.text }}</template>
+            <template v-else-if="activePlan?.planSource === 'ai'">
+              Ficha montada por IA a partir dos seus dados e das suas restrições —
+              vale revisar antes de treinar.
+            </template>
+            <template v-else>
+              Ficha calculada por fórmula (TDEE e volume por grupo muscular).
+            </template>
+          </p>
         </div>
 
         <!-- Lista de Exercícios da Ficha Ativa -->
@@ -318,7 +365,7 @@
                 type="button"
                 :id="`btn-add-exercise-${split.id}`"
                 @click="openAdderFor(split.id)"
-                class="px-3 py-1.5 rounded-xl text-xs font-bold border border-slate-700 text-slate-300 hover:text-white hover:border-amber-500/60 transition-colors"
+                class="tap-btn px-3 py-1.5 rounded-xl text-xs font-bold border border-slate-700 text-slate-300 hover:text-white hover:border-amber-500/60 transition-colors"
                 title="Adicionar um exercício a esta ficha"
               >
                 + Adicionar exercício
@@ -338,24 +385,24 @@
                 v-for="ex in split.exercises" 
                 :key="ex.id"
                 :id="`exercise-card-${ex.id}`"
-                class="p-4 rounded-2xl border transition-all flex flex-col md:flex-row md:items-center justify-between gap-4"
+                class="p-4 rounded-2xl border transition-all flex flex-col md:flex-row md:items-center justify-between gap-4 min-w-0"
                 :class="workoutLogs[ex.id]?.isDone ? 'bg-slate-900/40 border-slate-800/60 opacity-75' : 'bg-slate-900 border-slate-800 hover:border-slate-700'"
               >
                 <!-- Lado Esquerdo: Checkbox + Título + Dicas -->
-                <div class="flex items-start md:items-center gap-3.5 flex-1">
+                <div class="flex items-start md:items-center gap-3.5 flex-1 min-w-0">
                   <button 
                     type="button"
                     :id="`btn-check-${ex.id}`"
                     @click="toggleExerciseCheck(ex.id, split.id)"
                     :aria-pressed="!!workoutLogs[ex.id]?.isDone"
                     :aria-label="workoutLogs[ex.id]?.isDone ? `Marcar ${ex.name} como pendente` : `Marcar ${ex.name} como concluído`"
-                    class="mt-1 md:mt-0 w-7 h-7 rounded-xl flex-shrink-0 flex items-center justify-center border transition-all"
+                    class="check-btn mt-1 md:mt-0"
                     :class="workoutLogs[ex.id]?.isDone ? (isWeightLoss ? 'bg-rose-500 border-rose-400 text-white font-black text-sm' : 'bg-amber-500 border-amber-400 text-slate-950 font-black text-sm') : 'border-slate-700 hover:border-amber-500/60 text-transparent'"
                   >
                     ✓
                   </button>
 
-                  <div class="space-y-0.5">
+                  <div class="space-y-0.5 min-w-0">
                     <div class="flex items-center gap-2 flex-wrap">
                       <a 
                         v-if="ex.imageUrl"
@@ -363,7 +410,7 @@
                         target="_blank" 
                         rel="noopener noreferrer"
                         :id="`link-exercise-${ex.id}`"
-                        class="text-sm md:text-base font-bold transition-colors hover:underline flex items-center gap-1.5 group"
+                        class="text-sm md:text-base font-bold transition-colors hover:underline flex items-center gap-1.5 group min-w-0"
                         :class="workoutLogs[ex.id]?.isDone ? 'line-through text-slate-500' : 'text-white hover:text-amber-300'"
                         title="Ver demonstração do exercício (imagem externa)"
                       >
@@ -378,12 +425,12 @@
                         {{ ex.name }}
                       </h4>
 
-<button 
+<button
                     type="button"
                     :id="`btn-swap-${ex.id}`"
                     @click="openExercisePicker(ex, split.id)" 
                     :aria-label="`Substituir exercício ${ex.name}`"
-                    class="text-[11px] text-slate-500 hover:text-amber-400 transition-colors p-1"
+                    class="action-btn text-slate-400 hover:text-amber-400"
                     title="Substituir este exercício"
                   >
                     <span aria-hidden="true">🔄</span>
@@ -395,7 +442,7 @@
                     @click="moveExercise(ex.id, split.id, -1)"
                     :disabled="split.exercises[0]?.id === ex.id"
                     :aria-label="`Mover ${ex.name} para cima`"
-                    class="text-[11px] text-slate-500 hover:text-amber-400 transition-colors p-1 disabled:opacity-25 disabled:cursor-not-allowed disabled:hover:text-slate-500"
+                    class="action-btn text-slate-400 hover:text-amber-400 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-slate-400"
                     title="Mover para cima"
                   >
                     <span aria-hidden="true">↑</span>
@@ -407,7 +454,7 @@
                     @click="moveExercise(ex.id, split.id, 1)"
                     :disabled="split.exercises[split.exercises.length - 1]?.id === ex.id"
                     :aria-label="`Mover ${ex.name} para baixo`"
-                    class="text-[11px] text-slate-500 hover:text-amber-400 transition-colors p-1 disabled:opacity-25 disabled:cursor-not-allowed disabled:hover:text-slate-500"
+                    class="action-btn text-slate-400 hover:text-amber-400 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-slate-400"
                     title="Mover para baixo"
                   >
                     <span aria-hidden="true">↓</span>
@@ -416,24 +463,66 @@
                   <button
                     type="button"
                     :id="`btn-remove-${ex.id}`"
-                    @click="removeExercise(ex.id, split.id)"
+                    @click="askRemoveExercise(ex, split.id)"
+                    :aria-expanded="pendingRemove?.exerciseId === ex.id ? 'true' : 'false'"
                     :aria-label="`Remover ${ex.name} da ficha`"
-                    class="text-[11px] text-slate-500 hover:text-rose-400 transition-colors p-1"
+                    class="action-btn action-btn-danger"
                     title="Remover da ficha"
                   >
-                    <span aria-hidden="true">✕</span>
+                    <span aria-hidden="true">🗑</span>
                   </button>
+                    </div>
+
+                    <!-- Confirmação da remoção: remover apaga o log de cargas do
+                         exercício, então o botão não pode ser um toque só. Fica
+                         na própria linha do nome em vez de num modal para não
+                         cobrir a ficha num celular. -->
+                    <div
+                      v-if="pendingRemove?.exerciseId === ex.id"
+                      :id="`confirm-remove-${ex.id}`"
+                      class="mt-2 p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/40"
+                      role="alertdialog"
+                      :aria-label="`Confirmar remoção de ${ex.name}`"
+                    >
+                      <p class="text-xs text-rose-100 mb-2">
+                        Remover <strong>{{ ex.name }}</strong> da ficha?
+                        O histórico de cargas dele também é apagado.
+                      </p>
+                      <div class="flex gap-2">
+                        <button
+                          type="button"
+                          :id="`btn-confirm-remove-${ex.id}`"
+                          @click="confirmRemoveExercise(split.id)"
+                          class="flex-1 min-h-11 px-3 rounded-xl bg-rose-500 text-white text-xs font-black hover:bg-rose-400 active:bg-rose-600 transition-colors"
+                        >
+                          Remover
+                        </button>
+                        <button
+                          type="button"
+                          :id="`btn-cancel-remove-${ex.id}`"
+                          @click="cancelRemoveExercise"
+                          class="flex-1 min-h-11 px-3 rounded-xl bg-slate-800 text-slate-200 text-xs font-bold hover:bg-slate-700 active:bg-slate-600 transition-colors"
+                        >
+                          Cancelar
+                        </button>
+                      </div>
                     </div>
 
                     <div class="flex flex-wrap items-center gap-2 text-xs text-slate-400">
                       <span :class="isWeightLoss ? 'text-rose-400' : 'text-amber-400'" class="font-semibold">{{ ex.defaultSeries }}</span>
+                      <!-- Reps sugeridas pela IA: o app não impõe repetição, o
+                           campo continua editável e é o que vale. -->
+                      <template v-if="ex.aiReps">
+                        <span>•</span>
+                        <span>{{ ex.aiReps }} reps</span>
+                      </template>
                       <span>•</span>
                       <button 
                         type="button"
                         :id="`btn-rest-${ex.id}`"
                         @click="triggerRestTimer(ex.rest)"
                         :aria-label="`Iniciar descanso de ${ex.rest}`"
-                        class="hover:text-amber-300 underline underline-offset-2 transition-colors flex items-center gap-1"
+                        class="tap-btn hover:text-amber-300 underline underline-offset-2 transition-colors flex items-center gap-1 rounded-lg hover:bg-amber-500/10"
                       >
                         <span aria-hidden="true">⏱️</span> Descanso: {{ ex.rest }}
                       </button>
@@ -456,7 +545,7 @@
                 </div>
 
                 <!-- Lado Direito: Inputs de Carga e Reps (Ocultos se for Cardio Contínuo) -->
-                <div v-if="ex.muscle !== 'cardio'" class="flex items-center gap-3 self-end md:self-auto w-full md:w-auto">
+                <div v-if="ex.muscle !== 'cardio'" class="flex flex-wrap items-center gap-2 sm:gap-3 self-end md:self-auto w-full md:w-auto">
                   <div class="flex items-center gap-2 bg-slate-950 px-3 py-2 rounded-xl border border-slate-800 flex-1 md:flex-initial">
                     <label :for="`input-weight-${ex.id}`" class="text-xs text-slate-500 font-medium">Carga:</label>
                     <input 
@@ -470,7 +559,7 @@
                       :value="workoutLogs[ex.id]?.weight"
                       @input="e => updateLog(ex.id, split.id, 'weight', e.target.value)"
                       :class="isWeightLoss ? 'text-rose-300' : 'text-amber-300'"
-                      class="w-16 bg-transparent text-sm font-bold text-right focus:outline-none focus:text-white"
+                      class="log-input w-16 text-sm font-bold text-right focus:outline-none focus:text-white"
                     />
                     <span class="text-xs text-slate-500">kg</span>
                   </div>
@@ -488,7 +577,7 @@
                       :value="workoutLogs[ex.id]?.reps"
                       @input="e => updateLog(ex.id, split.id, 'reps', e.target.value)"
                       :class="isWeightLoss ? 'text-rose-300' : 'text-amber-300'"
-                      class="w-12 bg-transparent text-sm font-bold text-right focus:outline-none focus:text-white"
+                      class="log-input w-12 text-sm font-bold text-right focus:outline-none focus:text-white"
                     />
                   </div>
                 </div>
@@ -669,23 +758,31 @@
 
     </main>
 
-    <!-- Banner de erro de armazenamento (não bloqueante) -->
+    <!--
+      Aviso de erro de armazenamento (não bloqueante).
+
+      Fica no fim do DOM e aparece como toast no rodapé, no mesmo esquema do
+      #install-help-snackbar. Antes ele era `sticky top-[57px]`: dependia da
+      altura do cabeçalho, cobria o menu e, quando a conta errava, sumia. No
+      rodapé ele não tem.offset nenhum para acertar — e ainda é visível de
+      qualquer ponto da ficha.
+    -->
     <div
       v-if="storageError"
       id="storage-error-banner"
       role="alert"
       aria-live="assertive"
-      class="sticky top-[57px] z-30 bg-rose-950/95 border-b border-rose-800/70 backdrop-blur"
+      class="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-md"
     >
-      <div class="max-w-5xl mx-auto px-4 py-2.5 flex items-start gap-2.5">
+      <div class="bg-rose-950/95 border border-rose-800/70 backdrop-blur rounded-2xl p-4 shadow-2xl flex items-start gap-3">
         <span aria-hidden="true">⚠️</span>
-        <p class="text-xs text-rose-100 flex-1">{{ storageError }}</p>
+        <p class="text-xs text-rose-100 flex-1 leading-relaxed">{{ storageError }}</p>
         <button
           type="button"
           id="btn-dismiss-storage-error"
           aria-label="Dispensar aviso"
           @click="storageError = null"
-          class="text-rose-300 hover:text-white px-1"
+          class="text-rose-300 hover:text-white w-8 h-8 -m-1.5 flex-shrink-0 flex items-center justify-center rounded-lg hover:bg-rose-900/60 transition-colors"
         >✕</button>
       </div>
     </div>
@@ -776,6 +873,7 @@ import confetti from 'canvas-confetti';
 import { db, buildWeekCheckId, getCurrentWeekKey, migrateLegacyWeeklyChecks, migrateLegacyLogsToSession } from './db';
 import { openSession, recordSet, listSessions, getLastSetsForExercises, getOpenSessionIds, closeSession } from './db/sessions';
 import { buildPersonalizedPlan } from './engine/generators/planGenerator';
+import { requestAiPlan, AiPlanError } from './engine/ai/planFromAi';
 import { parseWeight, parseReps } from './engine/history';
 import OnboardingModal from './components/OnboardingModal.vue';
 import HistoryPanel from './components/HistoryPanel.vue';
@@ -801,6 +899,11 @@ import {
 // Estados Globais
 const currentMainTab = ref('workout');
 const currentSplitTab = ref('treino-a');
+
+// Geração por IA: estado separado do plano para que uma falha nunca
+// apague o treino que o usuário já está usando.
+const isAiPlanLoading = ref(false);
+const aiPlanMessage = ref(null);
 const isOnboardingOpen = ref(false);
 const isPickerOpen = ref(false);
 
@@ -869,6 +972,26 @@ const adderGroup = computed(() => {
     .find(s => s.id === selectedSplitForAdd.value)
     ?.exercises?.[0] ?? null;
 });
+
+// Remoção pendente de confirmação. Só uma por vez: dois "¿remover?" abertos ao
+// mesmo tempo transformam a ficha num quebra-cabeça de botões.
+const pendingRemove = ref(null);
+
+function askRemoveExercise(exercise, splitId) {
+  pendingRemove.value = { exerciseId: exercise.id, name: exercise.name, splitId };
+}
+
+function cancelRemoveExercise() {
+  pendingRemove.value = null;
+}
+
+function confirmRemoveExercise(splitId) {
+  const target = pendingRemove.value;
+  if (!target) return;
+
+  pendingRemove.value = null;
+  return removeExercise(target.exerciseId, splitId);
+}
 
 // Catálogo único para gerador e modal de troca: se um usasse o catálogo de
 // fábrica e o outro o mesclado, um exercício recém-criado apareceria como
@@ -1123,6 +1246,83 @@ async function applyAndSavePlan(profile, persist = true) {
   await loadLastSets();
 
   return rawPlan;
+}
+
+// Mensagem por motivo: "algo deu errado" não ajuda ninguém a decidir se vale
+// tentar de novo, se o perfil está errado ou se a IA choseexercise perigoso.
+const AI_FAILURE_MESSAGES = {
+  unavailable: 'A geração por IA precisa do servidor ligado. A ficha atual continua valendo.',
+  network: 'Sem conexão com o servidor de IA. A ficha atual continua valendo.',
+  timeout: 'A IA demorou demais e foi cancelada. A ficha atual continua valendo.',
+  ai_disabled: 'A geração por IA está desligada no servidor. A ficha atual continua valendo.',
+  rate_limited: 'Você pediu fichas com IA várias vezes seguidas. Espere um minuto e tente de novo.',
+  forbidden_origin: 'O servidor recusou o pedido por origem. A ficha atual continua valendo.',
+  unknown_exercise: 'A IA escolheu um exercício que não existe no catálogo. Ficha descartada.',
+  unsafe_exercise: 'A IA escolheu um exercício fora das suas restrições. Ficha descartada.',
+  duplicate_exercise: 'A IA repetiu um exercício na mesma ficha. Ficha descartada.',
+  split_size: 'A IA montou uma ficha com tamanho inválido. Ficha descartada.',
+  nutrition_out_of_range: 'As metas da IA estavam fora de uma faixa saudável. Ficha descartada.',
+  nutrition_invalid: 'As metas da IA vieram incompletas. Ficha descartada.',
+  // Códigos do próprio Worker: sem eles o usuário leria "falhou" para um timeout
+  // que ele pode resolver simplesmente tentando de novo em instantes.
+  ai_timeout: 'A IA demorou demais no servidor. Tente de novo em instantes — sua ficha atual continua valendo.',
+  ai_upstream_error: 'O serviço de IA respondeu com erro. Tente de novo mais tarde — sua ficha atual continua valendo.',
+  ai_empty_plan: 'A IA devolveu uma ficha vazia. Tente de novo.',
+  malformed: 'A resposta da IA veio fora do formato esperado. Tente de novo.'
+};
+
+/**
+ * Gera a ficha e as metas com o Gemini, pelo proxy do servidor.
+ *
+ * Regra que dá nome à função: o plano atual só é trocado depois que a gravação
+ * no banco termina. Se a IA falhar, responder devagar ou devolver lixo, o
+ * usuário continua exatamente com o treino que já tinha.
+ */
+async function generatePlanWithAi() {
+  const profile = userProfile.value;
+  if (!profile || isAiPlanLoading.value) return;
+
+  isAiPlanLoading.value = true;
+  aiPlanMessage.value = { tone: 'info', text: 'Consultando a IA... ela leva alguns segundos.' };
+
+  try {
+    const splitIds = (activePlan.value?.workoutSplits ?? []).map(s => s.id);
+
+    const aiPlan = await requestAiPlan({
+      profile,
+      catalog: fullCatalog.value,
+      splitIds: splitIds.length > 0 ? splitIds : ['treino-a']
+    });
+
+    const rawPlan = JSON.parse(JSON.stringify(aiPlan));
+
+    const ok = await persistOrReport(
+      'Não foi possível salvar a ficha gerada por IA.',
+      () => db.active_plan.put(rawPlan)
+    );
+    if (!ok) {
+      aiPlanMessage.value = { tone: 'error', text: 'A ficha foi gerada, mas não consegui salvar. A ficha atual continua valendo.' };
+      return;
+    }
+
+    activePlan.value = rawPlan;
+    currentSplitTab.value = rawPlan.workoutSplits?.[0]?.id ?? currentSplitTab.value;
+    await loadLastSets();
+
+    const count = rawPlan.workoutSplits.reduce((total, s) => total + s.exercises.length, 0);
+    aiPlanMessage.value = {
+      tone: 'info',
+      text: `Ficha gerada por IA: ${rawPlan.workoutSplits.length} fichas, ${count} exercícios e ${rawPlan.physiology.targetCalories} kcal.${rawPlan.aiRationale ? ` ${rawPlan.aiRationale}` : ''}`
+    };
+  } catch (error) {
+    const reason = error instanceof AiPlanError ? error.reason : 'unknown';
+    aiPlanMessage.value = {
+      tone: 'error',
+      text: AI_FAILURE_MESSAGES[reason] ?? `A geração por IA falhou. A ficha atual continua valendo.`
+    };
+  } finally {
+    isAiPlanLoading.value = false;
+  }
 }
 
 function triggerRestTimer(restString) {
