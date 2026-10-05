@@ -43,10 +43,14 @@ src/
 ├── style.css                base Tailwind v4 + estilos globais
 ├── db/
 │   ├── index.js               Dexie/IndexedDB + helpers de semana e migrações
-│   └── sessions.js            sessões de treino e séries (leitura/escrita)
+│   ├── sessions.js            sessões de treino e séries (leitura/escrita)
+│   ├── customExercises.js     CRUD de exercícios próprios + catálogo mesclado
+│   └── backup.js              exportação e restauração de todos os dados
 ├── components/
 │   ├── OnboardingModal.vue     wizard de 3 passos (perfil → rotina → ambiente)
-│   ├── ExercisePickerModal.vue substituição de exercício com filtro de segurança
+│   ├── ExercisePickerModal.vue substituição ou adição de exercício com filtro de segurança
+│   ├── CustomExercisesModal.vue CRUD de exercícios próprios
+│   ├── BackupImportModal.vue   confirmação antes de substituir os dados
 │   ├── RestTimer.vue           cronômetro de descanso flutuante
 │   └── HistoryPanel.vue        histórico de treinos e volume por semana
 └── engine/                   lógica pura, sem dependência de framework
@@ -55,7 +59,7 @@ src/
     ├── generators/workoutGenerator.js divisões (ABC, Upper/Lower, PPL) e seleção segura
     ├── history.js                 agregações de volume, duração e progressão
     └── knowledge/
-        ├── exercises.js      catálogo de 41 exercícios
+        ├── exercises.js      catálogo de 60 exercícios
         └── foodTemplates.js  templates de refeição e suplementos
 ```
 
@@ -63,13 +67,13 @@ O `engine/` é o coração do app: funções puras, sem imports de Vue, totalmen
 cobertas por testes unitários. O `App.vue` cuida só de estado, persistência e
 renderização.
 
-Suíte: **184 testes unitários** (`vitest run`) e **20 testes de navegador**
+Suíte: **289 testes unitários** (`vitest run`) e **44 testes de navegador**
 (Playwright, `npm run test:visual`). `npm run verify` roda os unitários e o
 build, que é o mesmo gate do CI.
 
 ### Modelo de dados
 
-Banco `TreinoProDB`, no schema v3:
+Banco `TreinoProDB`, no schema v4:
 
 | Tabela | Chave | Conteúdo |
 |---|---|---|
@@ -79,7 +83,7 @@ Banco `TreinoProDB`, no schema v3:
 | `workout_sessions` | `++id` | Um treino executado: dia, semana, início, fim, ficha |
 | `session_sets` | `id` (= `<sessionId>:<exerciseId>`) | Séries registradas dentro de uma sessão |
 | `weekly_checks` | `id` (`week:YYYY-Www:dayId`) | Dias concluídos, isolados por semana |
-| `custom_exercises` | `id` | Reservado para exercícios próprios (ainda não usado) |
+| `custom_exercises` | `id`, `muscle`, `[muscle+pattern]` | Exercícios criados pelo usuário |
 
 O `weekKey` no calendário existe porque, antes, o dia marcado continuava
 marcado na semana seguinte e o confetti disparava toda semana. As linhas
@@ -109,6 +113,60 @@ anterior**. O treino em andamento é excluído de propósito: o selo existe para
 lembrar o que foi feito da última vez, e mostrar o que está sendo digitado
 agora seria redundante com o campo. As agregações (volume, duração,
 progressão) vivem em `src/engine/history.js`, sem dependência de framework.
+
+## Exercícios próprios
+
+`+ Meus exercícios` abre o CRUD (`CustomExercisesModal.vue`). O exercício criado
+pelo usuário entra no mesmo catálogo embutido e passa pelos mesmos filtros de
+equipamento e restrição articular — não existe atalho para contornar uma
+restrição.
+
+O `id` é um slug derivado do nome (`custom_supino_na_arquinha`) e **não** muda
+quando o exercício é renomeado: o id é a chave de `workout_logs` e
+`session_sets`, então recalculá-lo deixaria todo o histórico de cargas órfão.
+Os exercícios próprios também entram **antes** do catálogo de fábrica no
+catálogo mesclado (`buildFullCatalog()`), senão nunca seriam escolhidos: a
+fábrica já cobre todos os slots.
+
+## Editor de ficha
+
+Cada exercício na ficha ativa tem três ações — trocar, reordenar (↑ ↓) e remover.
+O botão `+ Adicionar exercício` abre o seletor em modo de adição, que já vem com
+o grupo muscular e as restrições do perfil aplicados.
+
+Tudo passa por `mutateSplitExercises()` (`App.vue`), que trata o mesmo cuidado nos
+três casos: o log de treino é chaveado por `exerciseId`, então um exercício que
+sai da ficha tem o log apagado **na mesma transação** que grava o plano, e a UI
+só é atualizada depois que a escrita termina. Exercício duplicado dentro da
+mesma ficha é recusado com aviso.
+
+## Backup e restauração
+
+Os botões 💾 e 📂 no cabeçalho exportam e restauram **todos** os dados do
+usuário: perfil, plano, exercícios próprios, cargas, sessões, séries e
+calendário semanal. `src/db/backup.js` centraliza os dois lados.
+
+A restauração é uma **substituição**, não uma fusão: um backup descreve um estado
+completo do app, e aplicar isso por cima de dados diferentes exigiria inventar
+regras de conflito. O arquivo é lido e validado **antes** de qualquer escrita, e
+`BackupImportModal.vue` mostra o que será trocado (quantas fichas, exercícios,
+séries) com o aviso de que os dados atuais serão substituídos. Sem esse passo, o
+usuário só descobria a perda depois de confirmar.
+
+O que a validação garante, todos em `parseBackupText()`:
+
+- arquivo que não é JSON, não é backup ou veio de versão mais nova é recusado **sem tocar no banco**;
+- o perfil é coberto campo a campo (`ageYears: "30"` vira `30`, `restrictions: "joelho"` vira `[]`), senão um arquivo editado à mão quebraria `restrictions.includes()` no filtro de segurança;
+- ids de série são recalculados a partir de `(sessionId, exerciseId)` e séries sem sessão são descartadas, evitando volume fantasma no histórico;
+- o plano importado passa pelo mesmo `filterSafeExercises()` do gerador: exercício que conflita com a restrição do próprio backup é removido e **contado no aviso**, não restaurado em silêncio;
+- exercícios próprios passam por `validateCustomExercise()`, então um arquivo não consegue injetar articulação inventada para driblar o filtro, nem sequestrar um id do catálogo de fábrica.
+
+A escrita é uma transação única sobre as sete tabelas: se qualquer passo falhar,
+o banco volta ao estado anterior em vez de ficar com o perfil sem plano.
+
+Backups antigos (sem `kind`/`version`, exportados antes do formato versionado) são
+aceitos com aviso — o usuário tem um arquivo legítimo na mão e recusar tudo por
+falta de um campo seria o pior resultado possível.
 
 ## Filtro de segurança articular
 

@@ -144,6 +144,11 @@ test('Backup: restauração devolve o estado do arquivo após limpar o aparelho'
   await page.goto('/');
   await expect(page.locator('#onboarding-modal')).toBeVisible();
 
+  // O onboarding cobre o cabeçalho. Fechá-lo é o caminho do próprio app: o botão
+  // de fechar existe justamente para isso, e é o que libera o botão de backup.
+  await page.locator('#btn-close-onboarding').click();
+  await expect(page.locator('#onboarding-modal')).toBeHidden();
+
   await selectBackupFile(page, backup);
 
   const modal = page.locator('#backup-import-modal');
@@ -169,16 +174,11 @@ test('Backup: restauração devolve o estado do arquivo após limpar o aparelho'
   await expect(page.locator('#custom-exercise-custom_supino_na_arquinha')).toBeVisible();
   await page.locator('#btn-close-custom-exercises').click();
 
-  // E o histórico voltou: o selo de última carga aponta para a sessão do backup.
-  await expect
-    .poll(async () => {
-      await page.reload();
-      await page.locator('#tab-btn-workout').click();
-      const tab = page.locator(`#btn-split-${restored.splitId}`);
-      await tab.click();
-      return page.locator(`#last-set-${firstExercise}`).textContent().catch(() => null);
-    }, { timeout: 8000 })
-    .toContain('25');
+  // E o log de carga voltou: o campo do exercício mostra o valor do backup.
+  // O selo de "último treino" ficaria oculto aqui de propósito, já que o
+  // workout_logs restaurado é justamente o estado atual dos campos.
+  await expect(page.locator(`#input-weight-${firstExercise}`)).toHaveValue('25');
+  await expect(page.locator(`#input-reps-${firstExercise}`)).toHaveValue('12');
 });
 
 test('Backup: cancelar a confirmação não altera nenhum dado', async ({ page }) => {
