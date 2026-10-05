@@ -170,22 +170,18 @@ export function parseBackupText(text) {
 
   const warnings = [];
 
-  // Backup anterior à marcação de versão: existia (App.vue exportava um objeto
-  // solto) e não trazia exercícios próprios. Aceitar é melhor que recusar — o
-  // usuário tem um backup legítimo na mão e perder tudo por causa de um campo
-  // faltando seria o pior resultado possível.
-  const isLegacy = raw.kind === undefined && raw.version === undefined;
-  if (isLegacy) {
-    const recognizable = raw.userProfile || raw.activePlan || raw.sessions || raw.workoutLogs;
-    if (!recognizable) {
-      return { ok: false, error: 'O arquivo não tem o formato de um backup do app.' };
-    }
-    warnings.push('Backup antigo, sem versão: os exercícios próprios não serão restaurados.');
-  } else if (raw.kind !== BACKUP_KIND) {
+  // Sem `kind`/`version` não é um backup: é um arquivo qualquer. O formato
+  // antigo (exportado antes de existir versão) existia, mas não trazia
+  // exercícios próprios e sua validação nunca existiu — restaurá-lo despejaria
+  // dados não saneados no aparelho, com o filtro articular do perfil do usuário
+  // já aplicado por cima. Recusar é mais honesto do que fingir que voltou tudo.
+  if (raw.kind !== BACKUP_KIND) {
     return { ok: false, error: 'Este arquivo não é um backup do TreinoPro.' };
-  } else if (typeof raw.version !== 'number' || !Number.isInteger(raw.version) || raw.version < 1) {
+  }
+  if (typeof raw.version !== 'number' || !Number.isInteger(raw.version) || raw.version < 1) {
     return { ok: false, error: 'Versão de backup inválida.' };
-  } else if (raw.version > BACKUP_VERSION) {
+  }
+  if (raw.version > BACKUP_VERSION) {
     return {
       ok: false,
       error: 'O backup veio de uma versão mais nova do app e não pode ser restaurado aqui.'

@@ -216,8 +216,11 @@ describe('parseBackupText — recusa', () => {
   });
 });
 
-describe('parseBackupText — arquivo antigo', () => {
-  it('aceita o formato sem "kind" e avisa o que não vem junto', () => {
+describe('parseBackupText — arquivo sem versão', () => {
+  it('recusa o formato antigo, que nunca teve kind nem version', () => {
+    // O formato antigo (exportado antes do formato versionado) não trazia
+    // exercícios próprios e nunca passou por validação. Aceitá-lo despejaria
+    // dados não saneados no aparelho.
     const result = parseBackupText(JSON.stringify({
       userProfile: profile,
       activePlan: { id: PLAN_ID, workoutSplits: [] },
@@ -225,9 +228,17 @@ describe('parseBackupText — arquivo antigo', () => {
       sessions: []
     }));
 
-    expect(result.ok).toBe(true);
-    expect(result.backup.userProfile.userName).toBe('Ana');
-    expect(result.warnings.join(' ')).toMatch(/antigo/);
+    expect(result.ok).toBe(false);
+    expect(result.error).toMatch(/não é um backup do TreinoPro/);
+  });
+
+  it('recusa kind correto com version faltando', () => {
+    const result = parseBackupText(JSON.stringify({
+      kind: BACKUP_KIND,
+      userProfile: profile
+    }));
+    expect(result.ok).toBe(false);
+    expect(result.error).toMatch(/Versão de backup inválida/);
   });
 
   it('aceita workoutLogs no formato de objeto (mapa exerciseId -> log)', () => {

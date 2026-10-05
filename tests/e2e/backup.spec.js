@@ -113,7 +113,7 @@ test('Backup: JSON de outro app é recusado pelo nome do arquivo', async ({ page
   await onboardHome(page, 'Ana Outros Dados');
   await selectBackupFile(page, { foo: 'bar' });
 
-  await expect(page.locator('#storage-error-banner')).toContainText('não tem o formato de um backup');
+  await expect(page.locator('#storage-error-banner')).toContainText('não é um backup do TreinoPro');
   await expect(page.locator('#backup-import-modal')).toBeHidden();
 });
 
@@ -215,9 +215,12 @@ test('Backup: o mesmo arquivo pode ser importado duas vezes seguidas', async ({ 
   await expect(page.locator('#custom-exercise-custom_agachamento_na_cadeira')).toHaveCount(1);
 });
 
-test('Backup: avisa quando o arquivo é antigo e não traz exercícios próprios', async ({ page }) => {
-  await onboardHome(page, 'Ana Legacy');
+test('Backup: arquivo do formato antigo é recusado antes de tocar no app', async ({ page }) => {
+  await onboardHome(page, 'Ana Formato Antigo');
+  const before = await firstSplitOrder(page);
 
+  // Formato anterior à versão: parece um backup (tem perfil e plano) mas não
+  // passou por validação alguma. O app precisa recusar em vez de adivinhar.
   await selectBackupFile(page, {
     userProfile: { userName: 'Backup Antigo', goal: 'hypertrophy', equipment: 'gym', restrictions: [] },
     activePlan: { id: 'current_active_plan', workoutSplits: [{ id: 'treino-a', title: 'Treino A', exercises: [] }] },
@@ -227,12 +230,9 @@ test('Backup: avisa quando o arquivo é antigo e não traz exercícios próprios
     exportedAt: '2026-01-05T10:00:00.000Z'
   });
 
-  const modal = page.locator('#backup-import-modal');
-  await expect(modal).toBeVisible();
-  await expect(page.locator('#backup-import-warnings')).toContainText('antigo');
-  await expect(modal.locator('#backup-stat-user')).toHaveText('Backup Antigo');
+  await expect(page.locator('#storage-error-banner')).toContainText('não é um backup do TreinoPro');
+  await expect(page.locator('#backup-import-modal')).toBeHidden();
 
-  await page.locator('#btn-confirm-backup-import').click();
-  await expect(modal).toBeHidden({ timeout: 5000 });
-  await expect(page.locator('#onboarding-modal')).toBeHidden();
+  // O treino atual segue intacto: recusa não pode custar o dia do usuário.
+  expect((await firstSplitOrder(page)).ids).toEqual(before.ids);
 });

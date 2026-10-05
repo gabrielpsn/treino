@@ -155,7 +155,7 @@ usuário só descobria a perda depois de confirmar.
 
 O que a validação garante, todos em `parseBackupText()`:
 
-- arquivo que não é JSON, não é backup ou veio de versão mais nova é recusado **sem tocar no banco**;
+- arquivo que não é JSON, não é backup ou veio de versão mais nova é recusado **sem tocar no banco** — inclusive o formato antigo, sem `kind`/`version`, que nunca teve exercícios próprios nem validação;
 - o perfil é coberto campo a campo (`ageYears: "30"` vira `30`, `restrictions: "joelho"` vira `[]`), senão um arquivo editado à mão quebraria `restrictions.includes()` no filtro de segurança;
 - ids de série são recalculados a partir de `(sessionId, exerciseId)` e séries sem sessão são descartadas, evitando volume fantasma no histórico;
 - o plano importado passa pelo mesmo `filterSafeExercises()` do gerador: exercício que conflita com a restrição do próprio backup é removido e **contado no aviso**, não restaurado em silêncio;
@@ -163,10 +163,6 @@ O que a validação garante, todos em `parseBackupText()`:
 
 A escrita é uma transação única sobre as sete tabelas: se qualquer passo falhar,
 o banco volta ao estado anterior em vez de ficar com o perfil sem plano.
-
-Backups antigos (sem `kind`/`version`, exportados antes do formato versionado) são
-aceitos com aviso — o usuário tem um arquivo legítimo na mão e recusar tudo por
-falta de um campo seria o pior resultado possível.
 
 ## Filtro de segurança articular
 
