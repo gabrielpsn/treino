@@ -561,7 +561,7 @@
 
                     <!-- Última carga registrada em qualquer treino anterior -->
                     <p
-                      v-if="lastSetLabel(ex.id) && !nextLoadSuggestions[ex.id]"
+                      v-if="lastSetLabel(ex.id)"
                       :id="`last-load-${ex.id}`"
                       class="text-[11px] text-slate-500 mt-1"
                     >
