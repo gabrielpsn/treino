@@ -23,6 +23,12 @@ coverage
 # Cloudflare
 .wrangler
 
+# Segredos locais do Worker (GEMINI_API_KEY etc.) — nunca versionar
+.dev.vars
+.env
+.env.*
+!.env.example
+
 # Protótipos HTML superseded (mantidos só no histórico do git)
 # scripts de referência usados antes da migração para Vue.
 

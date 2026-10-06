@@ -174,16 +174,45 @@ empurrar um movimento contraindicado. O mesmo conjunto de regras
 `filterSafeExercises`) é usado tanto pelo gerador de planos quanto pelo modal de
 substituição, para que as duas telas nunca divirjam.
 
+## Geração por IA (Gemini)
+
+A ficha e as metas podem ser sugeridas pelo Gemini, sempre por trás de um proxy
+no próprio Worker — a chave nunca chega ao navegador:
+
+1. O cliente envia `POST /api/gemini/plan` com o perfil (objetivo, restrições,
+   equipamento, `bmr`/`tdee`) e os ids seguros do catálogo, nunca o catálogo
+   inteiro nem dados de saúde sensíveis.
+2. O Worker (`worker/index.js`) chama a API do Gemini com timeout de 25 s
+   (`REQUEST_TIMEOUT_MS`), rate limit de 8 req/min/IP, checagem de Origin e
+   erro traduzido — a resposta bruta do modelo não vaza para fora.
+3. O cliente valida a resposta **inteira** antes de trocar a ficha atual
+   (`src/engine/ai/planFromAi.js`): só ids existentes no catálogo, sem
+   exercício conflitante com restrição declarada, sem duplicata na mesma
+   ficha, tamanho dentro do limite e macros coerentes com o TDEE. Qualquer
+   violação aborta com mensagem amigável e a ficha atual fica intacta.
+
+Configuração (Cloudflare Workers):
+
+- `wrangler secret put GEMINI_API_KEY` — chave da API do Gemini. **Nunca**
+  commitar; se uma chave vazar (chat, log, repositório), revogá-la no console
+  do Google e gerar outra.
+- `GEMINI_MODEL` (padrão `gemini-2.5-flash`), `GEMINI_API_BASE` (padrão
+  `https://generativelanguage.googleapis.com/v1beta`) e `REQUEST_TIMEOUT_MS`
+  são opcionais.
+
 ## Deploy
 
 Push em `main` dispara o GitHub Actions (`.github/workflows/deploy-cloudflare.yml`):
 
 1. Job `verify`: `npm ci`, testes unitários e build.
 2. Job `deploy`: só roda se o `verify` passou e o push foi em `main`. Faz o build
-   e publica com `wrangler deploy --assets dist`.
+   e publica com `wrangler deploy --name treino --compatibility-date 2026-09-23`
+   (assets em `./dist` vêm do `wrangler.jsonc`).
 
-Requer o secret `CLOUDFLARE_API_TOKEN`. A versão do wrangler é fixada
-(`wrangler@4`) para que uma publicação não quebre por causa de um release novo.
+Requer o secret `CLOUDFLARE_API_TOKEN`. O `GEMINI_API_KEY` é configurado à
+parte com `wrangler secret put` (seção acima), não pelo Actions. A versão do
+wrangler é fixada (`wrangler@4`) para que uma publicação não quebre por causa
+de um release novo.
 
 ## Protótipos
 
