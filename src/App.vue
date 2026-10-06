@@ -532,9 +532,36 @@
                       💡 {{ ex.tips }}
                     </p>
 
+                    <!-- PR (Personal Record) mais relevante -->
+                    <p
+                      v-if="personalRecords[ex.id]"
+                      class="text-[11px] text-sky-400/90 mt-1 flex flex-wrap items-center gap-1.5"
+                    >
+                      <span aria-hidden="true">🏆</span>
+                      PR: <span class="font-semibold">{{ personalRecords[ex.id].maxWeightKg.toString().replace('.', ',') }} kg</span>
+                      <span>•</span>
+                      {{ personalRecords[ex.id].maxReps }} reps
+                    </p>
+
+                    <!-- Sugestão de próxima carga (double progression) -->
+                    <p
+                      v-if="nextLoadSuggestions[ex.id]"
+                      :id="`suggest-next-${ex.id}`"
+                      class="text-[11px] text-emerald-400/90 mt-1 flex flex-wrap items-center gap-1.5"
+                    >
+                      <span aria-hidden="true">📈</span>
+                      Sugestão: <span class="font-semibold">
+                        {{ nextLoadSuggestions[ex.id].suggestedWeightKg > 0
+                          ? nextLoadSuggestions[ex.id].suggestedWeightKg.toString().replace('.', ',') + ' kg'
+                          : '' }}
+                        <template v-if="nextLoadSuggestions[ex.id].suggestedWeightKg > 0 && nextLoadSuggestions[ex.id].suggestedReps > 0"> × </template>
+                        {{ nextLoadSuggestions[ex.id].suggestedReps > 0 ? nextLoadSuggestions[ex.id].suggestedReps + ' reps' : '' }}
+                      </span>
+                    </p>
+
                     <!-- Última carga registrada em qualquer treino anterior -->
                     <p
-                      v-if="lastSetLabel(ex.id)"
+                      v-if="lastSetLabel(ex.id) && !nextLoadSuggestions[ex.id]"
                       :id="`last-load-${ex.id}`"
                       class="text-[11px] text-slate-500 mt-1"
                     >
@@ -875,6 +902,7 @@ import { openSession, recordSet, listSessions, getLastSetsForExercises, getOpenS
 import { buildPersonalizedPlan } from './engine/generators/planGenerator';
 import { requestAiPlan, AiPlanError } from './engine/ai/planFromAi';
 import { parseWeight, parseReps } from './engine/history';
+import { calculatePersonalRecords, suggestNextLoad, getLastSetsForExercise } from './engine/progression';
 import OnboardingModal from './components/OnboardingModal.vue';
 import HistoryPanel from './components/HistoryPanel.vue';
 import RestTimer from './components/RestTimer.vue';
@@ -1484,6 +1512,40 @@ const exerciseNames = computed(() => {
     }
   }
   return map;
+});
+
+// PRs por exercício (maior carga, reps, volume, melhor 1RM estimado)
+const personalRecords = computed(() => {
+  const prs = calculatePersonalRecords(historySessions.value);
+  const out = {};
+  for (const [id, pr] of prs) {
+    out[id] = pr;
+  }
+  return out;
+});
+
+// Sugestões de próxima carga por exercício (derivadas do histórico)
+const nextLoadSuggestions = computed(() => {
+  const suggestions = {};
+  const splits = activePlan.value?.workoutSplits || [];
+  for (const split of splits) {
+    for (const ex of split.exercises || []) {
+      const last = getLastSetsForExercise(historySessions.value, ex.id);
+      const range = Array.isArray(ex.repsRange) && ex.repsRange.length === 2 ? ex.repsRange : null;
+      const sugg = suggestNextLoad({
+        exerciseId: ex.id,
+        exercise: ex,
+        lastSets: last,
+        targetRepsRange: range,
+        defaultWeightKg: Number(ex.defaultWeight) || 0,
+        defaultReps: Number(ex.defaultReps) || 10
+      });
+      if (sugg && sugg.exerciseId) {
+        suggestions[ex.id] = sugg;
+      }
+    }
+  }
+  return suggestions;
 });
 
 // Evita mostrar "último treino" para a série que o usuário está preenchendo
