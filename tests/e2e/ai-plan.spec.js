@@ -9,15 +9,12 @@ import { filterSafeExercises } from '../../src/engine/generators/workoutGenerato
  */
 async function onboard(page, { name = 'Aluno IA', restrictions = [] } = {}) {
   await page.goto('/');
+  // Contexto novo = sem perfil salvo: o modal abre depois das migrações do
+  // IndexedDB. Os testes sempre passam por aqui, então não existe caminho que
+  // pule o cadastro — clicar na aba antes do hidratar é o que causava a corrida
+  // com o overlay do modal abrindo em cima.
   const modal = page.locator('#onboarding-modal');
-  if (await modal.count() === 0) {
-    await page.locator('#tab-btn-workout').click();
-    return;
-  }
-  if (!(await modal.isVisible({ timeout: 1000 }).catch(() => false))) {
-    await page.locator('#tab-btn-workout').click();
-    return;
-  }
+  await expect(modal).toBeVisible({ timeout: 15000 });
 
   await page.locator('#input-user-name').fill(name);
   await page.locator('#input-age').fill('30');
@@ -36,6 +33,7 @@ async function onboard(page, { name = 'Aluno IA', restrictions = [] } = {}) {
 
   await page.locator('#btn-onboarding-submit').click();
   await expect(page.locator('#onboarding-modal')).not.toBeVisible({ timeout: 5000 });
+
   await page.locator('#tab-btn-workout').click();
 }
 
@@ -92,11 +90,14 @@ async function mockAiError(page, { status, code, error }) {
   }));
 }
 
-test.beforeEach(async ({ page }) => {
-  await onboard(page);
-});
-
 test.describe('perfil sem restrição', () => {
+  // Antes existia um beforeEach de nível raiz, que roda TAMBÉM nos testes do
+  // describe de restrição — o cadastro acontecia duas vezes e a segunda rodada
+  // clicava na aba enquanto o modal fechava, causando interferência de overlay.
+  test.beforeEach(async ({ page }) => {
+    await onboard(page);
+  });
+
 test('Antes de gerar, a tela diz que a ficha veio da fórmula', async ({ page }) => {
   await expect(page.locator('#ai-plan-status')).toHaveText(/fórmula/i);
 });
@@ -294,9 +295,7 @@ test.describe('com restrição articular declarada', () => {
   // Cadastro próprio: é o caso em que a IA "melhora" a ficha e entrega um
   // exercício que machuca. Não dá para reaproveitar o cadastro do describe
   // anterior porque o perfil já estaria na tela quando o modal fechasse.
-  test.beforeEach(async ({ page, context }) => {
-    await context.clearCookies().catch(() => {});
-    await page.evaluate(() => indexedDB.deleteDatabase('treino-db'));
+  test.beforeEach(async ({ page }) => {
     await onboard(page, { name: 'Aluno Restrito', restrictions: ['ombro'] });
   });
 

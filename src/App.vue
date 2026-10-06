@@ -933,6 +933,14 @@ const currentSplitTab = ref('treino-a');
 const isAiPlanLoading = ref(false);
 const aiPlanMessage = ref(null);
 const isOnboardingOpen = ref(false);
+
+// Corrida entre o carregamento inicial (mount) e o primeiro save: se a
+// migração/lentidão do IndexedDB fizer `hydrateFromDatabase` ler o perfil como
+// null e terminar DEPOIS do save, o registro está desatualizado — aplicar o
+// default por cima apagaria o perfil recém-salvo e reabriria o modal em cima
+// da tela do usuário.
+let profileSavedDuringLoad = false;
+
 const isPickerOpen = ref(false);
 
 const userProfile = ref(null);
@@ -1155,6 +1163,11 @@ async function loadUserData() {
 
 async function hydrateFromDatabase(profileRecord) {
   if (!profileRecord) {
+    // O registro foi lido antes das migrações terminarem: se o usuário salvou
+    // o perfil nesse meio-tempo, este null está desatualizado. Aplicar o
+    // default por cima reabriria o onboarding e apagaria o perfil novo.
+    if (profileSavedDuringLoad) return;
+
     // Primeiro acesso: abre o onboarding com homem/João por padrão inicial
     isOnboardingOpen.value = true;
     const defaultProfile = {
@@ -1171,6 +1184,7 @@ async function hydrateFromDatabase(profileRecord) {
     };
     userProfile.value = defaultProfile;
     await db.user_profile.put({ id: 'current_user', ...defaultProfile });
+    if (profileSavedDuringLoad) return;
     await applyAndSavePlan(defaultProfile, true);
   } else {
     userProfile.value = profileRecord;
@@ -1226,6 +1240,9 @@ async function loadLastSets() {
 async function handleSaveProfile(newProfile) {
   try {
     const rawProfile = JSON.parse(JSON.stringify(newProfile));
+    // Marcado antes de qualquer await: se o carregamento inicial ainda estiver
+    // rodando, ele não pode aplicar o perfil default por cima do save novo.
+    profileSavedDuringLoad = true;
     const plan = await applyAndSavePlan(rawProfile, true);
 
     userProfile.value = rawProfile;
