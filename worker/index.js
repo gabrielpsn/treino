@@ -223,7 +223,7 @@ async function handlePlanRequest(request, env) {
   const { userName, ...profileForModel } = profile ?? {};
   const payload = { profile: profileForModel, catalog, splits };
 
-  const model = env.GEMINI_MODEL || 'gemini-2.5-flash';
+  const model = env.GEMINI_MODEL || 'gemini-3.8-flash';
   const base = env.GEMINI_API_BASE || 'https://generativelanguage.googleapis.com/v1beta';
   const url = `${base}/models/${encodeURIComponent(model)}:generateContent`;
 
