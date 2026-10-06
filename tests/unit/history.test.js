@@ -7,6 +7,7 @@ import {
   sessionSetStats,
   sessionDurationMinutes,
   buildProgression,
+  buildExerciseProgression,
   loadChangePercent,
   formatVolume,
   formatDuration,
@@ -199,6 +200,58 @@ describe('buildProgression', () => {
     ]);
     expect(progression[0].topWeight).toBeNull();
     expect(progression[0].volume).toBe(0);
+  });
+});
+
+describe('buildExerciseProgression', () => {
+  const SESSIONS = [
+    {
+      id: 10,
+      dayKey: '2026-03-03',
+      startedAt: '2026-03-03T10:00:00.000Z',
+      sets: [
+        { exerciseId: 'supino', weight: '40', reps: '10', isDone: true },
+        { exerciseId: 'supino', weight: '36', reps: '8', isDone: true },
+        { exerciseId: 'remada', weight: '50', reps: '10', isDone: true }
+      ]
+    },
+    {
+      id: 11,
+      dayKey: '2026-03-10',
+      startedAt: '2026-03-10T10:00:00.000Z',
+      sets: [
+        { exerciseId: 'supino', weight: '42,5', reps: '10', isDone: true },
+        { exerciseId: 'remada', weight: '50', reps: '10', isDone: false }
+      ]
+    }
+  ];
+
+  it('um ponto por sessão com carga do exercício escolhido, em ordem cronológica', () => {
+    const points = buildExerciseProgression(SESSIONS, 'supino');
+    expect(points.map(p => p.sessionId)).toEqual([10, 11]);
+    expect(points.map(p => p.topWeight)).toEqual([40, 42.5]);
+    expect(points[0].dayKey).toBe('2026-03-03');
+  });
+
+  it('só considera séries concluídas do exercício pedido', () => {
+    const points = buildExerciseProgression(SESSIONS, 'remada');
+    // A remada da sessão 11 não foi concluída e não pode virar ponto de queda.
+    expect(points.map(p => p.sessionId)).toEqual([10]);
+    expect(points[0].topWeight).toBe(50);
+  });
+
+  it('sessão sem carga (aeróbico) fica de fora do gráfico', () => {
+    const points = buildExerciseProgression(
+      [{ id: 1, startedAt: '2026-03-03T10:00:00.000Z', sets: [{ exerciseId: 'corrida', weight: '', reps: '20', isDone: true }] }],
+      'corrida'
+    );
+    expect(points).toEqual([]);
+  });
+
+  it('exercício sem histórico devolve vazio, e sem exerciseId também', () => {
+    expect(buildExerciseProgression(SESSIONS, 'inexistente')).toEqual([]);
+    expect(buildExerciseProgression(SESSIONS, null)).toEqual([]);
+    expect(buildExerciseProgression([], 'supino')).toEqual([]);
   });
 });
 

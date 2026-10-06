@@ -107,6 +107,37 @@ function maxWeight(sets = []) {
   return max;
 }
 
+/**
+ * Evolução de carga de UM exercício: um ponto por sessão concluída em que ele
+ * aparece, da mais antiga para a mais recente. Sessões sem carga registrada
+ * (aeróbico) ficam de fora — não têm eixo Y comparável — e sessões em que o
+ * exercício não foi marcado como concluído também, senão a linha cairia para
+ * zero no dia em que a pessoa pulou o movimento.
+ */
+export function buildExerciseProgression(sessionsWithSets = [], exerciseId) {
+  if (!exerciseId) return [];
+
+  const points = [];
+  for (const session of sessionsWithSets || []) {
+    const sets = (session?.sets || []).filter(set => set?.exerciseId === exerciseId && set.isDone);
+    if (sets.length === 0) continue;
+
+    const topWeight = maxWeight(sets);
+    if (topWeight === null) continue;
+
+    points.push({
+      sessionId: session.id,
+      dayKey: session.dayKey,
+      startedAt: session.startedAt,
+      topWeight,
+      volume: sessionVolume(sets),
+      doneSets: sets.length
+    });
+  }
+
+  return points.sort((a, b) => String(a.startedAt || '').localeCompare(String(b.startedAt || '')));
+}
+
 // Variação percentual da carga máxima entre duas sessões. Retorna null quando
 // não há base de comparação (primeira execução, ou exercises sem carga).
 export function loadChangePercent(previousTopWeight, currentTopWeight) {
