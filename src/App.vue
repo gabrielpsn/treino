@@ -303,6 +303,19 @@
               + Meus exercícios
             </button>
 
+            <!-- Tela cheia para executar o treino: fila do que falta, entradas
+                 grandes de carga/reps e o cronômetro da sessão. -->
+            <button
+              v-if="trainingSplit"
+              type="button"
+              id="btn-open-training-mode"
+              @click="openTrainingMode"
+              class="tap-btn px-3 py-1.5 rounded-xl text-xs font-bold border border-amber-500/50 text-amber-300 hover:text-white hover:border-amber-400 transition-all"
+              title="Abrir o modo treino em tela cheia"
+            >
+              <span aria-hidden="true">▶</span> Modo Treino
+            </button>
+
             <button
               v-if="activeSessionId"
               type="button"
@@ -841,6 +854,21 @@
     <!-- Cronômetro Flutuante de Descanso -->
     <RestTimer ref="restTimerRef" />
 
+    <!-- Modo Treino: tela cheia com cronômetro da sessão. Desmonta ao fechar,
+         então o intervalo do relógio morre junto (z-30 deixa o RestTimer de
+         z-40 flutuar por cima). -->
+    <TrainingMode
+      v-if="isTrainingModeOpen"
+      :split="trainingSplit"
+      :logs="workoutLogs"
+      :started-at="trainingStartedAt"
+      @close="isTrainingModeOpen = false"
+      @toggle="onTrainingToggle"
+      @update="onTrainingUpdate"
+      @rest="triggerRestTimer"
+      @finish="onTrainingFinish"
+    />
+
     <!-- Modal de Onboarding / Perfil Personalizado -->
     <OnboardingModal 
       :is-open="isOnboardingOpen" 
@@ -906,6 +934,7 @@ import { calculatePersonalRecords, suggestNextLoad, getLastSetsForExercise } fro
 import OnboardingModal from './components/OnboardingModal.vue';
 import HistoryPanel from './components/HistoryPanel.vue';
 import RestTimer from './components/RestTimer.vue';
+import TrainingMode from './components/TrainingMode.vue';
 import ExercisePickerModal from './components/ExercisePickerModal.vue';
 import CustomExercisesModal from './components/CustomExercisesModal.vue';
 import BackupImportModal from './components/BackupImportModal.vue';
@@ -956,6 +985,15 @@ const lastSets = ref({});
 // tecla; sem o cache, cada caractere faria uma consulta para rediscover a
 // sessão antes de gravar.
 const openSessionBySplit = ref({});
+
+// startedAt da sessão aberta, ao lado do id: o Modo Treino mostra o tempo
+// total do treino (da primeira série até agora), não só desde que a tela
+// cheia foi aberta.
+const sessionStartedAtBySplit = ref({});
+
+// Modo Treino: tela cheia com cronômetro e fila de exercícios da ficha ativa.
+const isTrainingModeOpen = ref(false);
+const trainingModeStartedAt = ref(null);
 
 // Sessões carregadas sob demanda: abrir a aba Histórico faz a consulta, em vez
 // de pagar esse custo no boot de quem só quer treinar.
@@ -1493,7 +1531,10 @@ async function resolveOpenSessionId(splitId) {
   if (cached) return cached;
 
   const session = await openSession(splitId);
-  if (session?.id) openSessionBySplit.value = { ...openSessionBySplit.value, [splitId]: session.id };
+  if (session?.id) {
+    openSessionBySplit.value = { ...openSessionBySplit.value, [splitId]: session.id };
+    sessionStartedAtBySplit.value = { ...sessionStartedAtBySplit.value, [splitId]: session.startedAt };
+  }
   return session?.id || null;
 }
 
@@ -1600,8 +1641,45 @@ async function finishCurrentSession() {
   delete next[currentSplitTab.value];
   openSessionBySplit.value = next;
 
+  const startedAtBySplit = { ...sessionStartedAtBySplit.value };
+  delete startedAtBySplit[currentSplitTab.value];
+  sessionStartedAtBySplit.value = startedAtBySplit;
+
   // Com a sessão encerrada, ela passa a contar como "último treino" nos selos.
   await loadLastSets();
+}
+
+// --- Modo Treino (tela cheia durante a execução da ficha) ---
+
+const trainingSplit = computed(() =>
+  (activePlan.value?.workoutSplits || []).find(split => split.id === currentSplitTab.value) || null
+);
+
+// O cronômetro prefere o startedAt real da sessão (tempo total do treino);
+// antes da primeira série a sessão ainda não existe, então vale desde que a
+// tela cheia foi aberta.
+const trainingStartedAt = computed(
+  () => sessionStartedAtBySplit.value[currentSplitTab.value] ?? trainingModeStartedAt.value
+);
+
+function openTrainingMode() {
+  if (!trainingSplit.value) return;
+  trainingModeStartedAt.value = new Date().toISOString();
+  isTrainingModeOpen.value = true;
+}
+
+function onTrainingToggle(exerciseId) {
+  return toggleExerciseCheck(exerciseId, currentSplitTab.value);
+}
+
+function onTrainingUpdate(exerciseId, field, value) {
+  return updateLog(exerciseId, currentSplitTab.value, field, value);
+}
+
+async function onTrainingFinish() {
+  await finishCurrentSession();
+  isTrainingModeOpen.value = false;
+  trainingModeStartedAt.value = null;
 }
 
 function openExercisePicker(exercise, splitId) {
@@ -1840,6 +1918,7 @@ async function resetAllProgress() {
   weeklyChecks.value = {};
   lastSets.value = {};
   openSessionBySplit.value = {};
+  sessionStartedAtBySplit.value = {};
 }
 
 async function handleExportJSON() {
@@ -1928,6 +2007,7 @@ async function confirmBackupImport() {
 
 async function rehydrateAfterRestore() {
   openSessionBySplit.value = {};
+  sessionStartedAtBySplit.value = {};
   lastSets.value = {};
   workoutLogs.value = {};
   weeklyChecks.value = {};

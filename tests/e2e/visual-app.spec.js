@@ -20,21 +20,12 @@ test.describe('Validação Visual por Tela do App de Treino', () => {
   }
 
   test('Tela 1: Onboarding - Perfil, Solicitação do Nome e Objetivo de Perda de Peso', async ({ page }) => {
-    // O app persiste em IndexedDB, não em localStorage. Limpar só o localStorage
-    // não reinicia o estado: o modal nem aparecia e o perfil de um teste
-    // anterior vazava para o seguinte.
+    // O Playwright dá um BrowserContext novo por teste: o IndexedDB já nasce
+    // vazio. O deleteDatabase anterior disputava com a conexão aberta do Dexie
+    // e dependia de o reload destruir a página na hora certa — metade das
+    // execuções reabria com perfil salvo e o modal nem aparecia.
     await page.goto('/');
-    await page.evaluate(async () => {
-      localStorage.clear();
-      sessionStorage.clear();
-      await new Promise(resolve => {
-        const req = indexedDB.deleteDatabase('TreinoProDB');
-        req.onsuccess = resolve;
-        req.onerror = resolve;
-        req.onblocked = resolve;
-      });
-    });
-    await page.reload();
+    await page.waitForLoadState('networkidle');
 
     // Aguarda o modal de onboarding abrir
     const modal = page.locator('#onboarding-modal');
