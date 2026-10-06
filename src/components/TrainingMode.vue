@@ -1,6 +1,7 @@
 <template>
   <div
     v-if="split"
+    id="training-mode"
     role="dialog"
     aria-modal="true"
     aria-label="Modo Treino"
@@ -83,6 +84,22 @@
               aria-label="Repetições do exercício atual"
               :value="logs[focusExercise.id]?.reps"
               @input="$emit('update', focusExercise.id, 'reps', $event.target.value)"
+              class="w-full min-w-0 bg-transparent text-amber-300 text-base font-bold text-right focus:outline-none"
+            />
+          </div>
+
+          <div class="flex items-center gap-2 bg-slate-950 px-3 py-2.5 rounded-xl border border-slate-800 w-24">
+            <label for="training-input-rir" class="text-xs text-slate-500 font-medium">RIR:</label>
+            <input
+              id="training-input-rir"
+              type="number"
+              min="0"
+              max="10"
+              inputmode="numeric"
+              placeholder="—"
+              aria-label="RIR (reps em reserva) do exercício atual"
+              :value="logs[focusExercise.id]?.rir"
+              @input="$emit('update', focusExercise.id, 'rir', $event.target.value)"
               class="w-full min-w-0 bg-transparent text-amber-300 text-base font-bold text-right focus:outline-none"
             />
           </div>

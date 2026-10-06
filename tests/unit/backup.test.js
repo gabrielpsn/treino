@@ -90,6 +90,7 @@ async function seed(database, overrides = {}) {
     workoutId: 'treino-a',
     weight: 60,
     reps: '8',
+    rir: '1',
     isDone: true,
     updatedAt: '2026-03-02T10:00:00.000Z'
   });
@@ -103,7 +104,7 @@ async function seed(database, overrides = {}) {
   const now = new Date(2026, 2, 3, 18, 0, 0);
   const session = await openSession('treino-a', { database, now });
   await recordSet(
-    { splitId: 'treino-a', exerciseId: 'supino_reto_halteres', weight: 62.5, reps: '8', isDone: true },
+    { splitId: 'treino-a', exerciseId: 'supino_reto_halteres', weight: 62.5, reps: '8', rir: '2', isDone: true },
     { database, now }
   );
   await closeSession(session.id, { database, now: new Date(2026, 2, 3, 19, 0, 0) });
@@ -326,6 +327,25 @@ describe('parseBackupText — saneamento', () => {
     // Duas linhas para o mesmo par viram uma: no banco o id é a chave primária,
     // então as duas não poderiam coexistir de qualquer forma.
     expect(sets).toHaveLength(2);
+  });
+
+  it('preenche rir vazio em séries de backups antigos, sem inventar valor', () => {
+    const result = parseBackupText(JSON.stringify({
+      kind: BACKUP_KIND,
+      version: 1,
+      sessions: [{
+        id: 7,
+        startedAt: '2026-03-03T18:00:00.000Z',
+        sets: [
+          { id: 'a', sessionId: 7, exerciseId: 'supino_reto_halteres', weight: 60, reps: '8', isDone: true },
+          { id: 'b', sessionId: 7, exerciseId: 'desenvolvimento_dumbbell', weight: 20, reps: '10', rir: '3', isDone: true }
+        ]
+      }]
+    }));
+
+    const sets = result.backup.sessions[0].sets;
+    expect(sets.find(s => s.exerciseId === 'supino_reto_halteres').rir).toBe('');
+    expect(sets.find(s => s.exerciseId === 'desenvolvimento_dumbbell').rir).toBe('3');
   });
 
   it('remove do plano os exercícios que conflitam com o perfil do backup', () => {

@@ -59,7 +59,7 @@ export async function openSession(splitId, { database = db, now = new Date() } =
 // Grava (ou sobrescreve) a série do exercício na sessão aberta do split.
 // Retorna o id da sessão usada, ou null se nada foi gravado.
 export async function recordSet(
-  { splitId, exerciseId, weight = '', reps = '', isDone = false, sessionId = null },
+  { splitId, exerciseId, weight = '', reps = '', rir = '', isDone = false, sessionId = null },
   { database = db, now = new Date() } = {}
 ) {
   if (!splitId || !exerciseId) return null;
@@ -75,6 +75,7 @@ export async function recordSet(
     splitId,
     weight,
     reps,
+    rir,
     isDone,
     recordedAt: timestamp
   });

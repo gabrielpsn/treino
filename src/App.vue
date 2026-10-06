@@ -620,6 +620,26 @@
                       class="log-input w-12 text-sm font-bold text-right focus:outline-none focus:text-white"
                     />
                   </div>
+
+                  <!-- RIR: reps em reserva do último esforço. Uma casa só — é
+                       o suficiente para a progressão e não ocupa a linha do
+                       celular como um seletor de escala ocuparia. -->
+                  <div class="flex items-center gap-2 bg-slate-950 px-3 py-2 rounded-xl border border-slate-800 flex-1 md:flex-initial">
+                    <label :for="`input-rir-${ex.id}`" class="text-xs text-slate-500 font-medium">RIR:</label>
+                    <input
+                      :id="`input-rir-${ex.id}`"
+                      type="number"
+                      min="0"
+                      max="10"
+                      inputmode="numeric"
+                      placeholder="—"
+                      :aria-label="`RIR (reps em reserva) para ${ex.name}`"
+                      :value="workoutLogs[ex.id]?.rir"
+                      @input="e => updateLog(ex.id, split.id, 'rir', e.target.value)"
+                      :class="isWeightLoss ? 'text-rose-300' : 'text-amber-300'"
+                      class="log-input w-10 text-sm font-bold text-right focus:outline-none focus:text-white"
+                    />
+                  </div>
                 </div>
                 <div v-else class="text-xs text-sky-400 font-semibold bg-sky-500/10 px-3 py-1.5 rounded-xl border border-sky-500/20">
                   Exercício Aeróbico
@@ -1472,7 +1492,7 @@ async function persistExerciseLog(exerciseId, splitId, patch, errorMessage) {
       const sessionId = await resolveOpenSessionId(splitId);
       await db.workout_logs.put(updated);
       await recordSet(
-        { splitId, exerciseId, weight: updated.weight, reps: updated.reps, isDone: updated.isDone },
+        { splitId, exerciseId, weight: updated.weight, reps: updated.reps, rir: updated.rir ?? '', isDone: updated.isDone },
         { sessionId }
       );
     })

@@ -13,10 +13,19 @@ test.describe('Validação Visual por Tela do App de Treino', () => {
   async function prepareAppPage(page) {
     await page.goto('/');
     await page.waitForLoadState('networkidle');
-    const closeBtn = page.locator('#btn-close-onboarding');
-    if (await closeBtn.isVisible()) {
-      await closeBtn.click();
+
+    // O modal só aparece depois do hidratar (IndexedDB, não rede): checar o
+    // botão de fechar logo após o networkidle era corrido — o modal abria em
+    // cima e os cliques seguintes nunca ficavam "estáveis". Espera o modal e
+    // só então fecha; se o perfil já existir, não há modal e segue direto.
+    const modal = page.locator('#onboarding-modal');
+    try {
+      await modal.waitFor({ state: 'visible', timeout: 5000 });
+    } catch {
+      return;
     }
+    await page.locator('#btn-close-onboarding').click();
+    await modal.waitFor({ state: 'hidden', timeout: 5000 });
   }
 
   test('Tela 1: Onboarding - Perfil, Solicitação do Nome e Objetivo de Perda de Peso', async ({ page }) => {

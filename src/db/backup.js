@@ -30,7 +30,7 @@ const SESSION_FIELDS = [
   'splitId', 'goal', 'source', 'note', 'createdAt'
 ];
 
-const SET_FIELDS = ['id', 'sessionId', 'exerciseId', 'splitId', 'weight', 'reps', 'isDone', 'recordedAt'];
+const SET_FIELDS = ['id', 'sessionId', 'exerciseId', 'splitId', 'weight', 'reps', 'rir', 'isDone', 'recordedAt'];
 
 // Perfil: o formato é do onboarding, não do histórico. Coagir cada campo no
 // restore é o que impede que um arquivo editado à mão traga `restrictions:
@@ -233,6 +233,9 @@ function normalizeBackup(raw, warnings) {
       isDone: !!row.isDone,
       weight: row.weight ?? '',
       reps: row.reps ?? '',
+      // Backups antigos não têm rir: string vazia mantém o campo presente e o
+      // round-trip estável em vez de deixar undefined no registro.
+      rir: row.rir ?? '',
       recordedAt: row.recordedAt ?? session.startedAt ?? new Date().toISOString()
     });
   }
@@ -355,6 +358,7 @@ function normalizeLogs(value) {
       workoutId: row.workoutId ?? null,
       weight: row.weight ?? '',
       reps: row.reps ?? '',
+      rir: row.rir ?? '',
       isDone: !!row.isDone
     });
   }

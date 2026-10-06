@@ -137,6 +137,20 @@ describe('recordSet', () => {
     expect(sets[0]).toMatchObject({ exerciseId: 'supino', weight: '80', reps: '10', isDone: true });
   });
 
+  it('persiste o RIR e grava string vazia quando não informado', async () => {
+    const { db, now } = freshDatabase();
+    const sessionId = await recordSet(
+      { splitId: 'treino-a', exerciseId: 'supino', weight: '80', reps: '10', rir: '2', isDone: true },
+      { database: db, now }
+    );
+    const [withRir] = await getSetsForSession(sessionId, { database: db });
+    expect(withRir.rir).toBe('2');
+
+    await recordSet({ splitId: 'treino-a', exerciseId: 'remada', weight: '60', reps: '10', isDone: true }, { database: db, now });
+    const sets = await db.session_sets.toArray();
+    expect(sets.find(set => set.exerciseId === 'remada').rir).toBe('');
+  });
+
   it('sobrescreve em vez de duplicar quando o mesmo exercício é editado de novo', async () => {
     const { db, now } = freshDatabase();
     await recordSet({ splitId: 'treino-a', exerciseId: 'supino', weight: '80', reps: '10', isDone: true }, { database: db, now });

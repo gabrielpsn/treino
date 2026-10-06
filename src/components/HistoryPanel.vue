@@ -190,6 +190,7 @@
               <span class="text-slate-400 shrink-0 tabular-nums">
                 <template v-if="hasLoad(set)">
                   {{ formatWeight(set.weight) }} kg × {{ set.reps }} reps
+                  <template v-if="set.rir !== '' && set.rir !== undefined && set.rir !== null"> · RIR {{ set.rir }}</template>
                 </template>
                 <template v-else-if="set.isDone"> concluído </template>
                 <template v-else-if="set.weight || set.reps"> registrado </template>
