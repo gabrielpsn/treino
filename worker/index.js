@@ -69,6 +69,9 @@ function jsonResponse(body, status, extraHeaders = {}) {
  * catálogo, porque o modelo pode inventar um exercício que "parece" existir.
  */
 const RESPONSE_SCHEMA = {
+  // O Gemini só aceita `required` no nível raiz do responseSchema; qualquer
+  // `required` aninhado dentro de items/properties gera 400 INVALID_ARGUMENT
+  // nos modelos 3.x ("Cannot have repeated items ('required') within a map").
   type: 'object',
   properties: {
     rationale: {
@@ -98,12 +101,10 @@ const RESPONSE_SCHEMA = {
                 sets: { type: 'integer' },
                 reps: { type: 'string', description: 'Ex.: "10-12" ou "8"' },
                 restSeconds: { type: 'integer' }
-              },
-              required: ['id', 'sets', 'reps', 'restSeconds']
+              }
             }
           }
-        },
-        required: ['splitId', 'focus', 'exercises']
+        }
       }
     }
   },
@@ -223,7 +224,10 @@ async function handlePlanRequest(request, env) {
   const { userName, ...profileForModel } = profile ?? {};
   const payload = { profile: profileForModel, catalog, splits };
 
-  const model = env.GEMINI_MODEL || 'gemini-3.8-flash';
+  // Default por disponibilidade: os lançamentos mais novos (3.6/3.8) estavam
+  // sofrendo 503 "high demand" enquanto o 3.5 respondia de imediato. Operadores
+  // que quiserem o mais recente sobrescrevem com GEMINI_MODEL.
+  const model = env.GEMINI_MODEL || 'gemini-3.5-flash';
   const base = env.GEMINI_API_BASE || 'https://generativelanguage.googleapis.com/v1beta';
   const url = `${base}/models/${encodeURIComponent(model)}:generateContent`;
 

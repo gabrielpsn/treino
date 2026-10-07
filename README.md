@@ -196,7 +196,7 @@ Configuração (Cloudflare Workers):
 - `wrangler secret put GEMINI_API_KEY` — chave da API do Gemini. **Nunca**
   commitar; se uma chave vazar (chat, log, repositório), revogá-la no console
   do Google e gerar outra.
-- `GEMINI_MODEL` (padrão `gemini-3.8-flash`), `GEMINI_API_BASE` (padrão
+- `GEMINI_MODEL` (padrão `gemini-3.5-flash`), `GEMINI_API_BASE` (padrão
   `https://generativelanguage.googleapis.com/v1beta`) e `REQUEST_TIMEOUT_MS`
   são opcionais.
 
