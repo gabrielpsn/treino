@@ -1,22 +1,22 @@
 /**
- * Proxy da API do Gemini para o TreinoPro.
+ * Motor Serverless de IA para o TreinoPro rodando no Cloudflare Workers.
  *
- * Por que existe: a chave da API não pode ser entregue ao navegador. A PWA é
- * JavaScript servido a qualquer pessoa, então uma chave no bundle vira chave
- * pública — e a conta que a paga é a do dono do app. Aqui a chave vive em
- * `wrangler secret`, nunca sai daqui, e o navegador só conversa com este
- * Worker.
+ * Suporta dois provedores:
+ * 1. Cloudflare Workers AI (Opção nativa e 100% gratuita):
+ *    Executa modelos de ponta diretamente na infraestrutura da Cloudflare
+ *    (ex: @cf/meta/llama-3.1-8b-instruct ou @cf/meta/llama-3.3-70b-instruct-fp8-fast)
+ *    usando o binding `env.AI`. Zero custo de infraestrutura e sem necessidade de chaves de API externas.
  *
- * O Worker também é o filtro de custo: uma chamada de geração paga por
- * requisição, então o caminho é fechado para tudo que não seja o plano do app,
- * com limite de tamanho, de tempo e de frequência.
+ * 2. Google Gemini API (Proxy seguro):
+ *    Caso `env.GEMINI_API_KEY` esteja presente e `env.AI` não esteja configurado,
+ *    atua como proxy seguro com structured output JSON.
  */
 
 const PLAN_PATH = '/api/gemini/plan';
 
 // O pedido leva o perfil e o catálogo seguro do usuário. 24KB é folgado para
 // 60 exercícios e pequeno o bastante para barrar quem tentar mandar um lixo
-// gigante só para-consuming cota.
+// gigante só para consumir cota.
 const MAX_BODY_BYTES = 24 * 1024;
 const REQUEST_TIMEOUT_MS = 25_000;
 
@@ -69,9 +69,6 @@ function jsonResponse(body, status, extraHeaders = {}) {
  * catálogo, porque o modelo pode inventar um exercício que "parece" existir.
  */
 const RESPONSE_SCHEMA = {
-  // O Gemini só aceita `required` no nível raiz do responseSchema; qualquer
-  // `required` aninhado dentro de items/properties gera 400 INVALID_ARGUMENT
-  // nos modelos 3.x ("Cannot have repeated items ('required') within a map").
   type: 'object',
   properties: {
     rationale: {
@@ -113,7 +110,7 @@ const RESPONSE_SCHEMA = {
 
 function buildSystemInstruction() {
   return [
-    'Você é o gerador de ficha de treino do TreinoPro, um app brasileiro de musculação.',
+    'Você é o gerador de ficha de treino e metas nutricionais do TreinoPro, um app brasileiro de musculação e alta performance.',
     'Regras inegociáveis:',
     '1. Escolha exercícios SOMENTE pelo "id" exato da lista "catalogo" que você recebeu.',
     '   Nunca invente, renomeie nem traduza exercício. Se nenhum id serve, use menos exercícios.',
@@ -161,8 +158,22 @@ function extractCandidate(payload) {
   if (!text) return null;
 
   // O modelo pode embrulhar o JSON em ```json ... ``` mesmo com responseSchema.
-  const unfenced = text.replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
-  return JSON.parse(unfenced);
+  return extractJsonFromText(text);
+}
+
+function extractJsonFromText(text) {
+  if (!text) return null;
+  const unfenced = text.replace(/^```(?:json)?/gim, '').replace(/```$/gm, '').trim();
+  try {
+    return JSON.parse(unfenced);
+  } catch {
+    const firstBrace = unfenced.indexOf('{');
+    const lastBrace = unfenced.lastIndexOf('}');
+    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+      return JSON.parse(unfenced.slice(firstBrace, lastBrace + 1));
+    }
+    return null;
+  }
 }
 
 async function readJsonBody(request) {
@@ -187,51 +198,96 @@ function requestId() {
   return `req_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
-async function handlePlanRequest(request, env) {
-  const id = requestId();
+/**
+ * Executa o agente nativamente no Cloudflare Workers AI (100% gratuito, sem chaves externas).
+ */
+async function handleWorkersAiRequest(payload, env, id) {
+  const model = env.CF_AI_MODEL || '@cf/meta/llama-3.1-8b-instruct';
+  const timeoutMs = Number(env.REQUEST_TIMEOUT_MS) || REQUEST_TIMEOUT_MS;
 
-  if (!env.GEMINI_API_KEY) {
-    console.error(`[${id}] GEMINI_API_KEY não configurada no Worker`);
+  const systemPrompt = [
+    buildSystemInstruction(),
+    '',
+    'FORMATO OBRIGATÓRIO DE SAÍDA:',
+    'Responda ESTRITAMENTE com um objeto JSON válido, sem texto introdutório, sem tags fora do JSON e sem saudações.',
+    'Chaves obrigatórias na raiz do JSON: rationale, targetCalories, proteinGrams, carbsGrams, fatGrams, splits.'
+  ].join('\n');
+
+  const userPrompt = [
+    buildUserPrompt(payload),
+    '',
+    'IMPORTANTE: Responda APENAS com o JSON contendo os dados do treino e da dieta.'
+  ].join('\n');
+
+  let aiResult;
+  let timeoutHandle;
+
+  try {
+    const aiPromise = env.AI.run(model, {
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ],
+      temperature: 0.3,
+      max_tokens: 3072
+    });
+
+    const timeoutPromise = new Promise((_, reject) => {
+      timeoutHandle = setTimeout(() => {
+        const err = new Error('Workers AI request timeout');
+        err.name = 'AbortError';
+        reject(err);
+      }, timeoutMs);
+    });
+
+    aiResult = await Promise.race([aiPromise, timeoutPromise]);
+  } catch (error) {
+    console.error(`[${id}] falha no Cloudflare Workers AI:`, error?.name ?? error);
+    if (error?.name === 'AbortError' || error?.message?.includes('timeout') || error?.message?.includes('aborted')) {
+      return jsonResponse(
+        { error: 'A geração por IA não respondeu a tempo. A ficha atual continua valendo.', code: 'ai_timeout' },
+        504
+      );
+    }
     return jsonResponse(
-      { error: 'A geração por IA não está disponível agora.', code: 'ai_disabled' },
-      503
+      { error: 'A geração por IA falhou. A ficha atual continua valendo.', code: 'ai_upstream_error' },
+      502
+    );
+  } finally {
+    clearTimeout(timeoutHandle);
+  }
+
+  const rawText = typeof aiResult === 'string' ? aiResult : (aiResult?.response ?? '');
+  let parsed;
+  try {
+    parsed = extractJsonFromText(rawText);
+  } catch (error) {
+    console.error(`[${id}] resposta do Workers AI não é JSON utilizável:`, error?.message ?? error);
+    return jsonResponse(
+      { error: 'A resposta da IA veio em formato inesperado.', code: 'ai_bad_response' },
+      502
     );
   }
 
-  const limit = checkRateLimit(request.headers.get('cf-connecting-ip') ?? 'desconhecido');
-  if (!limit.allowed) {
+  if (!parsed || !Array.isArray(parsed.splits) || parsed.splits.length === 0) {
+    console.error(`[${id}] resposta do Workers AI sem splits:`, JSON.stringify(parsed).slice(0, 300));
     return jsonResponse(
-      { error: 'Muitos pedidos seguidos. Tente de novo em instantes.', code: 'rate_limited' },
-      429,
-      { 'retry-after': String(limit.retryAfter) }
+      { error: 'A IA devolveu uma ficha vazia.', code: 'ai_empty_plan' },
+      502
     );
   }
 
-  const body = await readJsonBody(request);
-  if (body.tooLarge) {
-    return jsonResponse({ error: 'Pedido grande demais.', code: 'payload_too_large' }, 413);
-  }
-  if (body.invalid || !body.data) {
-    return jsonResponse({ error: 'Pedido inválido.', code: 'bad_request' }, 400);
-  }
+  return jsonResponse({ plan: parsed }, 200);
+}
 
-  const { profile, catalog, splits } = body.data;
-  if (!Array.isArray(catalog) || catalog.length === 0 || !Array.isArray(splits) || splits.length === 0) {
-    return jsonResponse({ error: 'Perfil ou catálogo ausente.', code: 'bad_request' }, 400);
-  }
-
-  // O nome do usuário não muda a ficha e não precisa sair do aparelho dele.
-  const { userName, ...profileForModel } = profile ?? {};
-  const payload = { profile: profileForModel, catalog, splits };
-
-  // Default por disponibilidade: os lançamentos mais novos (3.6/3.8) estavam
-  // sofrendo 503 "high demand" enquanto o 3.5 respondia de imediato. Operadores
-  // que quiserem o mais recente sobrescrevem com GEMINI_MODEL.
+/**
+ * Executa o agente via proxy do Google Gemini.
+ */
+async function handleGeminiRequest(payload, env, id) {
   const model = env.GEMINI_MODEL || 'gemini-3.5-flash';
   const base = env.GEMINI_API_BASE || 'https://generativelanguage.googleapis.com/v1beta';
   const url = `${base}/models/${encodeURIComponent(model)}:generateContent`;
 
-  // Configurável para o teste não esperar 25s de verdade por um timeout.
   const timeoutMs = Number(env.REQUEST_TIMEOUT_MS) || REQUEST_TIMEOUT_MS;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
@@ -267,8 +323,6 @@ async function handlePlanRequest(request, env) {
   }
 
   if (!upstream.ok) {
-    // O corpo do Gemini pode trazer detalhe da conta. Loga no servidor, responde
-    // genérico: mensagem de erro é a forma mais fácil de vazar informação.
     const detail = await upstream.text().catch(() => '');
     console.error(`[${id}] Gemini respondeu ${upstream.status}: ${detail.slice(0, 500)}`);
     return jsonResponse(
@@ -297,6 +351,53 @@ async function handlePlanRequest(request, env) {
   }
 
   return jsonResponse({ plan: parsed }, 200);
+}
+
+async function handlePlanRequest(request, env) {
+  const id = requestId();
+
+  // Verifica se pelo menos um motor de IA está disponível (Cloudflare Workers AI nativo ou chave Gemini)
+  if (!env.AI && !env.GEMINI_API_KEY) {
+    console.error(`[${id}] Nenhum motor de IA configurado no Worker (nem env.AI nem env.GEMINI_API_KEY)`);
+    return jsonResponse(
+      { error: 'A geração por IA não está disponível agora.', code: 'ai_disabled' },
+      503
+    );
+  }
+
+  const limit = checkRateLimit(request.headers.get('cf-connecting-ip') ?? 'desconhecido');
+  if (!limit.allowed) {
+    return jsonResponse(
+      { error: 'Muitos pedidos seguidos. Tente de novo em instantes.', code: 'rate_limited' },
+      429,
+      { 'retry-after': String(limit.retryAfter) }
+    );
+  }
+
+  const body = await readJsonBody(request);
+  if (body.tooLarge) {
+    return jsonResponse({ error: 'Pedido grande demais.', code: 'payload_too_large' }, 413);
+  }
+  if (body.invalid || !body.data) {
+    return jsonResponse({ error: 'Pedido inválido.', code: 'bad_request' }, 400);
+  }
+
+  const { profile, catalog, splits } = body.data;
+  if (!Array.isArray(catalog) || catalog.length === 0 || !Array.isArray(splits) || splits.length === 0) {
+    return jsonResponse({ error: 'Perfil ou catálogo ausente.', code: 'bad_request' }, 400);
+  }
+
+  // O nome do usuário não muda a ficha e não precisa sair do aparelho dele.
+  const { userName, ...profileForModel } = profile ?? {};
+  const payload = { profile: profileForModel, catalog, splits };
+
+  // Se env.AI estiver configurado (Cloudflare Workers AI nativo e gratuito), prioriza a execução nativa
+  if (env.AI) {
+    return handleWorkersAiRequest(payload, env, id);
+  }
+
+  // Fallback: se houver GEMINI_API_KEY, utiliza o proxy Gemini
+  return handleGeminiRequest(payload, env, id);
 }
 
 export default {

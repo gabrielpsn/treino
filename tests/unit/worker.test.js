@@ -243,6 +243,86 @@ describe('Worker — rota da IA', () => {
   });
 });
 
+describe('Worker — Cloudflare Workers AI nativo (Opção 2 100% gratuita)', () => {
+  const dummyPlan = {
+    rationale: 'Foco em compostos com alta densidade motora.',
+    targetCalories: 2500,
+    proteinGrams: 165,
+    carbsGrams: 280,
+    fatGrams: 70,
+    splits: [
+      {
+        splitId: 'treino-a',
+        focus: 'Peito e Tríceps',
+        exercises: [{ id: 'supino_reto_halteres', sets: 4, reps: '8-10', restSeconds: 90 }]
+      }
+    ]
+  };
+
+  it('executa nativamente via env.AI.run quando binding AI está presente', async () => {
+    const aiRun = vi.fn(async () => ({
+      response: JSON.stringify(dummyPlan)
+    }));
+
+    const response = await worker.fetch(planRequest(), {
+      AI: { run: aiRun },
+      ASSETS: env.ASSETS
+    });
+
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.plan.targetCalories).toBe(2500);
+    expect(body.plan.splits[0].exercises[0].id).toBe('supino_reto_halteres');
+    expect(aiRun).toHaveBeenCalled();
+    expect(aiRun.mock.calls[0][0]).toBe('@cf/meta/llama-3.1-8b-instruct');
+  });
+
+  it('aceita resposta do Workers AI com cercas de markdown (```json ... ```)', async () => {
+    const aiRun = vi.fn(async () => ({
+      response: '```json\n' + JSON.stringify(dummyPlan) + '\n```'
+    }));
+
+    const response = await worker.fetch(planRequest(), {
+      AI: { run: aiRun },
+      ASSETS: env.ASSETS
+    });
+
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.plan.proteinGrams).toBe(165);
+  });
+
+  it('rejeita resposta vazia do Workers AI', async () => {
+    const aiRun = vi.fn(async () => ({
+      response: JSON.stringify({ splits: [] })
+    }));
+
+    const response = await worker.fetch(planRequest(), {
+      AI: { run: aiRun },
+      ASSETS: env.ASSETS
+    });
+
+    expect(response.status).toBe(502);
+    expect((await response.json()).code).toBe('ai_empty_plan');
+  });
+
+  it('traduz timeout ou falha do Workers AI em status HTTP adequado', async () => {
+    const aiRun = vi.fn(async () => {
+      const err = new Error('Workers AI request timeout');
+      err.name = 'AbortError';
+      throw err;
+    });
+
+    const response = await worker.fetch(planRequest(), {
+      AI: { run: aiRun },
+      ASSETS: env.ASSETS
+    });
+
+    expect(response.status).toBe(504);
+    expect((await response.json()).code).toBe('ai_timeout');
+  });
+});
+
 describe('Worker — o resto é app estático', () => {
   it('repassa qualquer outra rota para os assets', async () => {
     const assets = { fetch: vi.fn(async () => new Response('treino')) };
