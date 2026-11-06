@@ -91,8 +91,8 @@
           </div>
 
           <div class="flex gap-3">
-            <div class="flex items-center gap-2 bg-slate-950 px-3 py-2.5 rounded-xl border border-slate-800 flex-1">
-              <label for="training-input-weight" class="text-xs text-slate-500 font-medium">Carga:</label>
+            <div class="flex items-center gap-2 bg-slate-950 px-3 py-2.5 rounded-xl border-2 border-slate-600 focus-within:border-amber-400 focus-within:ring-2 focus-within:ring-amber-500/30 flex-1">
+              <label for="training-input-weight" class="text-xs text-slate-200 font-bold uppercase tracking-wider">Carga:</label>
               <input
                 id="training-input-weight"
                 type="number"
@@ -103,13 +103,13 @@
                 aria-label="Carga em kg do exercício atual"
                 :value="activeSetWeight"
                 @input="onWeightInput"
-                class="w-full min-w-0 bg-transparent text-amber-300 text-base font-bold text-right focus:outline-none"
+                class="w-full min-w-0 bg-transparent text-amber-300 text-base font-extrabold text-right focus:outline-none"
               />
-              <span class="text-xs text-slate-500">kg</span>
+              <span class="text-xs text-slate-300 font-bold">kg</span>
             </div>
 
-            <div class="flex items-center gap-2 bg-slate-950 px-3 py-2.5 rounded-xl border border-slate-800 flex-1">
-              <label for="training-input-reps" class="text-xs text-slate-500 font-medium">Reps:</label>
+            <div class="flex items-center gap-2 bg-slate-950 px-3 py-2.5 rounded-xl border-2 border-slate-600 focus-within:border-amber-400 focus-within:ring-2 focus-within:ring-amber-500/30 flex-1">
+              <label for="training-input-reps" class="text-xs text-slate-200 font-bold uppercase tracking-wider">Reps:</label>
               <input
                 id="training-input-reps"
                 type="number"
@@ -120,12 +120,12 @@
                 aria-label="Repetições do exercício atual"
                 :value="activeSetReps"
                 @input="onRepsInput"
-                class="w-full min-w-0 bg-transparent text-amber-300 text-base font-bold text-right focus:outline-none"
+                class="w-full min-w-0 bg-transparent text-amber-300 text-base font-extrabold text-right focus:outline-none"
               />
             </div>
 
-            <div class="flex items-center gap-2 bg-slate-950 px-3 py-2.5 rounded-xl border border-slate-800 w-24">
-              <label for="training-input-rir" class="text-xs text-slate-500 font-medium">RIR:</label>
+            <div class="flex items-center gap-2 bg-slate-950 px-3 py-2.5 rounded-xl border-2 border-slate-600 focus-within:border-amber-400 focus-within:ring-2 focus-within:ring-amber-500/30 w-24">
+              <label for="training-input-rir" class="text-xs text-slate-200 font-bold uppercase tracking-wider">RIR:</label>
               <input
                 id="training-input-rir"
                 type="number"
@@ -136,7 +136,7 @@
                 aria-label="RIR (reps em reserva) do exercício atual"
                 :value="activeSetRir"
                 @input="onRirInput"
-                class="w-full min-w-0 bg-transparent text-amber-300 text-base font-bold text-right focus:outline-none"
+                class="w-full min-w-0 bg-transparent text-amber-300 text-base font-extrabold text-right focus:outline-none"
               />
             </div>
           </div>

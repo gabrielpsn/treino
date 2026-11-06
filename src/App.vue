@@ -295,7 +295,19 @@
               :class="currentSplitTab === split.id ? (isWeightLoss ? 'bg-rose-500 text-white font-black shadow' : 'bg-amber-500 text-slate-950 font-black shadow') : 'text-slate-400 hover:text-white'"
               class="tap-btn px-3.5 py-1.5 rounded-xl text-xs md:text-sm font-bold transition-all flex-shrink-0"
             >
-              {{ split.title.split(' ')[0] }} {{ split.title.split(' ')[1] }}
+              {{ getSplitTabLabel(split.title) }}
+            </button>
+
+            <!-- Botão para o usuário criar sua própria ficha de treino -->
+            <button
+              type="button"
+              id="btn-open-create-split"
+              @click="openCreateSplitModal"
+              class="tap-btn px-3 py-1.5 rounded-xl text-xs md:text-sm font-bold border-2 border-dashed border-amber-500/60 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 hover:border-amber-400 transition-all flex items-center gap-1 flex-shrink-0"
+              title="Criar sua própria ficha de treino personalizada"
+            >
+              <span aria-hidden="true">➕</span>
+              <span>Criar Ficha</span>
             </button>
 
             <button
@@ -412,7 +424,30 @@
               </div>
 
               <!-- Botões de ação do split -->
-              <div class="flex items-center gap-2 self-end sm:self-auto flex-shrink-0">
+              <div class="flex items-center gap-2 self-end sm:self-auto flex-shrink-0 flex-wrap">
+                <button
+                  type="button"
+                  :id="`btn-edit-split-${split.id}`"
+                  @click="openEditSplitModal(split)"
+                  class="tap-btn px-2.5 py-1.5 rounded-xl text-xs font-semibold border-2 border-slate-700 bg-slate-900 text-slate-300 hover:text-white hover:border-slate-500 transition-colors flex items-center gap-1"
+                  title="Editar nome e cor desta ficha"
+                >
+                  <span aria-hidden="true">✏️</span>
+                  <span class="hidden sm:inline">Editar</span>
+                </button>
+
+                <button
+                  v-if="activePlan?.workoutSplits?.length > 1"
+                  type="button"
+                  :id="`btn-delete-split-${split.id}`"
+                  @click="askDeleteSplit(split)"
+                  class="tap-btn px-2.5 py-1.5 rounded-xl text-xs font-semibold border-2 border-rose-500/40 bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 hover:border-rose-400 transition-colors flex items-center gap-1"
+                  title="Excluir esta ficha de treino"
+                >
+                  <span aria-hidden="true">🗑</span>
+                  <span class="hidden sm:inline">Excluir</span>
+                </button>
+
                 <button
                   type="button"
                   :id="`btn-group-by-muscle-${split.id}`"
@@ -421,8 +456,7 @@
                   title="Organizar e agrupar exercícios por grupo muscular"
                 >
                   <span aria-hidden="true">⚡</span>
-                  <span class="hidden sm:inline">Agrupar por Músculo</span>
-                  <span class="sm:hidden">Agrupar</span>
+                  <span class="hidden sm:inline">Agrupar</span>
                 </button>
 
                 <button
@@ -433,6 +467,37 @@
                   title="Adicionar um exercício a esta ficha"
                 >
                   + Adicionar exercício
+                </button>
+              </div>
+            </div>
+
+            <!-- Confirmação de Exclusão da Ficha -->
+            <div
+              v-if="pendingDeleteSplit?.id === split.id"
+              :id="`confirm-delete-split-${split.id}`"
+              class="p-4 rounded-2xl bg-rose-500/10 border-2 border-rose-500/50 shadow-xl"
+              role="alertdialog"
+              :aria-label="`Confirmar exclusão da ficha ${split.title}`"
+            >
+              <p class="text-xs sm:text-sm font-bold text-rose-100 mb-2.5">
+                Tem certeza que deseja excluir a ficha <strong>{{ split.title }}</strong>? Os exercícios serão removidos desta rotina.
+              </p>
+              <div class="flex gap-2.5">
+                <button
+                  type="button"
+                  :id="`btn-confirm-delete-split-${split.id}`"
+                  @click="confirmDeleteSplit(split.id)"
+                  class="min-h-11 px-4 rounded-xl bg-rose-500 text-white text-xs font-black hover:bg-rose-400 active:bg-rose-600 transition-colors"
+                >
+                  Sim, excluir ficha
+                </button>
+                <button
+                  type="button"
+                  :id="`btn-cancel-delete-split-${split.id}`"
+                  @click="pendingDeleteSplit = null"
+                  class="min-h-11 px-4 rounded-xl bg-slate-800 text-slate-200 text-xs font-bold hover:bg-slate-700 active:bg-slate-600 transition-colors"
+                >
+                  Cancelar
                 </button>
               </div>
             </div>
@@ -670,8 +735,11 @@
                 <!-- Lado Direito: Inputs de Carga e Reps (Ocultos se for Cardio Contínuo) -->
                 <div v-if="ex.muscle !== 'cardio'" class="flex flex-col gap-2 self-end md:self-auto w-full md:w-auto">
                   <div class="flex flex-wrap items-center gap-2 sm:gap-3">
-                    <div class="flex items-center gap-2 bg-slate-950 px-3 py-2 rounded-xl border border-slate-800 flex-1 md:flex-initial">
-                      <label :for="`input-weight-${ex.id}`" class="text-xs text-slate-500 font-medium">Carga:</label>
+                    <div
+                      class="flex items-center gap-2 bg-slate-900 px-3 py-2 rounded-xl border-2 border-slate-600 flex-1 md:flex-initial transition-all"
+                      :class="isWeightLoss ? 'focus-within:border-rose-400 focus-within:ring-2 focus-within:ring-rose-500/20' : 'focus-within:border-amber-400 focus-within:ring-2 focus-within:ring-amber-500/20'"
+                    >
+                      <label :for="`input-weight-${ex.id}`" class="text-xs text-slate-200 font-bold uppercase tracking-wider">Carga:</label>
                       <input 
                         :id="`input-weight-${ex.id}`"
                         type="number" 
@@ -683,13 +751,16 @@
                         :value="workoutLogs[ex.id]?.weight"
                         @input="e => updateLog(ex.id, split.id, 'weight', e.target.value)"
                         :class="isWeightLoss ? 'text-rose-300' : 'text-amber-300'"
-                        class="log-input w-16 text-sm font-bold text-right focus:outline-none focus:text-white"
+                        class="log-input w-16 text-base font-extrabold text-right focus:outline-none focus:text-white"
                       />
-                      <span class="text-xs text-slate-500">kg</span>
+                      <span class="text-xs text-slate-300 font-bold">kg</span>
                     </div>
 
-                    <div class="flex items-center gap-2 bg-slate-950 px-3 py-2 rounded-xl border border-slate-800 flex-1 md:flex-initial">
-                      <label :for="`input-reps-${ex.id}`" class="text-xs text-slate-500 font-medium">Reps:</label>
+                    <div
+                      class="flex items-center gap-2 bg-slate-900 px-3 py-2 rounded-xl border-2 border-slate-600 flex-1 md:flex-initial transition-all"
+                      :class="isWeightLoss ? 'focus-within:border-rose-400 focus-within:ring-2 focus-within:ring-rose-500/20' : 'focus-within:border-amber-400 focus-within:ring-2 focus-within:ring-amber-500/20'"
+                    >
+                      <label :for="`input-reps-${ex.id}`" class="text-xs text-slate-200 font-bold uppercase tracking-wider">Reps:</label>
                       <input 
                         :id="`input-reps-${ex.id}`"
                         type="number" 
@@ -701,13 +772,16 @@
                         :value="workoutLogs[ex.id]?.reps"
                         @input="e => updateLog(ex.id, split.id, 'reps', e.target.value)"
                         :class="isWeightLoss ? 'text-rose-300' : 'text-amber-300'"
-                        class="log-input w-12 text-sm font-bold text-right focus:outline-none focus:text-white"
+                        class="log-input w-12 text-base font-extrabold text-right focus:outline-none focus:text-white"
                       />
                     </div>
 
                     <!-- RIR: reps em reserva do último esforço. -->
-                    <div class="flex items-center gap-2 bg-slate-950 px-3 py-2 rounded-xl border border-slate-800 flex-1 md:flex-initial">
-                      <label :for="`input-rir-${ex.id}`" class="text-xs text-slate-500 font-medium">RIR:</label>
+                    <div
+                      class="flex items-center gap-2 bg-slate-900 px-3 py-2 rounded-xl border-2 border-slate-600 flex-1 md:flex-initial transition-all"
+                      :class="isWeightLoss ? 'focus-within:border-rose-400 focus-within:ring-2 focus-within:ring-rose-500/20' : 'focus-within:border-amber-400 focus-within:ring-2 focus-within:ring-amber-500/20'"
+                    >
+                      <label :for="`input-rir-${ex.id}`" class="text-xs text-slate-200 font-bold uppercase tracking-wider">RIR:</label>
                       <input
                         :id="`input-rir-${ex.id}`"
                         type="number"
@@ -719,7 +793,7 @@
                         :value="workoutLogs[ex.id]?.rir"
                         @input="e => updateLog(ex.id, split.id, 'rir', e.target.value)"
                         :class="isWeightLoss ? 'text-rose-300' : 'text-amber-300'"
-                        class="log-input w-10 text-sm font-bold text-right focus:outline-none focus:text-white"
+                        class="log-input w-10 text-base font-extrabold text-right focus:outline-none focus:text-white"
                       />
                     </div>
 
@@ -727,7 +801,7 @@
                       type="button"
                       :id="`btn-add-set-${ex.id}`"
                       @click="addExerciseSet(ex.id, split.id)"
-                      class="tap-btn px-2.5 py-2 rounded-xl text-xs font-bold border border-slate-800 bg-slate-950/80 hover:bg-slate-800 text-slate-300 hover:text-white transition-colors flex items-center gap-1"
+                      class="tap-btn px-2.5 py-2 rounded-xl text-xs font-bold border-2 border-slate-600 bg-slate-900 hover:bg-slate-800 text-slate-200 hover:text-white transition-colors flex items-center gap-1 shadow-sm"
                       title="Adicionar mais uma série para este exercício"
                     >
                       <span aria-hidden="true">+</span> Série
@@ -1442,6 +1516,18 @@
       </div>
     </div>
 
+    <!-- Modal de Criação / Edição de Ficha Personalizada -->
+    <CreateSplitModal
+      :is-open="isCreateSplitOpen"
+      :existing-splits="activePlan?.workoutSplits || []"
+      :catalog="fullCatalog"
+      :editing-split="editingSplitTarget"
+      :is-weight-loss="isWeightLoss"
+      @close="isCreateSplitOpen = false"
+      @create="handleSplitCreated"
+      @update="handleSplitUpdated"
+    />
+
     <!-- Aviso de Nova Versão do PWA -->
     <VersionUpdatePrompt
       :visible="pwa.needRefresh.value"
@@ -1470,6 +1556,7 @@ import TrainingMode from './components/TrainingMode.vue';
 import ExercisePickerModal from './components/ExercisePickerModal.vue';
 import CustomExercisesModal from './components/CustomExercisesModal.vue';
 import BackupImportModal from './components/BackupImportModal.vue';
+import CreateSplitModal from './components/CreateSplitModal.vue';
 import VersionUpdatePrompt from './components/VersionUpdatePrompt.vue';
 import { usePwaUpdate } from './composables/usePwaUpdate';
 import {
@@ -1554,6 +1641,129 @@ const storageError = ref(null);
 function reportStorageError(message, err) {
   console.error(message, err);
   storageError.value = message;
+}
+
+// Criação e Gerenciamento de Fichas Customizadas pelo Usuário
+const isCreateSplitOpen = ref(false);
+const editingSplitTarget = ref(null);
+const pendingDeleteSplit = ref(null);
+
+function openCreateSplitModal() {
+  editingSplitTarget.value = null;
+  isCreateSplitOpen.value = true;
+}
+
+function openEditSplitModal(split) {
+  editingSplitTarget.value = split;
+  isCreateSplitOpen.value = true;
+}
+
+function askDeleteSplit(split) {
+  pendingDeleteSplit.value = split;
+}
+
+async function handleSplitCreated({ title, subtitle, color, accentBg, exercises = [] }) {
+  isCreateSplitOpen.value = false;
+  if (!activePlan.value) return;
+
+  const splitId = 'treino-custom-' + Date.now().toString(36);
+  const cleanExercises = Array.isArray(exercises)
+    ? exercises.map(e => ({
+        id: e.id,
+        name: e.name,
+        muscle: e.muscle,
+        series: Number(e.series) || 3,
+        reps: e.reps || '8-12',
+        rest: Number(e.rest) || 60,
+        pattern: e.pattern || 'custom',
+        tips: e.tips || '',
+        imageUrl: e.imageUrl || ''
+      }))
+    : [];
+
+  const newSplit = {
+    id: splitId,
+    title,
+    subtitle: subtitle || 'Ficha personalizada pelo atleta',
+    color: color || 'amber',
+    accentBg: accentBg || 'bg-amber-500/10 border-amber-500/20 text-amber-300',
+    exercises: cleanExercises
+  };
+
+  const nextSnapshot = JSON.parse(JSON.stringify({
+    ...activePlan.value,
+    workoutSplits: [...(activePlan.value.workoutSplits || []), newSplit]
+  }));
+
+  const ok = await persistOrReport('Não foi possível criar a nova ficha de treino.', async () => {
+    await db.active_plan.put(nextSnapshot);
+  });
+
+  if (ok) {
+    activePlan.value = nextSnapshot;
+    currentSplitTab.value = splitId;
+  }
+}
+
+async function handleSplitUpdated({ splitId, title, subtitle, color, accentBg }) {
+  isCreateSplitOpen.value = false;
+  editingSplitTarget.value = null;
+  if (!activePlan.value) return;
+
+  const nextSnapshot = JSON.parse(JSON.stringify(activePlan.value));
+  const split = nextSnapshot.workoutSplits.find(s => s.id === splitId);
+  if (!split) return;
+
+  split.title = title;
+  split.subtitle = subtitle;
+  split.color = color;
+  split.accentBg = accentBg;
+
+  const ok = await persistOrReport('Não foi possível atualizar a ficha.', async () => {
+    await db.active_plan.put(nextSnapshot);
+  });
+
+  if (ok) {
+    activePlan.value = nextSnapshot;
+  }
+}
+
+async function confirmDeleteSplit(splitId) {
+  pendingDeleteSplit.value = null;
+  if (!activePlan.value || activePlan.value.workoutSplits.length <= 1) return;
+
+  const splitToDelete = activePlan.value.workoutSplits.find(s => s.id === splitId);
+  const removedExerciseIds = splitToDelete ? splitToDelete.exercises.map(e => e.id) : [];
+
+  const nextSnapshot = JSON.parse(JSON.stringify(activePlan.value));
+  nextSnapshot.workoutSplits = nextSnapshot.workoutSplits.filter(s => s.id !== splitId);
+
+  const ok = await persistOrReport('Não foi possível excluir a ficha.', async () => {
+    for (const id of removedExerciseIds) {
+      await db.workout_logs.delete(id);
+    }
+    await db.active_plan.put(nextSnapshot);
+  });
+
+  if (ok) {
+    activePlan.value = nextSnapshot;
+    if (currentSplitTab.value === splitId) {
+      currentSplitTab.value = nextSnapshot.workoutSplits[0]?.id || 'treino-a';
+    }
+  }
+}
+
+function getSplitTabLabel(title) {
+  if (!title) return '';
+  // Se for no formato clássico "Treino A (Descrição...)" ou "Treino 1..."
+  const match = title.match(/^(Treino\s+[A-Za-z0-9]\b)/i);
+  if (match) return match[1];
+  // Se já for curto (até 18 caracteres), exibe o título completo
+  if (title.length <= 18) return title;
+  // Caso contrário, usa as 2 primeiras palavras
+  const words = title.trim().split(/\s+/);
+  if (words.length <= 2) return title;
+  return `${words[0]} ${words[1]}`;
 }
 
 // Referências
@@ -2874,8 +3084,10 @@ async function handleExportJSON() {
   const a = document.createElement('a');
   a.href = url;
   a.download = backupFileName();
+  document.body.appendChild(a);
   a.click();
-  URL.revokeObjectURL(url);
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 // ---------------------------------------------------------------------------

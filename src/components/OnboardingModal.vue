@@ -72,7 +72,7 @@
 
         <!-- Solicitação do Nome do Usuário -->
         <div>
-          <label for="input-user-name" class="block text-xs font-semibold text-slate-400 mb-1">Como devemos te chamar? (Seu Nome)</label>
+          <label for="input-user-name" class="block text-xs font-bold text-slate-200 mb-1">Como devemos te chamar? (Seu Nome)</label>
           <input 
             id="input-user-name"
             v-model="form.userName" 
@@ -81,10 +81,10 @@
             placeholder="Ex: Gabriel, Mariana, Patricia..." 
             :aria-invalid="!!errors.userName"
             :aria-describedby="errors.userName ? 'error-user-name' : undefined"
-            class="w-full bg-slate-950 border rounded-xl px-4 py-2.5 text-white font-semibold focus:outline-none transition-colors"
-            :class="errors.userName ? 'border-rose-500 focus:border-rose-400' : 'border-slate-800 focus:border-amber-500'"
+            class="w-full bg-slate-950 border-2 rounded-xl px-4 py-2.5 text-white font-bold placeholder:text-slate-400 focus:outline-none transition-colors"
+            :class="errors.userName ? 'border-rose-500 focus:border-rose-400' : 'border-slate-600 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20'"
           />
-          <p v-if="errors.userName" id="error-user-name" class="text-[11px] text-rose-400 mt-1">{{ errors.userName }}</p>
+          <p v-if="errors.userName" id="error-user-name" class="text-[11px] font-bold text-rose-400 mt-1">{{ errors.userName }}</p>
         </div>
 
         <!-- Escolha do Objetivo Principal -->
@@ -204,7 +204,7 @@
 
         <div class="grid grid-cols-3 gap-3">
           <div>
-            <label for="input-age" class="block text-xs font-semibold text-slate-400 mb-1">Idade (anos)</label>
+            <label for="input-age" class="block text-xs font-bold text-slate-200 mb-1">Idade (anos)</label>
             <input 
               id="input-age"
               v-model.number="form.ageYears" 
@@ -213,13 +213,13 @@
               max="100" 
               :aria-invalid="!!errors.ageYears"
               :aria-describedby="errors.ageYears ? 'error-age' : undefined"
-              class="w-full bg-slate-950 border rounded-xl px-3 py-2.5 text-white font-semibold focus:outline-none"
-              :class="errors.ageYears ? 'border-rose-500 focus:border-rose-400' : 'border-slate-800 focus:border-amber-500'"
+              class="w-full bg-slate-950 border-2 rounded-xl px-3 py-2.5 text-white font-bold focus:outline-none"
+              :class="errors.ageYears ? 'border-rose-500 focus:border-rose-400' : 'border-slate-600 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20'"
             />
-            <p v-if="errors.ageYears" id="error-age" class="text-[11px] text-rose-400 mt-1">{{ errors.ageYears }}</p>
+            <p v-if="errors.ageYears" id="error-age" class="text-[11px] font-bold text-rose-400 mt-1">{{ errors.ageYears }}</p>
           </div>
           <div>
-            <label for="input-weight" class="block text-xs font-semibold text-slate-400 mb-1">Peso (kg)</label>
+            <label for="input-weight" class="block text-xs font-bold text-slate-200 mb-1">Peso (kg)</label>
             <input 
               id="input-weight"
               v-model.number="form.weightKg" 
@@ -229,13 +229,13 @@
               max="300" 
               :aria-invalid="!!errors.weightKg"
               :aria-describedby="errors.weightKg ? 'error-weight' : undefined"
-              class="w-full bg-slate-950 border rounded-xl px-3 py-2.5 text-white font-semibold focus:outline-none"
-              :class="errors.weightKg ? 'border-rose-500 focus:border-rose-400' : 'border-slate-800 focus:border-amber-500'"
+              class="w-full bg-slate-950 border-2 rounded-xl px-3 py-2.5 text-white font-bold focus:outline-none"
+              :class="errors.weightKg ? 'border-rose-500 focus:border-rose-400' : 'border-slate-600 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20'"
             />
-            <p v-if="errors.weightKg" id="error-weight" class="text-[11px] text-rose-400 mt-1">{{ errors.weightKg }}</p>
+            <p v-if="errors.weightKg" id="error-weight" class="text-[11px] font-bold text-rose-400 mt-1">{{ errors.weightKg }}</p>
           </div>
           <div>
-            <label for="input-height" class="block text-xs font-semibold text-slate-400 mb-1">Altura (cm)</label>
+            <label for="input-height" class="block text-xs font-bold text-slate-200 mb-1">Altura (cm)</label>
             <input 
               id="input-height"
               v-model.number="form.heightCm" 
@@ -244,10 +244,10 @@
               max="230" 
               :aria-invalid="!!errors.heightCm"
               :aria-describedby="errors.heightCm ? 'error-height' : undefined"
-              class="w-full bg-slate-950 border rounded-xl px-3 py-2.5 text-white font-semibold focus:outline-none"
-              :class="errors.heightCm ? 'border-rose-500 focus:border-rose-400' : 'border-slate-800 focus:border-amber-500'"
+              class="w-full bg-slate-950 border-2 rounded-xl px-3 py-2.5 text-white font-bold focus:outline-none"
+              :class="errors.heightCm ? 'border-rose-500 focus:border-rose-400' : 'border-slate-600 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20'"
             />
-            <p v-if="errors.heightCm" id="error-height" class="text-[11px] text-rose-400 mt-1">{{ errors.heightCm }}</p>
+            <p v-if="errors.heightCm" id="error-height" class="text-[11px] font-bold text-rose-400 mt-1">{{ errors.heightCm }}</p>
           </div>
         </div>
       </div>

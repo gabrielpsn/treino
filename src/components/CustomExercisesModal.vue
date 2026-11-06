@@ -2,7 +2,7 @@
   <div
     v-if="isOpen"
     id="custom-exercises-overlay"
-    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto"
+    class="fixed inset-0 z-50 flex justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto"
     role="dialog"
     aria-modal="true"
     aria-labelledby="custom-exercises-title"
@@ -10,7 +10,7 @@
   >
     <div
       id="custom-exercises-modal"
-      class="relative w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl my-8"
+      class="relative w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl my-auto"
       tabindex="-1"
       @keydown.esc="emit('close')"
     >
@@ -132,7 +132,7 @@
         </h3>
 
         <div>
-          <label for="input-custom-name" class="block text-xs font-semibold text-slate-300 mb-1">Nome</label>
+          <label for="input-custom-name" class="block text-xs font-bold text-slate-200 mb-1">Nome</label>
           <input
             id="input-custom-name"
             v-model="form.name"
@@ -140,39 +140,39 @@
             :aria-invalid="!!errors.name"
             :aria-describedby="errors.name ? 'error-custom-name' : undefined"
             placeholder="Ex.: Supino na Arquinha"
-            class="w-full bg-slate-950 border rounded-xl px-3 py-2 text-sm text-white"
-            :class="errors.name ? 'border-rose-500/60' : 'border-slate-800'"
+            class="w-full bg-slate-950 border-2 rounded-xl px-3.5 py-2.5 text-sm text-white font-bold placeholder:text-slate-400 focus:outline-none transition-colors"
+            :class="errors.name ? 'border-rose-500 focus:border-rose-400' : 'border-slate-600 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20'"
           />
-          <p v-if="errors.name" id="error-custom-name" class="text-[11px] text-rose-400 mt-1">{{ errors.name }}</p>
+          <p v-if="errors.name" id="error-custom-name" class="text-[11px] font-bold text-rose-400 mt-1">{{ errors.name }}</p>
         </div>
 
         <div class="grid gap-4 sm:grid-cols-2">
           <div>
-            <label for="select-custom-muscle" class="block text-xs font-semibold text-slate-300 mb-1">Grupo muscular</label>
+            <label for="select-custom-muscle" class="block text-xs font-bold text-slate-200 mb-1">Grupo muscular</label>
             <select
               id="select-custom-muscle"
               v-model="form.muscle"
-              class="w-full bg-slate-950 border rounded-xl px-3 py-2 text-sm text-white"
-              :class="errors.muscle ? 'border-rose-500/60' : 'border-slate-800'"
+              class="w-full bg-slate-950 border-2 rounded-xl px-3.5 py-2.5 text-sm text-white font-bold focus:outline-none"
+              :class="errors.muscle ? 'border-rose-500' : 'border-slate-600 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20'"
             >
               <option value="" disabled>Selecione</option>
               <option v-for="m in muscleOptions" :key="m" :value="m">{{ muscleLabels[m] }}</option>
             </select>
-            <p v-if="errors.muscle" class="text-[11px] text-rose-400 mt-1">{{ errors.muscle }}</p>
+            <p v-if="errors.muscle" class="text-[11px] font-bold text-rose-400 mt-1">{{ errors.muscle }}</p>
           </div>
 
           <div>
-            <label for="select-custom-pattern" class="block text-xs font-semibold text-slate-300 mb-1">Padrão de movimento</label>
+            <label for="select-custom-pattern" class="block text-xs font-bold text-slate-200 mb-1">Padrão de movimento</label>
             <select
               id="select-custom-pattern"
               v-model="form.pattern"
-              class="w-full bg-slate-950 border rounded-xl px-3 py-2 text-sm text-white"
-              :class="errors.pattern ? 'border-rose-500/60' : 'border-slate-800'"
+              class="w-full bg-slate-950 border-2 rounded-xl px-3.5 py-2.5 text-sm text-white font-bold focus:outline-none"
+              :class="errors.pattern ? 'border-rose-500' : 'border-slate-600 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20'"
             >
               <option value="" disabled>Selecione</option>
               <option v-for="p in availablePatterns" :key="p" :value="p">{{ patternLabels[p] || p }}</option>
             </select>
-            <p v-if="errors.pattern" class="text-[11px] text-rose-400 mt-1">{{ errors.pattern }}</p>
+            <p v-if="errors.pattern" class="text-[11px] font-bold text-rose-400 mt-1">{{ errors.pattern }}</p>
           </div>
         </div>
 
@@ -223,45 +223,45 @@
 
         <div class="grid gap-4 sm:grid-cols-2">
           <div>
-            <label for="input-custom-series" class="block text-xs font-semibold text-slate-300 mb-1">Séries</label>
+            <label for="input-custom-series" class="block text-xs font-bold text-slate-200 mb-1">Séries</label>
             <input
               id="input-custom-series"
               v-model="form.defaultSeries"
               type="text"
               :aria-invalid="!!errors.defaultSeries"
               placeholder="3x 10-12 reps"
-              class="w-full bg-slate-950 border rounded-xl px-3 py-2 text-sm text-white"
-              :class="errors.defaultSeries ? 'border-rose-500/60' : 'border-slate-800'"
+              class="w-full bg-slate-950 border-2 rounded-xl px-3.5 py-2.5 text-sm text-white font-bold placeholder:text-slate-400 focus:outline-none"
+              :class="errors.defaultSeries ? 'border-rose-500' : 'border-slate-600 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20'"
             />
-            <p v-if="errors.defaultSeries" class="text-[11px] text-rose-400 mt-1">{{ errors.defaultSeries }}</p>
+            <p v-if="errors.defaultSeries" class="text-[11px] font-bold text-rose-400 mt-1">{{ errors.defaultSeries }}</p>
           </div>
 
           <div>
-            <label for="input-custom-rest" class="block text-xs font-semibold text-slate-300 mb-1">Descanso</label>
+            <label for="input-custom-rest" class="block text-xs font-bold text-slate-200 mb-1">Descanso</label>
             <input
               id="input-custom-rest"
               v-model="form.rest"
               type="text"
               :aria-invalid="!!errors.rest"
               placeholder="60s"
-              class="w-full bg-slate-950 border rounded-xl px-3 py-2 text-sm text-white"
-              :class="errors.rest ? 'border-rose-500/60' : 'border-slate-800'"
+              class="w-full bg-slate-950 border-2 rounded-xl px-3.5 py-2.5 text-sm text-white font-bold placeholder:text-slate-400 focus:outline-none"
+              :class="errors.rest ? 'border-rose-500' : 'border-slate-600 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20'"
             />
-            <p v-if="errors.rest" class="text-[11px] text-rose-400 mt-1">{{ errors.rest }}</p>
+            <p v-if="errors.rest" class="text-[11px] font-bold text-rose-400 mt-1">{{ errors.rest }}</p>
           </div>
         </div>
 
         <div>
-          <label for="input-custom-tips" class="block text-xs font-semibold text-slate-300 mb-1">Dica de execução</label>
+          <label for="input-custom-tips" class="block text-xs font-bold text-slate-200 mb-1">Dica de execução</label>
           <textarea
             id="input-custom-tips"
             v-model="form.tips"
             rows="2"
             maxlength="240"
             placeholder="Apoio, amplitude, erro comum..."
-            class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white resize-y"
-          />
-          <p v-if="errors.tips" class="text-[11px] text-rose-400 mt-1">{{ errors.tips }}</p>
+            class="w-full bg-slate-950 border-2 border-slate-600 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 rounded-xl px-3.5 py-2.5 text-sm text-white font-semibold placeholder:text-slate-400 focus:outline-none resize-y"
+          ></textarea>
+          <p v-if="errors.tips" class="text-[11px] font-bold text-rose-400 mt-1">{{ errors.tips }}</p>
         </div>
 
         <div class="flex items-center gap-2 pt-2">
