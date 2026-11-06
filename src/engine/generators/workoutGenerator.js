@@ -295,8 +295,8 @@ export function generateWorkoutSplit(profile) {
       accentBg: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300',
       exercises: buildExerciseList([
         { muscle: 'quadriceps', pattern: 'squat' },
-        { muscle: 'quadriceps', pattern: 'leg_press' },
         { muscle: 'quadriceps', pattern: 'leg_extension' },
+        { muscle: 'posterior', pattern: 'hinge' },
         { muscle: 'posterior', pattern: 'leg_curl' },
         { muscle: 'gluteos', pattern: 'hip_thrust' },
         { muscle: 'panturrilha', pattern: 'calf_raise' }

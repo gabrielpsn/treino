@@ -177,7 +177,7 @@
     </div>
 
     <!-- Conteúdo Principal -->
-    <main class="max-w-5xl mx-auto px-4 py-6 pb-20 flex-1 w-full space-y-6">
+    <main class="max-w-5xl mx-auto px-4 py-6 pb-28 md:pb-20 flex-1 w-full space-y-6">
 
       <!-- BANNER DE BOAS-VINDAS / RESUMO INTELIGENTE -->
       <div v-if="activePlan?.physiology" id="banner-physiology-summary" class="bg-gradient-to-r from-slate-900 via-slate-900/90 to-slate-900 border border-slate-800/80 rounded-2xl p-4 sm:p-5 shadow-xl flex flex-wrap items-center justify-between gap-4">
@@ -286,14 +286,14 @@
             <p class="text-xs text-slate-400">Anote os pesos de hoje. O app salva automaticamente e exibe seu histórico para o próximo treino.</p>
           </div>
 
-          <div class="flex flex-wrap items-center gap-1.5 bg-slate-900 p-1.5 rounded-2xl border border-slate-800">
+          <div class="flex flex-wrap items-center gap-1.5 bg-slate-900 p-1.5 rounded-2xl border border-slate-800 max-w-full">
             <button 
               v-for="split in activePlan?.workoutSplits" 
               :key="split.id"
               :id="`btn-split-${split.id}`"
               @click="currentSplitTab = split.id"
               :class="currentSplitTab === split.id ? (isWeightLoss ? 'bg-rose-500 text-white font-black shadow' : 'bg-amber-500 text-slate-950 font-black shadow') : 'text-slate-400 hover:text-white'"
-              class="tap-btn px-3.5 py-1.5 rounded-xl text-xs md:text-sm font-bold transition-all"
+              class="tap-btn px-3.5 py-1.5 rounded-xl text-xs md:text-sm font-bold transition-all flex-shrink-0"
             >
               {{ split.title.split(' ')[0] }} {{ split.title.split(' ')[1] }}
             </button>
@@ -302,7 +302,7 @@
               type="button"
               id="btn-open-custom-exercises"
               @click="openCustomExercises"
-              class="tap-btn px-3 py-1.5 rounded-xl text-xs font-bold border border-slate-700 text-slate-300 hover:text-white hover:border-slate-500 transition-all"
+              class="tap-btn px-3 py-1.5 rounded-xl text-xs font-bold border border-slate-700 text-slate-300 hover:text-white hover:border-slate-500 transition-all flex-shrink-0"
               title="Criar e gerenciar seus próprios exercícios"
             >
               + Meus exercícios
@@ -315,7 +315,7 @@
               type="button"
               id="btn-open-training-mode"
               @click="openTrainingMode"
-              class="tap-btn px-3 py-1.5 rounded-xl text-xs font-bold border border-amber-500/50 text-amber-300 hover:text-white hover:border-amber-400 transition-all"
+              class="tap-btn px-3 py-1.5 rounded-xl text-xs font-bold border border-amber-500/50 text-amber-300 hover:text-white hover:border-amber-400 transition-all flex-shrink-0"
               title="Abrir o modo treino em tela cheia"
             >
               <span aria-hidden="true">▶</span> Modo Treino
@@ -326,7 +326,7 @@
               type="button"
               id="btn-finish-session"
               @click="finishCurrentSession"
-              class="tap-btn px-3 py-1.5 rounded-xl text-xs font-bold border border-slate-700 text-slate-300 hover:text-white hover:border-slate-500 transition-all ml-1"
+              class="tap-btn px-3 py-1.5 rounded-xl text-xs font-bold border border-slate-700 text-slate-300 hover:text-white hover:border-slate-500 transition-all ml-1 flex-shrink-0"
               title="Encerrar este treino e registrá-lo no histórico"
             >
               ✓ Concluir treino
@@ -343,7 +343,7 @@
               id="btn-generate-ai-plan"
               @click="generatePlanWithAi"
               :disabled="isAiPlanLoading"
-              class="tap-btn px-3 py-1.5 rounded-xl text-xs font-bold border transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              class="tap-btn px-3 py-1.5 rounded-xl text-xs font-bold border transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
               :class="isAiPlanLoading
                 ? 'border-slate-700 text-slate-400'
                 : 'border-sky-500/50 text-sky-300 hover:text-white hover:border-sky-400'"
@@ -1339,6 +1339,117 @@
       @close="closeBackupImport"
     />
 
+    <!-- BARRA DE NAVEGAÇÃO INFERIOR MÓVEL (THUMB ZONE) -->
+    <!--
+      Fixa na base no celular (`md:hidden`) na zona de alcance natural do polegar,
+      permitindo alternar com uma mão só entre Treino, Dieta, Agenda e Histórico,
+      com atalho central para o Modo Treino.
+    -->
+    <div
+      id="mobile-bottom-nav"
+      role="navigation"
+      aria-label="Navegação móvel inferior"
+      class="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-slate-900/95 backdrop-blur-xl border-t border-slate-800/90 px-2 py-1 pb-[max(0.6rem,env(safe-area-inset-bottom))] shadow-2xl transition-transform"
+    >
+      <div class="flex items-center justify-around max-w-md mx-auto">
+        <!-- Aba Treino -->
+        <button
+          type="button"
+          id="mobile-nav-workout"
+          @click="currentMainTab = 'workout'"
+          :aria-current="currentMainTab === 'workout' ? 'page' : undefined"
+          class="flex flex-col items-center justify-center min-w-[54px] min-h-[44px] py-1 transition-all rounded-xl relative"
+          :class="currentMainTab === 'workout' ? (isWeightLoss ? 'text-rose-400 font-bold' : 'text-amber-400 font-bold') : 'text-slate-400 hover:text-slate-200'"
+        >
+          <span class="text-xl leading-none" aria-hidden="true">🏋️</span>
+          <span class="text-[10px] mt-1 font-semibold tracking-tight">Treino</span>
+          <span
+            v-if="currentMainTab === 'workout'"
+            class="absolute -bottom-0.5 w-4 h-0.5 rounded-full"
+            :class="isWeightLoss ? 'bg-rose-500' : 'bg-amber-500'"
+          ></span>
+        </button>
+
+        <!-- Aba Dieta -->
+        <button
+          type="button"
+          id="mobile-nav-nutrition"
+          @click="currentMainTab = 'nutrition'"
+          :aria-current="currentMainTab === 'nutrition' ? 'page' : undefined"
+          class="flex flex-col items-center justify-center min-w-[54px] min-h-[44px] py-1 transition-all rounded-xl relative"
+          :class="currentMainTab === 'nutrition' ? (isWeightLoss ? 'text-rose-400 font-bold' : 'text-amber-400 font-bold') : 'text-slate-400 hover:text-slate-200'"
+        >
+          <span class="text-xl leading-none" aria-hidden="true">🥗</span>
+          <span class="text-[10px] mt-1 font-semibold tracking-tight">Dieta</span>
+          <span
+            v-if="currentMainTab === 'nutrition'"
+            class="absolute -bottom-0.5 w-4 h-0.5 rounded-full"
+            :class="isWeightLoss ? 'bg-rose-500' : 'bg-amber-500'"
+          ></span>
+        </button>
+
+        <!-- Ação Central Destacada (FAB Modo Treino) -->
+        <button
+          v-if="trainingSplit"
+          type="button"
+          id="mobile-nav-training-fab"
+          @click="openTrainingMode"
+          class="flex flex-col items-center justify-center -mt-4 w-12 h-12 rounded-2xl shadow-xl border transition-transform active:scale-95 flex-shrink-0"
+          :class="isWeightLoss
+            ? 'bg-rose-500 text-white border-rose-400 shadow-rose-500/40'
+            : 'bg-amber-500 text-slate-950 border-amber-400 shadow-amber-500/40'"
+          title="Executar Modo Treino em Tela Cheia"
+          aria-label="Abrir modo treino em tela cheia"
+        >
+          <span class="text-lg font-black leading-none ml-0.5" aria-hidden="true">▶</span>
+        </button>
+
+        <!-- Aba Calendário / Agenda -->
+        <button
+          type="button"
+          id="mobile-nav-frequency"
+          @click="currentMainTab = 'frequency'"
+          :aria-current="currentMainTab === 'frequency' ? 'page' : undefined"
+          class="flex flex-col items-center justify-center min-w-[54px] min-h-[44px] py-1 transition-all rounded-xl relative"
+          :class="currentMainTab === 'frequency' ? (isWeightLoss ? 'text-rose-400 font-bold' : 'text-amber-400 font-bold') : 'text-slate-400 hover:text-slate-200'"
+        >
+          <span class="text-xl leading-none" aria-hidden="true">📅</span>
+          <span class="text-[10px] mt-1 font-semibold tracking-tight">Agenda</span>
+          <span
+            v-if="currentMainTab === 'frequency'"
+            class="absolute -bottom-0.5 w-4 h-0.5 rounded-full"
+            :class="isWeightLoss ? 'bg-rose-500' : 'bg-amber-500'"
+          ></span>
+        </button>
+
+        <!-- Aba Histórico -->
+        <button
+          type="button"
+          id="mobile-nav-history"
+          @click="openHistoryTab"
+          :aria-current="currentMainTab === 'history' ? 'page' : undefined"
+          class="flex flex-col items-center justify-center min-w-[54px] min-h-[44px] py-1 transition-all rounded-xl relative"
+          :class="currentMainTab === 'history' ? (isWeightLoss ? 'text-rose-400 font-bold' : 'text-amber-400 font-bold') : 'text-slate-400 hover:text-slate-200'"
+        >
+          <span class="text-xl leading-none" aria-hidden="true">📈</span>
+          <span class="text-[10px] mt-1 font-semibold tracking-tight">Histórico</span>
+          <span
+            v-if="currentMainTab === 'history'"
+            class="absolute -bottom-0.5 w-4 h-0.5 rounded-full"
+            :class="isWeightLoss ? 'bg-rose-500' : 'bg-amber-500'"
+          ></span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Aviso de Nova Versão do PWA -->
+    <VersionUpdatePrompt
+      :visible="pwa.needRefresh.value"
+      :is-weight-loss="isWeightLoss"
+      @update="pwa.updateApp"
+      @dismiss="pwa.dismissUpdate"
+    />
+
   </div>
 </template>
 
@@ -1359,6 +1470,8 @@ import TrainingMode from './components/TrainingMode.vue';
 import ExercisePickerModal from './components/ExercisePickerModal.vue';
 import CustomExercisesModal from './components/CustomExercisesModal.vue';
 import BackupImportModal from './components/BackupImportModal.vue';
+import VersionUpdatePrompt from './components/VersionUpdatePrompt.vue';
+import { usePwaUpdate } from './composables/usePwaUpdate';
 import {
   buildFullCatalog,
   listCustomExercises,
@@ -1382,6 +1495,7 @@ import {
 // Estados Globais
 const currentMainTab = ref('workout');
 const currentSplitTab = ref('treino-a');
+const pwa = usePwaUpdate();
 
 // Geração por IA: estado separado do plano para que uma falha nunca
 // apague o treino que o usuário já está usando.
@@ -1710,6 +1824,8 @@ async function loadWeeklyChecks() {
 }
 
 function setupPWA() {
+  pwa.register();
+
   if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
     isAppInstalled.value = true;
   }

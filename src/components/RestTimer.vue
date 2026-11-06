@@ -5,7 +5,7 @@
     role="timer"
     aria-live="off"
     :aria-label="`Descanso entre séries: ${timeLeft} segundos restantes`"
-    class="fixed bottom-6 right-6 z-40 bg-slate-900 border border-amber-500/40 rounded-2xl p-4 shadow-2xl flex items-center gap-4 max-w-xs"
+    class="fixed bottom-20 right-4 sm:bottom-6 sm:right-6 z-40 bg-slate-900 border border-amber-500/40 rounded-2xl p-4 shadow-2xl flex items-center gap-4 max-w-xs"
   >
     <div class="relative w-12 h-12 flex items-center justify-center">
       <svg class="w-12 h-12 transform -rotate-90" aria-hidden="true">

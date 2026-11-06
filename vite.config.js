@@ -11,7 +11,7 @@ export default defineConfig({
     vue(),
     tailwindcss(),
     VitePWA({
-      registerType: 'autoUpdate',
+      registerType: 'prompt',
       includeAssets: ['favicon.svg', 'pwa-192x192.svg', 'pwa-192x192.png', 'pwa-512x512.png', 'pwa-512x512.svg'],
       manifest: {
         // O app serve hipertrofia E emagrecimento; o manifest antigo só citava hipertrofia.
