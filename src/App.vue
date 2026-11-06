@@ -12,95 +12,91 @@
       junto com a página e não existe mais deslocamento para errar — nem no
       celular, nem quando o título quebra em duas linhas.
     -->
-    <header class="border-b border-slate-800 bg-slate-900/70 backdrop-blur">
-      <div class="max-w-5xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-20 shadow-md">
+      <div class="max-w-5xl mx-auto px-4 py-2.5 flex items-center justify-between gap-3">
         
-        <div class="flex items-center gap-3 min-w-0">
+        <!-- Lado Esquerdo: Hambúrguer + Logo/Avatar + Título -->
+        <div class="flex items-center gap-2.5 min-w-0">
+          <!-- Botão Hambúrguer para Abrir o Menu Lateral -->
+          <button 
+            type="button"
+            id="btn-open-menu"
+            @click="isDrawerOpen = true"
+            aria-label="Abrir menu lateral de opções"
+            class="tap-btn p-2 -ml-1 rounded-xl text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700 transition-colors flex items-center justify-center text-lg font-bold shadow-sm"
+            title="Abrir menu de opções"
+          >
+            <span aria-hidden="true">☰</span>
+          </button>
+
           <div 
-            :class="isWeightLoss ? 'bg-gradient-to-tr from-rose-600 to-rose-400 shadow-rose-500/20 text-white' : 'bg-gradient-to-tr from-amber-600 to-amber-400 shadow-amber-500/20 text-slate-950'"
-            class="w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg font-black text-lg transition-colors flex-shrink-0"
+            :class="isWeightLoss
+              ? 'bg-gradient-to-tr from-rose-600 to-rose-400 shadow-rose-500/20 text-white'
+              : currentTheme === 'orange'
+                ? 'bg-gradient-to-tr from-orange-600 to-amber-500 shadow-orange-500/20 text-white'
+                : 'bg-gradient-to-tr from-blue-600 to-sky-400 shadow-blue-500/20 text-white'"
+            class="w-9 h-9 rounded-xl flex items-center justify-center shadow-lg font-black text-base transition-colors flex-shrink-0"
           >
             {{ isWeightLoss ? '🔥' : '⚡' }}
           </div>
+
           <div class="min-w-0">
             <div class="flex items-center gap-2">
-              <h1 id="app-title" class="text-base sm:text-lg font-black tracking-tight text-white uppercase truncate">
+              <h1 id="app-title" class="text-sm sm:text-base font-black tracking-tight text-white uppercase truncate">
                 {{ appTitle }}
               </h1>
               <span 
-                :class="isWeightLoss ? 'bg-rose-500/20 text-rose-400 border-rose-500/30' : 'bg-amber-500/20 text-amber-400 border-amber-500/30'"
+                :class="isWeightLoss
+                  ? 'bg-rose-500/20 text-rose-400 border-rose-500/30'
+                  : currentTheme === 'orange'
+                    ? 'bg-orange-500/20 text-orange-400 border-orange-500/30'
+                    : 'bg-blue-500/20 text-blue-400 border-blue-500/30'"
                 class="text-[10px] px-2 py-0.5 rounded-full font-bold border flex-shrink-0"
               >
                 {{ goalBadge }}
               </span>
             </div>
-            <p id="app-user-subtitle" class="text-xs text-slate-400 flex items-center gap-1.5 truncate">
-              <span class="text-slate-200 font-semibold">Olá, {{ userProfile?.userName || 'Atleta' }} 👋</span>
+            <p id="app-user-subtitle" class="text-[11px] text-slate-400 flex items-center gap-1.5 truncate">
+              <span class="text-slate-200 font-semibold">{{ userProfile?.userName || 'Atleta' }}</span>
               <span>•</span>
-              <span :class="isWeightLoss ? 'text-rose-400' : 'text-amber-400'" class="font-medium">{{ userProfile?.weightKg }} kg</span>
-              <span>•</span>
-              <span class="capitalize">{{ userProfile?.experienceLevel === 'beginner' ? 'Iniciante' : userProfile?.experienceLevel === 'advanced' ? 'Avançado' : 'Intermediário' }}</span>
+              <span :class="isWeightLoss ? 'text-rose-400' : currentTheme === 'orange' ? 'text-orange-400' : 'text-blue-400'" class="font-bold">
+                {{ userProfile?.weightKg }} kg
+              </span>
             </p>
           </div>
         </div>
 
-        <!-- Ações do Header -->
-        <div class="header-actions">
-          <!-- Botão PWA Instalar / Atalho -->
-          <button 
-            id="btn-install-app"
-            @click="handleInstallPWA"
-            :class="isWeightLoss ? 'bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border-rose-500/40' : 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border-amber-500/40'"
-            class="header-btn text-xs border rounded-xl transition-all flex items-center gap-1.5 font-bold shadow-sm"
-            title="Instalar App ou Criar Atalho na Tela Inicial"
+        <!-- Lado Direito: Acesso Rápido ao Menu / Perfil -->
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            id="btn-header-avatar"
+            @click="isDrawerOpen = true"
+            class="tap-btn flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700 transition-colors"
+            title="Ver opções do atleta"
           >
-            <span aria-hidden="true">📲</span>
-            <span class="hidden sm:inline">{{ isAppInstalled ? 'App Instalado' : 'Instalar App' }}</span>
+            <div
+              :class="isWeightLoss ? 'bg-rose-500/30 text-rose-300 border-rose-400/40' : currentTheme === 'orange' ? 'bg-orange-500/30 text-orange-300 border-orange-400/40' : 'bg-blue-500/30 text-blue-300 border-blue-400/40'"
+              class="w-6 h-6 rounded-full font-bold text-xs flex items-center justify-center border"
+            >
+              {{ (userProfile?.userName || 'A').charAt(0).toUpperCase() }}
+            </div>
+            <span class="text-xs font-bold text-slate-300 hidden sm:inline">Menu</span>
+            <span class="text-xs text-slate-400">▾</span>
           </button>
-
-          <button 
-            id="btn-adjust-profile"
-            @click="isOnboardingOpen = true"
-            class="header-btn text-xs bg-slate-800/80 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl transition-all flex items-center gap-1.5 font-medium"
-            title="Ajustar Perfil & Recalcular"
-          >
-            <span aria-hidden="true">⚙️</span>
-            <span class="hidden sm:inline">Ajustar Perfil</span>
-          </button>
-          
-          <button 
-            id="btn-import-backup"
-            @click="openBackupFilePicker"
-            class="header-btn text-xs text-slate-400 hover:text-white rounded-xl border border-slate-800 hover:border-slate-700 transition-colors"
-            title="Restaurar backup"
-          >
-            <span aria-hidden="true">📂</span>
-            <span class="sr-only">Restaurar backup</span>
-          </button>
-
-          <button 
-            id="btn-export-backup"
-            @click="handleExportJSON" 
-            class="header-btn text-xs text-slate-400 hover:text-white rounded-xl border border-slate-800 hover:border-slate-700 transition-colors"
-            title="Exportar Dados (Backup)"
-          >
-            <span aria-hidden="true">💾</span>
-            <span class="sr-only">Exportar dados (backup)</span>
-          </button>
-
-          <!-- input escondido: o botão acima é o alvo real, para o seletor de
-               arquivo nativo não aparecer na interface -->
-          <input
-            id="input-backup-file"
-            ref="backupFileInput"
-            type="file"
-            accept="application/json,.json"
-            class="sr-only"
-            @change="handleBackupFileSelected"
-          />
         </div>
 
       </div>
+
+      <!-- input escondido: acionado pelo menu lateral para importar arquivo JSON -->
+      <input
+        id="input-backup-file"
+        ref="backupFileInput"
+        type="file"
+        accept="application/json,.json"
+        class="sr-only"
+        @change="handleBackupFileSelected"
+      />
     </header>
 
     <!-- Navegação por Abas Principais (Treino, Nutrição, Frequência) -->
@@ -509,6 +505,61 @@
               </div>
             </div>
 
+            <!-- Resumo Métrico & Mapa Anatômico da Sessão (Inspirado na Imagem 1) -->
+            <div class="p-4 rounded-2xl bg-slate-900 border-2 border-slate-800 shadow-xl space-y-3">
+              <!-- Métricas Rápidas da Sessão (Exercícios, Séries, Tempo, Calorias) -->
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
+                <div class="p-2.5 rounded-xl bg-slate-950 border border-slate-800">
+                  <p class="text-[10px] uppercase font-bold text-slate-400">Exercícios</p>
+                  <p class="text-base font-black text-white">{{ split.exercises.length }}</p>
+                </div>
+                <div class="p-2.5 rounded-xl bg-slate-950 border border-slate-800">
+                  <p class="text-[10px] uppercase font-bold text-slate-400">Séries Totais</p>
+                  <p class="text-base font-black text-emerald-400">{{ split.exercises.length * 3 }}</p>
+                </div>
+                <div class="p-2.5 rounded-xl bg-slate-950 border border-slate-800">
+                  <p class="text-[10px] uppercase font-bold text-slate-400">Tempo Estimado</p>
+                  <p class="text-base font-black text-sky-400">~{{ split.exercises.length * 8 }} min</p>
+                </div>
+                <div class="p-2.5 rounded-xl bg-slate-950 border border-slate-800">
+                  <p class="text-[10px] uppercase font-bold text-slate-400">Gasto Estimado</p>
+                  <p class="text-base font-black text-orange-400">~{{ split.exercises.length * 45 }} kcal</p>
+                </div>
+              </div>
+
+              <!-- Botão para Alternar / Exibir Mapa Anatômico -->
+              <div class="flex items-center justify-between pt-1">
+                <div class="flex items-center gap-2">
+                  <span class="text-xs font-black text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
+                    <span>💪</span> Músculos Ativos Deste Treino
+                  </span>
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-orange-500/20 text-orange-400 border border-orange-500/40">
+                    {{ getSplitMuscleGroups(split).length }} grupos
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  :id="`btn-toggle-body-map-${split.id}`"
+                  @click="showSplitBodyMap = !showSplitBodyMap"
+                  class="tap-btn text-xs font-bold text-orange-400 hover:text-orange-300 flex items-center gap-1 transition-colors"
+                >
+                  <span>{{ showSplitBodyMap ? 'Ocultar Mapa' : 'Ver Mapa Anatômico' }}</span>
+                  <span class="text-[10px]">{{ showSplitBodyMap ? '▲' : '▼' }}</span>
+                </button>
+              </div>
+
+              <!-- Diagrama Anatômico Integrado -->
+              <div v-if="showSplitBodyMap" :id="`split-body-map-${split.id}`" class="p-3 rounded-xl bg-slate-950 border border-slate-800 flex justify-center">
+                <MuscleBodyMap
+                  :highlighted-muscles="getSplitMuscleGroups(split)"
+                  :id-prefix="`split-${split.id}-`"
+                  :show-controls="true"
+                  :show-legend="true"
+                />
+              </div>
+            </div>
+
             <!-- Cards de Exercícios Divididos por Grupos Musculares -->
             <div class="grid gap-3">
               <template v-for="(ex, index) in getVisibleExercises(split)" :key="ex.id">
@@ -537,21 +588,40 @@
                   class="p-4 rounded-2xl border transition-all flex flex-col md:flex-row md:items-center justify-between gap-4 min-w-0"
                   :class="workoutLogs[ex.id]?.isDone ? 'bg-slate-900/40 border-slate-800/60 opacity-75' : 'bg-slate-900 border-slate-800 hover:border-slate-700'"
                 >
-                  <!-- Lado Esquerdo: Checkbox + Título + Dicas -->
-                  <div class="flex items-start md:items-center gap-3.5 flex-1 min-w-0">
+                  <!-- Lado Esquerdo: Checkbox + Miniatura + Título + Badges -->
+                  <div class="flex items-start md:items-center gap-3 flex-1 min-w-0">
                     <button 
                       type="button"
                       :id="`btn-check-${ex.id}`"
                       @click="toggleExerciseCheck(ex.id, split.id)"
                       :aria-pressed="!!workoutLogs[ex.id]?.isDone"
                       :aria-label="workoutLogs[ex.id]?.isDone ? `Marcar ${ex.name} como pendente` : `Marcar ${ex.name} como concluído`"
-                      class="check-btn mt-1 md:mt-0"
-                      :class="workoutLogs[ex.id]?.isDone ? (isWeightLoss ? 'bg-rose-500 border-rose-400 text-white font-black text-sm' : 'bg-amber-500 border-amber-400 text-slate-950 font-black text-sm') : 'border-slate-700 hover:border-amber-500/60 text-transparent'"
+                      class="check-btn mt-1 md:mt-0 flex-shrink-0"
+                      :class="workoutLogs[ex.id]?.isDone ? (isWeightLoss ? 'bg-rose-500 border-rose-400 text-white font-black text-sm' : 'bg-emerald-500 border-emerald-400 text-slate-950 font-black text-sm') : 'border-slate-700 hover:border-amber-500/60 text-transparent'"
                     >
                       ✓
                     </button>
 
-                    <div class="space-y-1 min-w-0">
+                    <!-- Miniatura Visual do Exercício (Inspirado na Imagem 1 - Tela 2) -->
+                    <button
+                      type="button"
+                      :id="`btn-thumb-${ex.id}`"
+                      @click="openExerciseDetails(ex)"
+                      class="w-12 h-12 rounded-xl bg-slate-950 border-2 border-slate-700/80 overflow-hidden flex items-center justify-center flex-shrink-0 cursor-pointer hover:border-orange-500 transition-all shadow-md group relative"
+                      title="Ver demonstração e músculos trabalhados"
+                    >
+                      <img
+                        v-if="ex.imageUrl"
+                        :src="ex.imageUrl"
+                        :alt="ex.name"
+                        class="w-full h-full object-cover group-hover:scale-110 transition-transform"
+                        loading="lazy"
+                      />
+                      <span v-else class="text-xl">🏋️</span>
+                      <span class="absolute inset-0 bg-orange-500/10 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                    </button>
+
+                    <div class="space-y-1 min-w-0 flex-1">
                       <!-- Badge do Grupo Muscular -->
                       <div class="flex items-center gap-2">
                         <span
@@ -585,6 +655,32 @@
                       >
                         {{ ex.name }}
                       </h4>
+
+                      <!-- Botão Ver Exemplo / Detalhes -->
+                      <button
+                        type="button"
+                        :id="`btn-details-${ex.id}`"
+                        @click="openExerciseDetails(ex)"
+                        class="tap-btn text-xs text-orange-400 hover:text-orange-300 font-bold inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/30 transition-colors"
+                        title="Ver demonstração e detalhes anatômicos"
+                      >
+                        <span>ℹ️</span>
+                        <span class="hidden sm:inline">Exemplo</span>
+                      </button>
+                    </div>
+
+                    <!-- Badge de Série Estilizado (Inspirado na Imagem 2) -->
+                    <div class="flex items-center gap-1.5 flex-wrap pt-0.5">
+                      <span class="px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                        SET {{ workoutLogs[ex.id]?.sets?.length || 1 }}
+                      </span>
+                      <span class="text-[11px] font-bold text-slate-300">
+                        {{ ex.defaultSeries || '3x 8-12 reps' }}
+                      </span>
+                      <span class="text-[11px] text-slate-400">
+                        • pausa {{ ex.rest || '60s' }}
+                      </span>
+                    </div>
 
 <button
                     type="button"
@@ -1536,6 +1632,33 @@
       @dismiss="pwa.dismissUpdate"
     />
 
+    <!-- Menu Lateral Deslizante (Side Drawer) -->
+    <AppSideDrawer
+      :is-open="isDrawerOpen"
+      :user-profile="userProfile"
+      :is-weight-loss="isWeightLoss"
+      :active-tab="currentMainTab"
+      :current-theme="currentTheme"
+      :is-app-installed="isAppInstalled"
+      @close="isDrawerOpen = false"
+      @navigate="tab => currentMainTab = tab"
+      @open-profile="isOnboardingOpen = true"
+      @open-create-split="openCreateSplitModal"
+      @open-custom-exercises="isCustomExercisesOpen = true"
+      @generate-ai-plan="generatePlanWithAi"
+      @export-backup="handleExportJSON"
+      @import-backup="openBackupFilePicker"
+      @install-app="handleInstallPWA"
+      @set-theme="theme => currentTheme = theme"
+    />
+
+    <!-- Modal de Demonstração e Detalhes do Exercício -->
+    <ExerciseDetailsModal
+      :is-open="isExerciseDetailsOpen"
+      :exercise="selectedExerciseForDetails"
+      @close="isExerciseDetailsOpen = false"
+    />
+
   </div>
 </template>
 
@@ -1558,6 +1681,9 @@ import CustomExercisesModal from './components/CustomExercisesModal.vue';
 import BackupImportModal from './components/BackupImportModal.vue';
 import CreateSplitModal from './components/CreateSplitModal.vue';
 import VersionUpdatePrompt from './components/VersionUpdatePrompt.vue';
+import AppSideDrawer from './components/AppSideDrawer.vue';
+import ExerciseDetailsModal from './components/ExerciseDetailsModal.vue';
+import MuscleBodyMap from './components/MuscleBodyMap.vue';
 import { usePwaUpdate } from './composables/usePwaUpdate';
 import {
   buildFullCatalog,
@@ -1641,6 +1767,18 @@ const storageError = ref(null);
 function reportStorageError(message, err) {
   console.error(message, err);
   storageError.value = message;
+}
+
+// Menu Lateral (Drawer), Detalhes de Exercício e Tema Visual
+const isDrawerOpen = ref(false);
+const isExerciseDetailsOpen = ref(false);
+const selectedExerciseForDetails = ref(null);
+const currentTheme = ref('blue'); // 'blue' (Image 2 Tecnofit) | 'orange' (Image 1 Gym)
+const showSplitBodyMap = ref(true);
+
+function openExerciseDetails(exercise) {
+  selectedExerciseForDetails.value = exercise;
+  isExerciseDetailsOpen.value = true;
 }
 
 // Criação e Gerenciamento de Fichas Customizadas pelo Usuário
