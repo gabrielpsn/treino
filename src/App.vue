@@ -1,18 +1,16 @@
 <template>
-  <div class="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-amber-500 selection:text-slate-950">
+  <div class="min-h-screen bg-white text-[#1E293B] flex flex-col font-sans selection:bg-[#FBBF04] selection:text-[#1E293B]">
     
     <!--
-      Cabeçalho e barra de abas.
-
-      Antes cada um era sticky com deslocamento fixo em pixel (top-57px e
-      top-93px). Esse número só funciona se a altura do cabeçalho for constante,
-      e ela não é: no celular o título quebra e as ações encolhem. Resultado: a
-      barra de abas subia por baixo do cabeçalho e o conteúdo passava por cima
-      dos dois. Agora só a barra de abas gruda (`top-0`), o cabeçalho rola
-      junto com a página e não existe mais deslocamento para errar — nem no
-      celular, nem quando o título quebra em duas linhas.
+      Cabeçalho e barra de abas com a nova paleta esportiva:
+      Cor Primária: #007BFF (Azul Royal Vibrante)
+      Destaques e CTAs: #FBBF04 (Amarelo Ouro)
+      Fundos de cards e containers: #ECEEFE
+      Fundo Geral: #FFFFFF
+      Texto Principal: #1E293B
+      Texto Secundário / Labels: #64748B
     -->
-    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-20 shadow-md">
+    <header class="border-b border-[#0062cc] bg-[#007BFF] text-white sticky top-0 z-20 shadow-md">
       <div class="max-w-5xl mx-auto px-4 py-2.5 flex items-center justify-between gap-3">
         
         <!-- Lado Esquerdo: Hambúrguer + Logo/Avatar + Título -->
@@ -23,19 +21,14 @@
             id="btn-open-menu"
             @click="isDrawerOpen = true"
             aria-label="Abrir menu lateral de opções"
-            class="tap-btn p-2 -ml-1 rounded-xl text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700 transition-colors flex items-center justify-center text-lg font-bold shadow-sm"
+            class="tap-btn p-2 -ml-1 rounded-xl text-white hover:bg-white/20 bg-white/10 transition-colors flex items-center justify-center text-lg font-bold shadow-xs"
             title="Abrir menu de opções"
           >
             <span aria-hidden="true">☰</span>
           </button>
 
           <div 
-            :class="isWeightLoss
-              ? 'bg-gradient-to-tr from-rose-600 to-rose-400 shadow-rose-500/20 text-white'
-              : currentTheme === 'orange'
-                ? 'bg-gradient-to-tr from-orange-600 to-amber-500 shadow-orange-500/20 text-white'
-                : 'bg-gradient-to-tr from-blue-600 to-sky-400 shadow-blue-500/20 text-white'"
-            class="w-9 h-9 rounded-xl flex items-center justify-center shadow-lg font-black text-base transition-colors flex-shrink-0"
+            class="w-9 h-9 rounded-xl flex items-center justify-center bg-white/20 border border-white/30 text-white shadow-sm font-black text-base transition-colors flex-shrink-0"
           >
             {{ isWeightLoss ? '🔥' : '⚡' }}
           </div>
@@ -46,20 +39,15 @@
                 {{ appTitle }}
               </h1>
               <span 
-                :class="isWeightLoss
-                  ? 'bg-rose-500/20 text-rose-400 border-rose-500/30'
-                  : currentTheme === 'orange'
-                    ? 'bg-orange-500/20 text-orange-400 border-orange-500/30'
-                    : 'bg-blue-500/20 text-blue-400 border-blue-500/30'"
-                class="text-[10px] px-2 py-0.5 rounded-full font-bold border flex-shrink-0"
+                class="text-[10px] px-2 py-0.5 rounded-full font-bold border border-[#f5a623] bg-[#FBBF04] text-[#1E293B] shadow-xs flex-shrink-0"
               >
                 {{ goalBadge }}
               </span>
             </div>
-            <p id="app-user-subtitle" class="text-[11px] text-slate-400 flex items-center gap-1.5 truncate">
-              <span class="text-slate-200 font-semibold">Olá, {{ userProfile?.userName || 'Atleta' }}</span>
+            <p id="app-user-subtitle" class="text-[11px] text-white/80 flex items-center gap-1.5 truncate">
+              <span class="text-white font-semibold">Olá, {{ userProfile?.userName || 'Atleta' }}</span>
               <span>•</span>
-              <span :class="isWeightLoss ? 'text-rose-400' : currentTheme === 'orange' ? 'text-orange-400' : 'text-blue-400'" class="font-bold">
+              <span class="font-bold text-[#FBBF04]">
                 {{ userProfile?.weightKg }} kg
               </span>
             </p>
@@ -72,17 +60,16 @@
             type="button"
             id="btn-header-avatar"
             @click="isDrawerOpen = true"
-            class="tap-btn flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700 transition-colors"
+            class="tap-btn flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white transition-colors"
             title="Ver opções do atleta"
           >
             <div
-              :class="isWeightLoss ? 'bg-rose-500/30 text-rose-300 border-rose-400/40' : currentTheme === 'orange' ? 'bg-orange-500/30 text-orange-300 border-orange-400/40' : 'bg-blue-500/30 text-blue-300 border-blue-400/40'"
-              class="w-6 h-6 rounded-full font-bold text-xs flex items-center justify-center border"
+              class="w-6 h-6 rounded-full font-bold text-xs flex items-center justify-center border bg-white/20 text-white border-white/30"
             >
               {{ (userProfile?.userName || 'A').charAt(0).toUpperCase() }}
             </div>
-            <span class="text-xs font-bold text-slate-300 hidden sm:inline">Menu</span>
-            <span class="text-xs text-slate-400">▾</span>
+            <span class="text-xs font-bold text-white hidden sm:inline">Menu</span>
+            <span class="text-xs text-white/80">▾</span>
           </button>
         </div>
 
@@ -100,54 +87,54 @@
     </header>
 
     <!-- Navegação por Abas Principais (Treino, Nutrição, Frequência) -->
-    <nav class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-30 shadow-lg shadow-slate-950/40">
+    <nav class="border-b border-[#DCE2FE] bg-[#F8FAFC] backdrop-blur sticky top-0 z-30 shadow-xs">
       <div class="max-w-5xl mx-auto px-4 flex items-center justify-between gap-2 overflow-x-auto py-2">
         <div class="flex items-center gap-2" role="tablist" aria-label="Seções do aplicativo">
-<button 
-              id="tab-btn-workout"
-              role="tab"
-              :aria-selected="currentMainTab === 'workout'"
-              aria-controls="screen-workout"
-              @click="currentMainTab = 'workout'"
-              :class="currentMainTab === 'workout' ? (isWeightLoss ? 'bg-rose-500 text-white font-bold shadow-md shadow-rose-500/20' : 'bg-amber-500 text-slate-950 font-bold shadow-md shadow-amber-500/20') : 'text-slate-400 hover:text-white hover:bg-slate-800/60'"
-              class="tap-btn px-4 py-2 rounded-xl text-xs md:text-sm transition-all flex items-center gap-2 flex-shrink-0"
-            >
+          <button 
+            id="tab-btn-workout"
+            role="tab"
+            :aria-selected="currentMainTab === 'workout'"
+            aria-controls="screen-workout"
+            @click="currentMainTab = 'workout'"
+            :class="currentMainTab === 'workout' ? 'bg-[#FBBF04] text-[#1E293B] font-black shadow-xs' : 'text-[#64748B] hover:text-[#007BFF] hover:bg-[#ECEEFE] font-bold'"
+            class="tap-btn px-4 py-2 rounded-xl text-xs md:text-sm transition-all flex items-center gap-2 flex-shrink-0"
+          >
             <span>🏋️</span> Fichas de Treino
           </button>
 
-<button 
-              id="tab-btn-nutrition"
-              role="tab"
-              :aria-selected="currentMainTab === 'nutrition'"
-              aria-controls="screen-nutrition"
-              @click="currentMainTab = 'nutrition'"
-            :class="currentMainTab === 'nutrition' ? (isWeightLoss ? 'bg-rose-500 text-white font-bold shadow-md shadow-rose-500/20' : 'bg-amber-500 text-slate-950 font-bold shadow-md shadow-amber-500/20') : 'text-slate-400 hover:text-white hover:bg-slate-800/60'"
+          <button 
+            id="tab-btn-nutrition"
+            role="tab"
+            :aria-selected="currentMainTab === 'nutrition'"
+            aria-controls="screen-nutrition"
+            @click="currentMainTab = 'nutrition'"
+            :class="currentMainTab === 'nutrition' ? 'bg-[#FBBF04] text-[#1E293B] font-black shadow-xs' : 'text-[#64748B] hover:text-[#007BFF] hover:bg-[#ECEEFE] font-bold'"
             class="tap-btn px-4 py-2 rounded-xl text-xs md:text-sm transition-all flex items-center gap-2 flex-shrink-0"
           >
             <span>🥗</span> Dieta & Metas
           </button>
 
-<button
-              id="tab-btn-frequency"
-              role="tab"
-              :aria-selected="currentMainTab === 'frequency'"
-              aria-controls="screen-frequency"
-              @click="currentMainTab = 'frequency'"
-            :class="currentMainTab === 'frequency' ? (isWeightLoss ? 'bg-rose-500 text-white font-bold shadow-md shadow-rose-500/20' : 'bg-amber-500 text-slate-950 font-bold shadow-md shadow-amber-500/20') : 'text-slate-400 hover:text-white hover:bg-slate-800/60'"
+          <button
+            id="tab-btn-frequency"
+            role="tab"
+            :aria-selected="currentMainTab === 'frequency'"
+            aria-controls="screen-frequency"
+            @click="currentMainTab = 'frequency'"
+            :class="currentMainTab === 'frequency' ? 'bg-[#FBBF04] text-[#1E293B] font-black shadow-xs' : 'text-[#64748B] hover:text-[#007BFF] hover:bg-[#ECEEFE] font-bold'"
             class="tap-btn px-4 py-2 rounded-xl text-xs md:text-sm transition-all flex items-center gap-2 flex-shrink-0"
           >
             <span>📅</span> Calendário Semanal
           </button>
 
           <button
-              id="tab-btn-history"
-              role="tab"
-              :aria-selected="currentMainTab === 'history'"
-              aria-controls="screen-history"
-              @click="openHistoryTab"
-              :class="currentMainTab === 'history' ? (isWeightLoss ? 'bg-rose-500 text-white font-bold shadow-md shadow-rose-500/20' : 'bg-amber-500 text-slate-950 font-bold shadow-md shadow-amber-500/20') : 'text-slate-400 hover:text-white hover:bg-slate-800/60'"
-              class="tap-btn px-4 py-2 rounded-xl text-xs md:text-sm transition-all flex items-center gap-2 flex-shrink-0"
-            >
+            id="tab-btn-history"
+            role="tab"
+            :aria-selected="currentMainTab === 'history'"
+            aria-controls="screen-history"
+            @click="openHistoryTab"
+            :class="currentMainTab === 'history' ? 'bg-[#FBBF04] text-[#1E293B] font-black shadow-xs' : 'text-[#64748B] hover:text-[#007BFF] hover:bg-[#ECEEFE] font-bold'"
+            class="tap-btn px-4 py-2 rounded-xl text-xs md:text-sm transition-all flex items-center gap-2 flex-shrink-0"
+          >
             <span>📈</span> Histórico
           </button>
         </div>
@@ -155,7 +142,7 @@
         <button 
           id="btn-reset-weights"
           @click="resetAllProgress"
-          class="tap-btn text-xs text-slate-500 hover:text-rose-400 transition-colors px-2 py-1 flex-shrink-0"
+          class="tap-btn text-xs text-[#64748B] hover:text-rose-500 transition-colors px-2 py-1 flex-shrink-0 font-medium"
         >
           Zerar Histórico
         </button>
@@ -164,9 +151,9 @@
 
     <!-- Aviso legal: o app calcula metas e sugere suplementos por fórmula
          publicada e não substitui avaliação médica ou profissional. -->
-    <div id="medical-disclaimer" class="border-b border-slate-800/70 bg-slate-950/60">
-      <p class="max-w-5xl mx-auto px-4 py-2 text-[11px] text-slate-500 leading-relaxed">
-        <strong class="text-slate-400">Aviso:</strong> as metas são calculadas por
+    <div id="medical-disclaimer" class="border-b border-[#DCE2FE] bg-[#F8FAFC]">
+      <p class="max-w-5xl mx-auto px-4 py-2 text-[11px] text-[#64748B] leading-relaxed">
+        <strong class="text-[#1E293B]">Aviso:</strong> as metas são calculadas por
         fórmulas públicas (Mifflin-St Jeor, faixas da OMS) e não substituem avaliação médica.
         Com dor, lesão ou condição clínica, consulte um profissional antes de seguir o plano.
       </p>
@@ -175,91 +162,98 @@
     <!-- Conteúdo Principal -->
     <main class="max-w-5xl mx-auto px-4 py-6 pb-28 md:pb-20 flex-1 w-full space-y-6">
 
+      <!-- WIDGET DE STATUS DE GAMIFICAÇÃO (Patente, Nível, XP, Ofensiva e Escudos) -->
+      <GamificationIronStatus
+        :total-xp="gamificationState.totalXp"
+        :streak="gamificationState.weeklyStreak"
+        :shields="gamificationState.shieldsCount"
+      />
+
       <!-- BANNER DE BOAS-VINDAS / RESUMO INTELIGENTE -->
-      <div v-if="activePlan?.physiology" id="banner-physiology-summary" class="bg-gradient-to-r from-slate-900 via-slate-900/90 to-slate-900 border border-slate-800/80 rounded-2xl p-4 sm:p-5 shadow-xl flex flex-wrap items-center justify-between gap-4">
+      <div v-if="activePlan?.physiology" id="banner-physiology-summary" class="bg-[#ECEEFE] border border-[#DCE2FE] rounded-2xl p-4 sm:p-5 shadow-xs flex flex-wrap items-center justify-between gap-4 text-[#1E293B]">
         <div>
           <div class="flex items-center gap-2">
-            <span :class="isWeightLoss ? 'text-rose-400' : 'text-amber-500'" class="text-xs font-bold uppercase tracking-wider">
+            <span class="text-xs font-bold uppercase tracking-wider text-[#007BFF]">
               {{ isWeightLoss ? 'Diagnóstico & Déficit Calórico' : 'Metas Diárias Calculadas' }}
             </span>
-            <span v-if="isCustomNutritionActive" class="text-[10px] bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 px-2 py-0.5 rounded-full font-semibold">
+            <span v-if="isCustomNutritionActive" class="text-[10px] bg-[#007BFF]/15 text-[#007BFF] border border-[#007BFF]/30 px-2 py-0.5 rounded-full font-semibold">
               Metas Customizadas
             </span>
           </div>
-          <h2 class="text-base sm:text-lg font-bold text-white mt-0.5">
+          <h2 class="text-base sm:text-lg font-bold text-[#1E293B] mt-0.5">
             {{ isWeightLoss ? 'Meta Nutricional:' : 'Superávit Anabólico:' }}
-            <span :class="isWeightLoss ? 'text-rose-400' : 'text-amber-400'">{{ effectiveTargetCalories }} kcal</span> / dia
+            <span class="text-[#007BFF]">{{ effectiveTargetCalories }} kcal</span> / dia
           </h2>
-          <p class="text-xs text-slate-400 mt-1">
-            Proteína: <strong class="text-slate-200">{{ effectiveMacros.proteinGrams }}g</strong> • 
-            Carboidrato: <strong class="text-slate-200">{{ effectiveMacros.carbsGrams }}g</strong> • 
-            Gorduras: <strong class="text-slate-200">{{ effectiveMacros.fatGrams }}g</strong>
-            <span v-if="activePlan.physiology.imc"> • IMC: <strong :class="isWeightLoss ? 'text-amber-400' : 'text-slate-200'">{{ activePlan.physiology.imc }} ({{ activePlan.physiology.imcStatus }})</strong></span>
+          <p class="text-xs text-[#64748B] mt-1">
+            Proteína: <strong class="text-[#1E293B]">{{ effectiveMacros.proteinGrams }}g</strong> • 
+            Carboidrato: <strong class="text-[#1E293B]">{{ effectiveMacros.carbsGrams }}g</strong> • 
+            Gorduras: <strong class="text-[#1E293B]">{{ effectiveMacros.fatGrams }}g</strong>
+            <span v-if="activePlan.physiology.imc"> • IMC: <strong class="text-[#1E293B]">{{ activePlan.physiology.imc }} ({{ activePlan.physiology.imcStatus }})</strong></span>
           </p>
         </div>
 
         <div class="flex items-center gap-3">
-          <div class="bg-slate-950 px-3.5 py-2 rounded-xl border border-slate-800 text-center">
-            <span class="block text-[10px] text-slate-500 uppercase font-semibold">Água / Dia</span>
-            <span class="text-sm font-bold text-cyan-400">{{ activePlan.physiology.water.liters }} L</span>
+          <div class="bg-white px-3.5 py-2 rounded-xl border border-[#DCE2FE] text-center shadow-xs">
+            <span class="block text-[10px] text-[#64748B] uppercase font-semibold">Água / Dia</span>
+            <span class="text-sm font-bold text-[#007BFF]">{{ activePlan.physiology.water.liters }} L</span>
           </div>
-          <div class="bg-slate-950 px-3.5 py-2 rounded-xl border border-slate-800 text-center">
-            <span class="block text-[10px] text-slate-500 uppercase font-semibold">Creatina</span>
-            <span :class="isWeightLoss ? 'text-rose-400' : 'text-amber-400'" class="text-sm font-bold">{{ activePlan.physiology.creatine }}g</span>
+          <div class="bg-white px-3.5 py-2 rounded-xl border border-[#DCE2FE] text-center shadow-xs">
+            <span class="block text-[10px] text-[#64748B] uppercase font-semibold">Creatina</span>
+            <span class="text-sm font-bold text-[#FBBF04]">{{ activePlan.physiology.creatine }}g</span>
           </div>
         </div>
       </div>
 
       <!-- SEÇÃO EXCLUSIVA DE EMAGRECIMENTO: DIAGNÓSTICO E CRONOGRAMA EM FASES -->
-      <section v-if="isWeightLoss && activePlan?.physiology" id="section-weight-loss-diagnosis" class="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl relative overflow-hidden">
-        <div class="border-b border-slate-800 pb-3 mb-4 flex items-center justify-between">
+      <section v-if="isWeightLoss && activePlan?.physiology" id="section-weight-loss-diagnosis" class="bg-[#ECEEFE] border border-[#DCE2FE] rounded-3xl p-5 sm:p-6 shadow-xs relative overflow-hidden text-[#1E293B]">
+        <div class="border-b border-[#DCE2FE] pb-3 mb-4 flex items-center justify-between">
           <div>
-            <span class="text-xs font-bold tracking-widest text-rose-400 uppercase">Cronograma de Emagrecimento Saudável</span>
-            <h3 class="text-lg font-extrabold text-white mt-0.5">Metas Sustentáveis (Sem Efeito Sanfona)</h3>
+            <span class="text-xs font-bold tracking-widest text-[#007BFF] uppercase">Cronograma de Emagrecimento Saudável</span>
+            <h3 class="text-lg font-extrabold text-[#1E293B] mt-0.5">Metas Sustentáveis (Sem Efeito Sanfona)</h3>
           </div>
-          <span class="text-xs bg-rose-500/10 text-rose-300 border border-rose-500/20 px-3 py-1 rounded-full font-bold">
+          <span class="text-xs bg-rose-500/10 text-rose-500 border border-rose-500/20 px-3 py-1 rounded-full font-bold">
             Ritmo: 2 a 3 kg/mês
           </span>
         </div>
 
         <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-          <div class="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800">
-            <span class="text-xs text-slate-400 font-medium">Peso Atual</span>
-            <div class="text-xl font-black text-white mt-1">{{ userProfile?.weightKg }} kg</div>
-            <p class="text-[11px] text-amber-400 mt-0.5">IMC: {{ activePlan.physiology.imc }}</p>
+          <div class="p-3.5 rounded-2xl bg-white border border-[#DCE2FE] shadow-xs">
+            <span class="text-xs text-[#64748B] font-medium">Peso Atual</span>
+            <div class="text-xl font-black text-[#1E293B] mt-1">{{ userProfile?.weightKg }} kg</div>
+            <p class="text-[11px] text-[#FBBF04] mt-0.5">IMC: {{ activePlan.physiology.imc }}</p>
           </div>
-          <div class="p-3.5 rounded-2xl bg-slate-950/60 border border-rose-500/30">
-            <span class="text-xs text-rose-400 font-medium">Faixa Saudável (OMS)</span>
-            <div class="text-xl font-black text-white mt-1">{{ activePlan.physiology.healthyWeightRange }}</div>
-            <p class="text-[11px] text-slate-400 mt-0.5">Prevenção articular e metabólica</p>
+          <div class="p-3.5 rounded-2xl bg-white border border-rose-500/30 shadow-xs">
+            <span class="text-xs text-rose-500 font-medium">Faixa Saudável (OMS)</span>
+            <div class="text-xl font-black text-[#1E293B] mt-1">{{ activePlan.physiology.healthyWeightRange }}</div>
+            <p class="text-[11px] text-[#64748B] mt-0.5">Prevenção articular e metabólica</p>
           </div>
-          <div class="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800">
-            <span class="text-xs text-slate-400 font-medium">Meta Estimada</span>
-            <div class="text-xl font-black mt-1" :class="activePlan.physiology.targetWeightDiff > 0 ? 'text-rose-400' : 'text-emerald-400'">
+          <div class="p-3.5 rounded-2xl bg-white border border-[#DCE2FE] shadow-xs">
+            <span class="text-xs text-[#64748B] font-medium">Meta Estimada</span>
+            <div class="text-xl font-black mt-1" :class="activePlan.physiology.targetWeightDiff > 0 ? 'text-rose-500' : 'text-emerald-500'">
               {{ activePlan.physiology.targetWeightText }}
             </div>
-            <p class="text-[11px] text-slate-400 mt-0.5">
+            <p class="text-[11px] text-[#64748B] mt-0.5">
               {{ activePlan.physiology.targetWeightDiff > 0 ? 'Fase 1: -5 a -7 kg de retenção' : 'Você já está na faixa saudável' }}
             </p>
           </div>
-          <div class="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800">
-            <span class="text-xs text-slate-400 font-medium">Prazo Recomendado</span>
-            <div class="text-xl font-black text-white mt-1">6 a 10 Meses</div>
-            <p class="text-[11px] text-emerald-400 mt-0.5">Consistência e massa magra</p>
+          <div class="p-3.5 rounded-2xl bg-white border border-[#DCE2FE] shadow-xs">
+            <span class="text-xs text-[#64748B] font-medium">Prazo Recomendado</span>
+            <div class="text-xl font-black text-[#1E293B] mt-1">6 a 10 Meses</div>
+            <p class="text-[11px] text-emerald-500 mt-0.5">Consistência e massa magra</p>
           </div>
         </div>
 
         <div class="grid sm:grid-cols-3 gap-3 text-xs">
-          <div class="p-3 rounded-xl bg-slate-800/40 border border-slate-800">
-            <strong class="text-rose-300 block mb-1">Etapa 1: Adaptação</strong>
+          <div class="p-3 rounded-xl bg-white border border-[#DCE2FE] shadow-xs">
+            <strong class="text-rose-500 block mb-1">Etapa 1: Adaptação</strong>
             Redução rápida de inchaço, ganho de mobilidade e adaptação ao déficit sem fome severa.
           </div>
-          <div class="p-3 rounded-xl bg-slate-800/40 border border-slate-800">
-            <strong class="text-rose-300 block mb-1">Etapa 2: Queima Ativa</strong>
+          <div class="p-3 rounded-xl bg-white border border-[#DCE2FE] shadow-xs">
+            <strong class="text-rose-500 block mb-1">Etapa 2: Queima Ativa</strong>
             Perda contínua de gordura visceral, sustentada por musculação e preservação de tônus.
           </div>
-          <div class="p-3 rounded-xl bg-slate-800/40 border border-slate-800">
-            <strong class="text-rose-300 block mb-1">Etapa 3: Consolidação</strong>
+          <div class="p-3 rounded-xl bg-white border border-[#DCE2FE] shadow-xs">
+            <strong class="text-rose-500 block mb-1">Etapa 3: Consolidação</strong>
             Manutenção hormonal estável e ajuste de passos diários para impedir o reganho de peso.
           </div>
         </div>
@@ -276,19 +270,19 @@
       >
         
         <!-- Seletor de Fichas (Sub-tabs A, B, C...) -->
-        <div class="flex items-center justify-between flex-wrap gap-3 border-b border-slate-800/80 pb-4">
+        <div class="flex items-center justify-between flex-wrap gap-3 border-b border-[#DCE2FE] pb-4">
           <div>
-            <h3 class="text-xl font-extrabold text-white tracking-tight">Ficha & Sobrecarga Progressiva</h3>
-            <p class="text-xs text-slate-400">Anote os pesos de hoje. O app salva automaticamente e exibe seu histórico para o próximo treino.</p>
+            <h3 class="text-xl font-extrabold text-[#007BFF] tracking-tight">Ficha & Sobrecarga Progressiva</h3>
+            <p class="text-xs text-[#64748B]">Anote os pesos de hoje. O app salva automaticamente e exibe seu histórico para o próximo treino.</p>
           </div>
 
-          <div class="flex flex-wrap items-center gap-1.5 bg-slate-900 p-1.5 rounded-2xl border border-slate-800 max-w-full">
+          <div class="flex flex-wrap items-center gap-1.5 bg-[#ECEEFE] p-1.5 rounded-2xl border border-[#DCE2FE] max-w-full">
             <button 
               v-for="split in activePlan?.workoutSplits" 
               :key="split.id"
               :id="`btn-split-${split.id}`"
               @click="currentSplitTab = split.id"
-              :class="currentSplitTab === split.id ? (isWeightLoss ? 'bg-rose-500 text-white font-black shadow' : 'bg-amber-500 text-slate-950 font-black shadow') : 'text-slate-400 hover:text-white'"
+              :class="currentSplitTab === split.id ? 'bg-[#007BFF] text-white font-black shadow-xs' : 'text-[#64748B] hover:text-[#007BFF]'"
               class="tap-btn px-3.5 py-1.5 rounded-xl text-xs md:text-sm font-bold transition-all flex-shrink-0"
             >
               {{ getSplitTabLabel(split.title) }}
@@ -299,7 +293,7 @@
               type="button"
               id="btn-open-create-split"
               @click="openCreateSplitModal"
-              class="tap-btn px-3 py-1.5 rounded-xl text-xs md:text-sm font-bold border-2 border-dashed border-amber-500/60 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 hover:border-amber-400 transition-all flex items-center gap-1 flex-shrink-0"
+              class="tap-btn px-3 py-1.5 rounded-xl text-xs md:text-sm font-black bg-[#FBBF04] text-[#1E293B] hover:bg-[#f5a623] border border-[#f5a623] transition-all flex items-center gap-1 flex-shrink-0 shadow-xs"
               title="Criar sua própria ficha de treino personalizada"
             >
               <span aria-hidden="true">➕</span>
@@ -310,20 +304,19 @@
               type="button"
               id="btn-open-custom-exercises"
               @click="openCustomExercises"
-              class="tap-btn px-3 py-1.5 rounded-xl text-xs font-bold border border-slate-700 text-slate-300 hover:text-white hover:border-slate-500 transition-all flex-shrink-0"
+              class="tap-btn px-3 py-1.5 rounded-xl text-xs font-bold border border-[#DCE2FE] bg-white text-[#1E293B] hover:bg-[#F8FAFC] transition-all flex-shrink-0 shadow-xs"
               title="Criar e gerenciar seus próprios exercícios"
             >
               + Meus exercícios
             </button>
 
-            <!-- Tela cheia para executar o treino: fila do que falta, entradas
-                 grandes de carga/reps e o cronômetro da sessão. -->
+            <!-- Tela cheia para executar o treino -->
             <button
               v-if="trainingSplit"
               type="button"
               id="btn-open-training-mode"
               @click="openTrainingMode"
-              class="tap-btn px-3 py-1.5 rounded-xl text-xs font-bold border border-amber-500/50 text-amber-300 hover:text-white hover:border-amber-400 transition-all flex-shrink-0"
+              class="tap-btn px-3 py-1.5 rounded-xl text-xs font-black bg-[#FBBF04] text-[#1E293B] hover:bg-[#f5a623] border border-[#f5a623] transition-all flex-shrink-0 shadow-xs"
               title="Abrir o modo treino em tela cheia"
             >
               <span aria-hidden="true">▶</span> Modo Treino
@@ -334,27 +327,23 @@
               type="button"
               id="btn-finish-session"
               @click="finishCurrentSession"
-              class="tap-btn px-3 py-1.5 rounded-xl text-xs font-bold border border-slate-700 text-slate-300 hover:text-white hover:border-slate-500 transition-all ml-1 flex-shrink-0"
+              class="tap-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-[#007BFF] hover:bg-[#0062cc] text-white transition-all ml-1 flex-shrink-0 shadow-xs"
               title="Encerrar este treino e registrá-lo no histórico"
             >
               ✓ Concluir treino
             </button>
 
-            <!--
-              Geração por IA. Fica aqui, ao lado das abas de ficha, porque é
-              uma decisão sobre o treino — não um ajuste de preferências. Só
-              aparece com perfil salvo: a ficha é montada a partir dele.
-            -->
+            <!-- Geração por IA -->
             <button
               v-if="userProfile"
               type="button"
               id="btn-generate-ai-plan"
               @click="generatePlanWithAi"
               :disabled="isAiPlanLoading"
-              class="tap-btn px-3 py-1.5 rounded-xl text-xs font-bold border transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+              class="tap-btn px-3 py-1.5 rounded-xl text-xs font-bold border transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 shadow-xs"
               :class="isAiPlanLoading
-                ? 'border-slate-700 text-slate-400'
-                : 'border-sky-500/50 text-sky-300 hover:text-white hover:border-sky-400'"
+                ? 'border-[#DCE2FE] bg-white text-[#64748B]'
+                : 'border-[#007BFF]/40 bg-white text-[#007BFF] hover:bg-[#ECEEFE]'"
               :title="isAiPlanLoading ? 'Gerando ficha com IA...' : 'Gerar a ficha e as metas com IA (Gemini)'"
             >
               <span aria-hidden="true">{{ isAiPlanLoading ? '⏳' : '🤖' }}</span>
@@ -362,14 +351,13 @@
             </button>
           </div>
 
-          <!-- Origem do plano e retorno da IA. Sem isso o usuário não sabe se
-               está olhando para a fórmula ou para uma sugestão de modelo. -->
+          <!-- Origem do plano e retorno da IA -->
           <p
             id="ai-plan-status"
             role="status"
             aria-live="polite"
             class="w-full text-xs leading-relaxed"
-            :class="aiPlanMessage?.tone === 'error' ? 'text-rose-300' : (aiPlanMessage ? 'text-sky-300' : 'text-slate-400')"
+            :class="aiPlanMessage?.tone === 'error' ? 'text-rose-500' : (aiPlanMessage ? 'text-[#007BFF]' : 'text-[#64748B]')"
           >
             <template v-if="aiPlanMessage">{{ aiPlanMessage.text }}</template>
             <template v-else-if="activePlan?.planSource === 'ai'">
@@ -381,6 +369,9 @@
             </template>
           </p>
         </div>
+
+        <!-- Widget de Tonelagem e PRs em Tempo Real na Sessão -->
+        <WorkoutTonnageLiveWidget v-bind="liveSessionGamification" />
 
         <!-- Lista de Exercícios da Ficha Ativa -->
         <div v-for="split in activePlan?.workoutSplits" :key="split.id">
@@ -505,35 +496,35 @@
               </div>
             </div>
 
-            <!-- Resumo Métrico & Mapa Anatômico da Sessão (Inspirado na Imagem 1) -->
-            <div class="p-4 rounded-2xl bg-slate-900 border-2 border-slate-800 shadow-xl space-y-3">
+            <!-- Resumo Métrico & Mapa Anatômico da Sessão -->
+            <div class="p-4 rounded-2xl bg-[#ECEEFE] border border-[#DCE2FE] shadow-xs space-y-3">
               <!-- Métricas Rápidas da Sessão (Exercícios, Séries, Tempo, Calorias) -->
               <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
-                <div class="p-2.5 rounded-xl bg-slate-950 border border-slate-800">
-                  <p class="text-[10px] uppercase font-bold text-slate-400">Exercícios</p>
-                  <p class="text-base font-black text-white">{{ split.exercises.length }}</p>
+                <div class="p-2.5 rounded-xl bg-white border border-[#DCE2FE] shadow-xs">
+                  <p class="text-[10px] uppercase font-bold text-[#64748B]">Exercícios</p>
+                  <p class="text-base font-black text-[#1E293B]">{{ split.exercises.length }}</p>
                 </div>
-                <div class="p-2.5 rounded-xl bg-slate-950 border border-slate-800">
-                  <p class="text-[10px] uppercase font-bold text-slate-400">Séries Totais</p>
-                  <p class="text-base font-black text-emerald-400">{{ split.exercises.length * 3 }}</p>
+                <div class="p-2.5 rounded-xl bg-white border border-[#DCE2FE] shadow-xs">
+                  <p class="text-[10px] uppercase font-bold text-[#64748B]">Séries Totais</p>
+                  <p class="text-base font-black text-[#007BFF]">{{ split.exercises.length * 3 }}</p>
                 </div>
-                <div class="p-2.5 rounded-xl bg-slate-950 border border-slate-800">
-                  <p class="text-[10px] uppercase font-bold text-slate-400">Tempo Estimado</p>
-                  <p class="text-base font-black text-sky-400">~{{ split.exercises.length * 8 }} min</p>
+                <div class="p-2.5 rounded-xl bg-white border border-[#DCE2FE] shadow-xs">
+                  <p class="text-[10px] uppercase font-bold text-[#64748B]">Tempo Estimado</p>
+                  <p class="text-base font-black text-[#1E293B]">~{{ split.exercises.length * 8 }} min</p>
                 </div>
-                <div class="p-2.5 rounded-xl bg-slate-950 border border-slate-800">
-                  <p class="text-[10px] uppercase font-bold text-slate-400">Gasto Estimado</p>
-                  <p class="text-base font-black text-orange-400">~{{ split.exercises.length * 45 }} kcal</p>
+                <div class="p-2.5 rounded-xl bg-white border border-[#DCE2FE] shadow-xs">
+                  <p class="text-[10px] uppercase font-bold text-[#64748B]">Gasto Estimado</p>
+                  <p class="text-base font-black text-[#FBBF04]">~{{ split.exercises.length * 45 }} kcal</p>
                 </div>
               </div>
 
               <!-- Botão para Alternar / Exibir Mapa Anatômico -->
               <div class="flex items-center justify-between pt-1">
                 <div class="flex items-center gap-2">
-                  <span class="text-xs font-black text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
+                  <span class="text-xs font-black text-[#1E293B] uppercase tracking-wider flex items-center gap-1.5">
                     <span>💪</span> Músculos Ativos Deste Treino
                   </span>
-                  <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-orange-500/20 text-orange-400 border border-orange-500/40">
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-[#007BFF]/15 text-[#007BFF] border border-[#007BFF]/30">
                     {{ getSplitMuscleGroups(split).length }} grupos
                   </span>
                 </div>
@@ -542,7 +533,7 @@
                   type="button"
                   :id="`btn-toggle-body-map-${split.id}`"
                   @click="showSplitBodyMap = !showSplitBodyMap"
-                  class="tap-btn text-xs font-bold text-orange-400 hover:text-orange-300 flex items-center gap-1 transition-colors"
+                  class="tap-btn text-xs font-bold text-[#007BFF] hover:text-[#0062cc] flex items-center gap-1 transition-colors"
                 >
                   <span>{{ showSplitBodyMap ? 'Ocultar Mapa' : 'Ver Mapa Anatômico' }}</span>
                   <span class="text-[10px]">{{ showSplitBodyMap ? '▲' : '▼' }}</span>
@@ -550,7 +541,7 @@
               </div>
 
               <!-- Diagrama Anatômico Integrado -->
-              <div v-if="showSplitBodyMap" :id="`split-body-map-${split.id}`" class="p-3 rounded-xl bg-slate-950 border border-slate-800 flex justify-center">
+              <div v-if="showSplitBodyMap" :id="`split-body-map-${split.id}`" class="p-3 rounded-xl bg-white border border-[#DCE2FE] flex justify-center shadow-xs">
                 <MuscleBodyMap
                   :highlighted-muscles="getSplitMuscleGroups(split)"
                   :id-prefix="`split-${split.id}-`"
@@ -586,7 +577,7 @@
                 <div 
                   :id="`exercise-card-${ex.id}`"
                   class="p-4 rounded-2xl border transition-all flex flex-col md:flex-row md:items-center justify-between gap-4 min-w-0"
-                  :class="workoutLogs[ex.id]?.isDone ? 'bg-slate-900/40 border-slate-800/60 opacity-75' : 'bg-slate-900 border-slate-800 hover:border-slate-700'"
+                  :class="workoutLogs[ex.id]?.isDone ? 'bg-[#ECEEFE]/60 border-[#DCE2FE] opacity-80' : 'bg-[#ECEEFE] border-[#DCE2FE] hover:border-[#007BFF]/50 shadow-xs'"
                 >
                   <!-- Lado Esquerdo: Checkbox + Miniatura + Título + Badges -->
                   <div class="flex items-start md:items-center gap-3 flex-1 min-w-0">
@@ -597,17 +588,17 @@
                       :aria-pressed="!!workoutLogs[ex.id]?.isDone"
                       :aria-label="workoutLogs[ex.id]?.isDone ? `Marcar ${ex.name} como pendente` : `Marcar ${ex.name} como concluído`"
                       class="check-btn mt-1 md:mt-0 flex-shrink-0"
-                      :class="workoutLogs[ex.id]?.isDone ? (isWeightLoss ? 'bg-rose-500 border-rose-400 text-white font-black text-sm' : 'bg-emerald-500 border-emerald-400 text-slate-950 font-black text-sm') : 'border-slate-700 hover:border-amber-500/60 text-transparent'"
+                      :class="workoutLogs[ex.id]?.isDone ? 'bg-[#FBBF04] border-[#FBBF04] text-[#1E293B] font-black text-sm shadow-xs' : 'bg-white border-[#DCE2FE] hover:border-[#FBBF04] text-transparent'"
                     >
                       ✓
                     </button>
 
-                    <!-- Miniatura Visual do Exercício (Inspirado na Imagem 1 - Tela 2) -->
+                    <!-- Miniatura Visual do Exercício -->
                     <button
                       type="button"
                       :id="`btn-thumb-${ex.id}`"
                       @click="openExerciseDetails(ex)"
-                      class="w-12 h-12 rounded-xl bg-slate-950 border-2 border-slate-700/80 overflow-hidden flex items-center justify-center flex-shrink-0 cursor-pointer hover:border-orange-500 transition-all shadow-md group relative"
+                      class="w-12 h-12 rounded-xl bg-white border border-[#DCE2FE] overflow-hidden flex items-center justify-center flex-shrink-0 cursor-pointer hover:border-[#007BFF] transition-all shadow-xs group relative"
                       title="Ver demonstração e músculos trabalhados"
                     >
                       <img
@@ -618,7 +609,7 @@
                         loading="lazy"
                       />
                       <span v-else class="text-xl">🏋️</span>
-                      <span class="absolute inset-0 bg-orange-500/10 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                      <span class="absolute inset-0 bg-[#007BFF]/10 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                     </button>
 
                     <div class="space-y-1 min-w-0 flex-1">
@@ -642,7 +633,7 @@
                         rel="noopener noreferrer"
                         :id="`link-exercise-${ex.id}`"
                         class="text-sm md:text-base font-bold transition-colors hover:underline flex items-center gap-1.5 group min-w-0"
-                        :class="workoutLogs[ex.id]?.isDone ? 'line-through text-slate-500' : 'text-white hover:text-amber-300'"
+                        :class="workoutLogs[ex.id]?.isDone ? 'line-through text-[#64748B]' : 'text-[#1E293B] hover:text-[#007BFF]'"
                         title="Ver demonstração do exercício (imagem externa)"
                       >
                         <span>{{ ex.name }}</span>
@@ -651,7 +642,7 @@
                       <h4 
                         v-else
                         class="text-sm md:text-base font-bold transition-colors"
-                        :class="workoutLogs[ex.id]?.isDone ? 'line-through text-slate-500' : 'text-white'"
+                        :class="workoutLogs[ex.id]?.isDone ? 'line-through text-[#64748B]' : 'text-[#1E293B]'"
                       >
                         {{ ex.name }}
                       </h4>
@@ -661,7 +652,7 @@
                         type="button"
                         :id="`btn-details-${ex.id}`"
                         @click="openExerciseDetails(ex)"
-                        class="tap-btn text-xs text-orange-400 hover:text-orange-300 font-bold inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/30 transition-colors"
+                        class="tap-btn text-xs text-[#007BFF] hover:text-[#0062cc] font-bold inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-white border border-[#DCE2FE] transition-colors shadow-xs"
                         title="Ver demonstração e detalhes anatômicos"
                       >
                         <span>ℹ️</span>
@@ -822,10 +813,9 @@
                 <div v-if="ex.muscle !== 'cardio'" class="flex flex-col gap-2 self-end md:self-auto w-full md:w-auto">
                   <div class="flex flex-wrap items-center gap-2 sm:gap-3">
                     <div
-                      class="flex items-center gap-2 bg-slate-900 px-3 py-2 rounded-xl border-2 border-slate-600 flex-1 md:flex-initial transition-all"
-                      :class="isWeightLoss ? 'focus-within:border-rose-400 focus-within:ring-2 focus-within:ring-rose-500/20' : 'focus-within:border-amber-400 focus-within:ring-2 focus-within:ring-amber-500/20'"
+                      class="flex items-center gap-2 bg-white px-3 py-2 rounded-xl border border-[#DCE2FE] shadow-xs flex-1 md:flex-initial transition-all focus-within:border-[#007BFF] focus-within:ring-2 focus-within:ring-[#007BFF]/20"
                     >
-                      <label :for="`input-weight-${ex.id}`" class="text-xs text-slate-200 font-bold uppercase tracking-wider">Carga:</label>
+                      <label :for="`input-weight-${ex.id}`" class="text-xs text-[#64748B] font-bold uppercase tracking-wider">Carga:</label>
                       <input 
                         :id="`input-weight-${ex.id}`"
                         type="number" 
@@ -836,17 +826,15 @@
                         :aria-label="`Carga em kg para ${ex.name}`"
                         :value="workoutLogs[ex.id]?.weight"
                         @input="e => updateLog(ex.id, split.id, 'weight', e.target.value)"
-                        :class="isWeightLoss ? 'text-rose-300' : 'text-amber-300'"
-                        class="log-input w-16 text-base font-extrabold text-right focus:outline-none focus:text-white"
+                        class="log-input w-16 text-base font-extrabold text-right focus:outline-none text-[#1E293B]"
                       />
-                      <span class="text-xs text-slate-300 font-bold">kg</span>
+                      <span class="text-xs text-[#64748B] font-bold">kg</span>
                     </div>
 
                     <div
-                      class="flex items-center gap-2 bg-slate-900 px-3 py-2 rounded-xl border-2 border-slate-600 flex-1 md:flex-initial transition-all"
-                      :class="isWeightLoss ? 'focus-within:border-rose-400 focus-within:ring-2 focus-within:ring-rose-500/20' : 'focus-within:border-amber-400 focus-within:ring-2 focus-within:ring-amber-500/20'"
+                      class="flex items-center gap-2 bg-white px-3 py-2 rounded-xl border border-[#DCE2FE] shadow-xs flex-1 md:flex-initial transition-all focus-within:border-[#007BFF] focus-within:ring-2 focus-within:ring-[#007BFF]/20"
                     >
-                      <label :for="`input-reps-${ex.id}`" class="text-xs text-slate-200 font-bold uppercase tracking-wider">Reps:</label>
+                      <label :for="`input-reps-${ex.id}`" class="text-xs text-[#64748B] font-bold uppercase tracking-wider">Reps:</label>
                       <input 
                         :id="`input-reps-${ex.id}`"
                         type="number" 
@@ -857,17 +845,15 @@
                         :aria-label="`Repetições para ${ex.name}`"
                         :value="workoutLogs[ex.id]?.reps"
                         @input="e => updateLog(ex.id, split.id, 'reps', e.target.value)"
-                        :class="isWeightLoss ? 'text-rose-300' : 'text-amber-300'"
-                        class="log-input w-12 text-base font-extrabold text-right focus:outline-none focus:text-white"
+                        class="log-input w-12 text-base font-extrabold text-right focus:outline-none text-[#1E293B]"
                       />
                     </div>
 
                     <!-- RIR: reps em reserva do último esforço. -->
                     <div
-                      class="flex items-center gap-2 bg-slate-900 px-3 py-2 rounded-xl border-2 border-slate-600 flex-1 md:flex-initial transition-all"
-                      :class="isWeightLoss ? 'focus-within:border-rose-400 focus-within:ring-2 focus-within:ring-rose-500/20' : 'focus-within:border-amber-400 focus-within:ring-2 focus-within:ring-amber-500/20'"
+                      class="flex items-center gap-2 bg-white px-3 py-2 rounded-xl border border-[#DCE2FE] shadow-xs flex-1 md:flex-initial transition-all focus-within:border-[#007BFF] focus-within:ring-2 focus-within:ring-[#007BFF]/20"
                     >
-                      <label :for="`input-rir-${ex.id}`" class="text-xs text-slate-200 font-bold uppercase tracking-wider">RIR:</label>
+                      <label :for="`input-rir-${ex.id}`" class="text-xs text-[#64748B] font-bold uppercase tracking-wider">RIR:</label>
                       <input
                         :id="`input-rir-${ex.id}`"
                         type="number"
@@ -878,8 +864,7 @@
                         :aria-label="`RIR (reps em reserva) para ${ex.name}`"
                         :value="workoutLogs[ex.id]?.rir"
                         @input="e => updateLog(ex.id, split.id, 'rir', e.target.value)"
-                        :class="isWeightLoss ? 'text-rose-300' : 'text-amber-300'"
-                        class="log-input w-10 text-base font-extrabold text-right focus:outline-none focus:text-white"
+                        class="log-input w-10 text-base font-extrabold text-right focus:outline-none text-[#1E293B]"
                       />
                     </div>
 
@@ -887,7 +872,7 @@
                       type="button"
                       :id="`btn-add-set-${ex.id}`"
                       @click="addExerciseSet(ex.id, split.id)"
-                      class="tap-btn px-2.5 py-2 rounded-xl text-xs font-bold border-2 border-slate-600 bg-slate-900 hover:bg-slate-800 text-slate-200 hover:text-white transition-colors flex items-center gap-1 shadow-sm"
+                      class="tap-btn px-2.5 py-2 rounded-xl text-xs font-bold border border-[#DCE2FE] bg-white hover:bg-[#F8FAFC] text-[#1E293B] hover:text-[#007BFF] transition-colors flex items-center gap-1 shadow-xs"
                       title="Adicionar mais uma série para este exercício"
                     >
                       <span aria-hidden="true">+</span> Série
@@ -895,11 +880,11 @@
                   </div>
 
                   <!-- Séries adicionais (Série 2, 3...) -->
-                  <div v-if="workoutLogs[ex.id]?.sets?.length > 1" class="space-y-1.5 pt-1 border-t border-slate-800/60">
+                  <div v-if="workoutLogs[ex.id]?.sets?.length > 1" class="space-y-1.5 pt-1 border-t border-[#DCE2FE]">
                     <div
                       v-for="s in workoutLogs[ex.id].sets.slice(1)"
                       :key="s.setNumber"
-                      class="flex items-center justify-between gap-2 bg-slate-950/60 px-3 py-1.5 rounded-xl border border-slate-800/80 text-xs"
+                      class="flex items-center justify-between gap-2 bg-white px-3 py-1.5 rounded-xl border border-[#DCE2FE] text-xs shadow-xs"
                     >
                       <div class="flex items-center gap-2">
                         <button
@@ -907,15 +892,15 @@
                           :id="`btn-check-set-${ex.id}-${s.setNumber}`"
                           @click="toggleSetDone(ex.id, split.id, s.setNumber)"
                           class="w-5 h-5 rounded-lg border flex items-center justify-center font-bold text-[10px] transition-colors"
-                          :class="s.isDone ? (isWeightLoss ? 'bg-rose-500 border-rose-400 text-white' : 'bg-amber-500 border-amber-400 text-slate-950') : 'border-slate-700 text-transparent hover:border-amber-400'"
+                          :class="s.isDone ? 'bg-[#FBBF04] border-[#FBBF04] text-[#1E293B]' : 'border-[#DCE2FE] text-transparent hover:border-[#FBBF04]'"
                         >
                           ✓
                         </button>
-                        <span class="font-semibold text-slate-300">Série {{ s.setNumber }}</span>
+                        <span class="font-semibold text-[#1E293B]">Série {{ s.setNumber }}</span>
                       </div>
 
                       <div class="flex items-center gap-2">
-                        <div class="flex items-center gap-1 bg-slate-900 px-2 py-1 rounded-lg border border-slate-800">
+                        <div class="flex items-center gap-1 bg-[#F8FAFC] px-2 py-1 rounded-lg border border-[#DCE2FE]">
                           <input
                             :id="`input-weight-${ex.id}-${s.setNumber}`"
                             type="number"
@@ -923,30 +908,28 @@
                             placeholder="0"
                             :value="s.weight"
                             @input="e => updateSetField(ex.id, split.id, s.setNumber, 'weight', e.target.value)"
-                            :class="isWeightLoss ? 'text-rose-300' : 'text-amber-300'"
-                            class="w-12 text-right bg-transparent font-bold focus:outline-none"
+                            class="w-12 text-right bg-transparent font-bold focus:outline-none text-[#1E293B]"
                           />
-                          <span class="text-[10px] text-slate-500">kg</span>
+                          <span class="text-[10px] text-[#64748B]">kg</span>
                         </div>
 
-                        <div class="flex items-center gap-1 bg-slate-900 px-2 py-1 rounded-lg border border-slate-800">
+                        <div class="flex items-center gap-1 bg-[#F8FAFC] px-2 py-1 rounded-lg border border-[#DCE2FE]">
                           <input
                             :id="`input-reps-${ex.id}-${s.setNumber}`"
                             type="number"
                             placeholder="12"
                             :value="s.reps"
                             @input="e => updateSetField(ex.id, split.id, s.setNumber, 'reps', e.target.value)"
-                            :class="isWeightLoss ? 'text-rose-300' : 'text-amber-300'"
-                            class="w-10 text-right bg-transparent font-bold focus:outline-none"
+                            class="w-10 text-right bg-transparent font-bold focus:outline-none text-[#1E293B]"
                           />
-                          <span class="text-[10px] text-slate-500">reps</span>
+                          <span class="text-[10px] text-[#64748B]">reps</span>
                         </div>
 
                         <button
                           type="button"
                           :id="`btn-remove-set-${ex.id}-${s.setNumber}`"
                           @click="removeExerciseSet(ex.id, split.id, s.setNumber)"
-                          class="text-slate-500 hover:text-rose-400 p-1 text-xs"
+                          class="text-[#64748B] hover:text-rose-500 p-1 text-xs"
                           title="Remover esta série"
                         >
                           ✕
@@ -1304,18 +1287,18 @@
         role="tabpanel"
         aria-labelledby="tab-btn-frequency"
         tabindex="0"
-        class="space-y-6 focus:outline-none"
+        class="space-y-6 focus:outline-none text-[#1E293B]"
       >
-        <div class="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 shadow-xl relative overflow-hidden">
+        <div class="bg-[#ECEEFE] border border-[#DCE2FE] rounded-3xl p-6 shadow-xs relative overflow-hidden">
           <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
             <div>
-              <h3 class="text-lg font-bold text-white flex items-center gap-2">
-                <span :class="isWeightLoss ? 'text-rose-400' : 'text-amber-400'">📅</span> Quadro de Compromisso Semanal
+              <h3 class="text-lg font-bold text-[#1E293B] flex items-center gap-2">
+                <span class="text-[#007BFF]">📅</span> Quadro de Compromisso Semanal
               </h3>
-              <p class="text-xs text-slate-400">Clique no dia para registrar treinos, caminhadas ou descansos concluídos.</p>
+              <p class="text-xs text-[#64748B]">Clique no dia para registrar treinos, caminhadas ou descansos concluídos.</p>
             </div>
-            <div class="text-xs sm:text-sm bg-slate-800/80 px-4 py-2 rounded-xl border border-slate-700/60 font-semibold">
-              Semana Concluída: <span id="week-progress-text" :class="isWeightLoss ? 'text-rose-400' : 'text-amber-400'" class="font-bold">{{ completedDaysCount }} / 7</span>
+            <div class="text-xs sm:text-sm bg-white px-4 py-2 rounded-xl border border-[#DCE2FE] font-semibold text-[#1E293B] shadow-xs">
+              Semana Concluída: <span id="week-progress-text" class="font-black text-[#007BFF]">{{ completedDaysCount }} / 7</span>
             </div>
           </div>
 
@@ -1329,13 +1312,13 @@
               :aria-pressed="!!weeklyChecks[day.id]"
               :aria-label="`${day.label}: ${day.workout}. ${weeklyChecks[day.id] ? 'Concluído' : 'Não concluído'}. Clique para alternar.`"
               class="p-3.5 rounded-2xl border text-center transition-all cursor-pointer flex flex-col justify-between"
-              :class="weeklyChecks[day.id] ? (isWeightLoss ? 'bg-rose-500/15 border-rose-500/50 text-white shadow' : 'bg-amber-500/15 border-amber-500/50 text-white shadow') : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:border-slate-700'"
+              :class="weeklyChecks[day.id] ? 'bg-[#FBBF04] border-[#FBBF04] text-[#1E293B] shadow-xs font-bold' : 'bg-white border-[#DCE2FE] text-[#64748B] hover:border-[#007BFF]'"
             >
               <div>
-                <span class="text-[11px] font-bold uppercase tracking-wider block" :class="weeklyChecks[day.id] ? (isWeightLoss ? 'text-rose-400' : 'text-amber-400') : 'text-slate-500'">
+                <span class="text-[11px] font-bold uppercase tracking-wider block" :class="weeklyChecks[day.id] ? 'text-[#1E293B]' : 'text-[#64748B]'">
                   {{ day.label }}
                 </span>
-                <span class="text-xs font-semibold block mt-1 line-clamp-2" :class="weeklyChecks[day.id] ? 'text-slate-200' : 'text-slate-400'">
+                <span class="text-xs font-semibold block mt-1 line-clamp-2" :class="weeklyChecks[day.id] ? 'text-[#1E293B]' : 'text-[#64748B]'">
                   {{ day.workout }}
                 </span>
               </div>
@@ -1345,11 +1328,33 @@
                   :id="`day-check-${day.id}`"
                   aria-hidden="true"
                   class="w-6 h-6 rounded-full flex items-center justify-center border text-xs font-bold transition-all"
-                  :class="weeklyChecks[day.id] ? (isWeightLoss ? 'bg-rose-500 border-rose-400 text-white' : 'bg-amber-500 border-amber-400 text-slate-950') : 'border-slate-800 text-transparent'"
+                  :class="weeklyChecks[day.id] ? 'bg-white border-[#1E293B] text-[#1E293B]' : 'border-[#DCE2FE] text-transparent'"
                 >
                   ✓
                 </span>
               </div>
+            </button>
+          </div>
+
+          <!-- Ação Gamificada: Descanso Ativo & Recuperação (Preserva Ofensiva e Rende XP) -->
+          <div class="mt-6 pt-4 border-t border-[#DCE2FE] flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <span class="text-xs font-black text-[#1E293B] flex items-center gap-1.5">
+                <span>🛡️</span> Descanso Ativo & Recuperação Muscular
+              </span>
+              <p class="text-[11px] text-[#64748B] mt-0.5">
+                Registrar dia de regeneração preserva sua ofensiva e rende <strong>+25 Iron XP</strong>.
+              </p>
+            </div>
+            <button
+              type="button"
+              id="btn-register-rest-day"
+              @click="handleRegisterRestDay"
+              class="tap-btn px-4 py-2 rounded-xl bg-white hover:bg-[#F8FAFC] border border-[#DCE2FE] text-[#1E293B] font-bold text-xs shadow-xs flex items-center gap-2 transition-all hover:border-[#007BFF]"
+              title="Registrar dia de descanso regenerativo"
+            >
+              <span>⚡</span>
+              <span>Registrar Descanso (+25 XP)</span>
             </button>
           </div>
         </div>
@@ -1649,6 +1654,17 @@
       @close="isExerciseDetailsOpen = false"
     />
 
+    <!-- Modal de Celebração e Impacto do Treino -->
+    <WorkoutCelebrationModal
+      :is-open="showCelebrationModal"
+      :tonnage-kg="lastSessionCelebration.tonnageKg"
+      :done-sets="lastSessionCelebration.doneSets"
+      :earned-xp="lastSessionCelebration.earnedXp"
+      :real-world-equivalence="lastSessionCelebration.realWorldEquivalence"
+      :new-badges="lastSessionCelebration.newBadges"
+      @close="showCelebrationModal = false"
+    />
+
   </div>
 </template>
 
@@ -1674,6 +1690,12 @@ import VersionUpdatePrompt from './components/VersionUpdatePrompt.vue';
 import AppSideDrawer from './components/AppSideDrawer.vue';
 import ExerciseDetailsModal from './components/ExerciseDetailsModal.vue';
 import MuscleBodyMap from './components/MuscleBodyMap.vue';
+import GamificationIronStatus from './components/GamificationIronStatus.vue';
+import WorkoutTonnageLiveWidget from './components/WorkoutTonnageLiveWidget.vue';
+import WorkoutCelebrationModal from './components/WorkoutCelebrationModal.vue';
+import { calculateSessionGamification, checkBadges } from './engine/gamification.js';
+import { loadGamificationState, recordSessionCompletion, recordRestDay } from './db/gamification.js';
+import { playPlateClick, playPrFanfare, triggerHaptic } from './engine/audioHaptics.js';
 import { usePwaUpdate } from './composables/usePwaUpdate';
 import {
   buildFullCatalog,
@@ -1720,6 +1742,17 @@ const userProfile = ref(null);
 const activePlan = ref(null);
 const workoutLogs = ref({});
 const weeklyChecks = ref({});
+
+// Gamificação & Conquistas
+const gamificationState = ref(loadGamificationState());
+const showCelebrationModal = ref(false);
+const lastSessionCelebration = ref({
+  tonnageKg: 0,
+  doneSets: 0,
+  earnedXp: 0,
+  realWorldEquivalence: '',
+  newBadges: []
+});
 
 // Última série registrada de cada exercício do plano, usada para exibir
 // "última carga" na ficha. projection exerciseId -> session_sets.
@@ -2511,6 +2544,18 @@ async function toggleExerciseCheck(exerciseId, splitId) {
       .find(s => s.id === splitId)
       ?.exercises?.find(e => e.id === exerciseId);
     if (ex) triggerRestTimer(ex.rest);
+
+    // Feedback sonoro e tátil
+    const pr = personalRecords.value[exerciseId];
+    const weight = Number(current.weight) || 0;
+    const isPr = pr && weight > (pr.maxWeightKg || 0);
+    if (isPr) {
+      playPrFanfare();
+      triggerHaptic('pr');
+    } else {
+      playPlateClick();
+      triggerHaptic('click');
+    }
   }
 }
 
@@ -2699,6 +2744,18 @@ async function toggleSetDone(exerciseId, splitId, setNumber) {
         ?.find(s => s.id === splitId)
         ?.exercises?.find(e => e.id === exerciseId);
       if (ex) triggerRestTimer(ex.rest);
+
+      // Feedback sonoro e tátil
+      const pr = personalRecords.value[exerciseId];
+      const weight = Number(target.weight) || 0;
+      const isPr = pr && weight > (pr.maxWeightKg || 0);
+      if (isPr) {
+        playPrFanfare();
+        triggerHaptic('pr');
+      } else {
+        playPlateClick();
+        triggerHaptic('click');
+      }
     }
   }
 
@@ -2708,6 +2765,16 @@ async function toggleSetDone(exerciseId, splitId, setNumber) {
     { sets },
     'Não foi possível marcar a série.'
   );
+}
+
+function handleRegisterRestDay() {
+  const today = getDayKey();
+  const res = recordRestDay(today);
+  gamificationState.value = res.updated;
+  if (!res.alreadyClaimed) {
+    playPlateClick();
+    triggerHaptic('click');
+  }
 }
 
 async function toggleDayCheck(dayId) {
@@ -2799,6 +2866,15 @@ const personalRecords = computed(() => {
   return out;
 });
 
+// Gamificação ao vivo da sessão atual (tonelagem em tempo real, PRs e XP)
+const liveSessionGamification = computed(() => {
+  return calculateSessionGamification({
+    workoutLogs: workoutLogs.value,
+    existingPrs: personalRecords.value,
+    isFinished: false
+  });
+});
+
 // Sugestões de próxima carga por exercício (derivadas do histórico)
 const nextLoadSuggestions = computed(() => {
   const suggestions = {};
@@ -2853,6 +2929,48 @@ async function finishCurrentSession() {
   });
 
   if (!ok) return;
+
+  // Gamificação: consolida impacto, tonelagem, XP e badges
+  const stats = calculateSessionGamification({
+    workoutLogs: workoutLogs.value,
+    existingPrs: personalRecords.value,
+    isFinished: true
+  });
+
+  const completedSets = [];
+  for (const log of Object.values(workoutLogs.value || {})) {
+    const sets = Array.isArray(log?.sets) && log.sets.length > 0
+      ? log.sets
+      : [{ weight: log?.weight, reps: log?.reps, isDone: !!log?.isDone }];
+    for (const s of sets) {
+      if (s.isDone) completedSets.push(s);
+    }
+  }
+
+  const newBadges = checkBadges({
+    sets: completedSets,
+    userProfile: userProfile.value,
+    lifetimeTonnageKg: gamificationState.value.lifetimeTonnageKg + stats.tonnageKg,
+    unlockedBadgeIds: gamificationState.value.unlockedBadgeIds
+  });
+
+  const updatedGamification = recordSessionCompletion({
+    earnedXp: stats.earnedXp,
+    tonnageKg: stats.tonnageKg,
+    newBadgeIds: newBadges.map(b => b.id),
+    currentWeekKey: currentWeekKey.value
+  });
+
+  gamificationState.value = updatedGamification;
+  lastSessionCelebration.value = {
+    tonnageKg: stats.tonnageKg,
+    doneSets: stats.doneSetsCount,
+    earnedXp: stats.earnedXp,
+    realWorldEquivalence: stats.realWorldEquivalence,
+    newBadges
+  };
+  showCelebrationModal.value = true;
+  triggerHaptic('celebrate');
 
   const next = { ...openSessionBySplit.value };
   delete next[currentSplitTab.value];

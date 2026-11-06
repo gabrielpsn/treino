@@ -14,16 +14,16 @@
       role="dialog"
       aria-modal="true"
       aria-label="Menu principal do aplicativo"
-      class="fixed inset-y-0 left-0 w-80 max-w-[85vw] bg-slate-900 border-r-2 border-slate-800 z-50 shadow-2xl flex flex-col justify-between overflow-y-auto animate-in slide-in-from-left duration-200"
+      class="fixed inset-y-0 left-0 w-80 max-w-[85vw] bg-white border-r-2 border-[#DCE2FE] text-[#1E293B] z-50 shadow-2xl flex flex-col justify-between overflow-y-auto animate-in slide-in-from-left duration-200"
     >
       <!-- Topo / Conteúdo Superior -->
       <div class="p-4 sm:p-5 space-y-5">
         
         <!-- Cabeçalho do Drawer com Botão Fechar -->
-        <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div class="flex items-center justify-between pb-3 border-b border-[#DCE2FE]">
           <div class="flex items-center gap-2">
             <span class="text-xl">⚡</span>
-            <span class="text-sm font-black text-white tracking-wider uppercase">TreinoPro</span>
+            <span class="text-sm font-black text-[#007BFF] tracking-wider uppercase">TreinoPro</span>
           </div>
 
           <button
@@ -31,20 +31,20 @@
             id="btn-close-drawer"
             @click="emit('close')"
             aria-label="Fechar menu lateral"
-            class="tap-btn p-2 rounded-xl text-slate-400 hover:text-white bg-slate-800/60 hover:bg-slate-700 transition-colors"
+            class="tap-btn p-2 rounded-xl text-[#64748B] hover:text-[#1E293B] bg-[#ECEEFE] hover:bg-[#DCE2FE] transition-colors"
           >
             ✕
           </button>
         </div>
 
-        <!-- Card de Perfil do Atleta (Inspirado na Imagem 2 - Paulo Costa) -->
+        <!-- Card de Perfil do Atleta -->
         <div
-          class="p-4 rounded-2xl relative overflow-hidden shadow-lg border border-white/10"
+          class="p-4 rounded-2xl relative overflow-hidden shadow-lg border border-white/20"
           :class="isWeightLoss
             ? 'bg-gradient-to-br from-rose-600 via-rose-700 to-orange-700 text-white'
             : currentTheme === 'orange'
               ? 'bg-gradient-to-br from-orange-600 via-orange-700 to-amber-700 text-white'
-              : 'bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 text-white'"
+              : 'bg-gradient-to-br from-[#007BFF] via-[#0069d9] to-[#0056b3] text-white'"
         >
           <!-- Fundo sutil com detalhe estético -->
           <div class="absolute -right-4 -bottom-4 w-24 h-24 rounded-full bg-white/10 blur-xl pointer-events-none"></div>
@@ -86,7 +86,7 @@
 
         <!-- Seções Principais do App -->
         <div class="space-y-1">
-          <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 px-2">
+          <p class="text-[10px] font-black uppercase tracking-widest text-[#64748B] px-2">
             Navegação Principal
           </p>
 
@@ -96,8 +96,8 @@
             @click="handleNavigate('workout')"
             class="tap-btn w-full p-2.5 rounded-xl font-bold text-xs flex items-center gap-3 transition-colors text-left"
             :class="activeTab === 'workout'
-              ? 'bg-orange-500/15 text-orange-400 border border-orange-500/30'
-              : 'text-slate-300 hover:bg-slate-800 hover:text-white'"
+              ? 'bg-[#FBBF04] text-[#1E293B] shadow-sm font-black'
+              : 'text-[#1E293B] hover:bg-[#ECEEFE]'"
           >
             <span class="text-base">🏋️</span>
             <span>Treinos & Fichas</span>
@@ -109,8 +109,8 @@
             @click="handleNavigate('nutrition')"
             class="tap-btn w-full p-2.5 rounded-xl font-bold text-xs flex items-center gap-3 transition-colors text-left"
             :class="activeTab === 'nutrition'
-              ? 'bg-orange-500/15 text-orange-400 border border-orange-500/30'
-              : 'text-slate-300 hover:bg-slate-800 hover:text-white'"
+              ? 'bg-[#FBBF04] text-[#1E293B] shadow-sm font-black'
+              : 'text-[#1E293B] hover:bg-[#ECEEFE]'"
           >
             <span class="text-base">🥗</span>
             <span>Dieta & Nutrição</span>
@@ -122,8 +122,8 @@
             @click="handleNavigate('frequency')"
             class="tap-btn w-full p-2.5 rounded-xl font-bold text-xs flex items-center gap-3 transition-colors text-left"
             :class="activeTab === 'frequency'
-              ? 'bg-orange-500/15 text-orange-400 border border-orange-500/30'
-              : 'text-slate-300 hover:bg-slate-800 hover:text-white'"
+              ? 'bg-[#FBBF04] text-[#1E293B] shadow-sm font-black'
+              : 'text-[#1E293B] hover:bg-[#ECEEFE]'"
           >
             <span class="text-base">📅</span>
             <span>Calendário & Frequência</span>
@@ -135,8 +135,8 @@
             @click="handleNavigate('history')"
             class="tap-btn w-full p-2.5 rounded-xl font-bold text-xs flex items-center gap-3 transition-colors text-left"
             :class="activeTab === 'history'
-              ? 'bg-orange-500/15 text-orange-400 border border-orange-500/30'
-              : 'text-slate-300 hover:bg-slate-800 hover:text-white'"
+              ? 'bg-[#FBBF04] text-[#1E293B] shadow-sm font-black'
+              : 'text-[#1E293B] hover:bg-[#ECEEFE]'"
           >
             <span class="text-base">📊</span>
             <span>Histórico & Métricas</span>
@@ -145,7 +145,7 @@
 
         <!-- Gestão de Fichas e Treino -->
         <div class="space-y-1">
-          <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 px-2">
+          <p class="text-[10px] font-black uppercase tracking-widest text-[#64748B] px-2">
             Gestão do Treino
           </p>
 
@@ -153,7 +153,7 @@
             type="button"
             id="btn-drawer-create-split"
             @click="handleAction('open-create-split')"
-            class="tap-btn w-full p-2.5 rounded-xl font-bold text-xs flex items-center gap-3 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors text-left"
+            class="tap-btn w-full p-2.5 rounded-xl font-bold text-xs flex items-center gap-3 text-[#1E293B] bg-[#ECEEFE] hover:bg-[#DCE2FE] transition-colors text-left border border-[#DCE2FE]"
           >
             <span class="text-base">📋</span>
             <span>Criar Nova Ficha</span>
@@ -163,7 +163,7 @@
             type="button"
             id="btn-drawer-custom-exercises"
             @click="handleAction('open-custom-exercises')"
-            class="tap-btn w-full p-2.5 rounded-xl font-bold text-xs flex items-center gap-3 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors text-left"
+            class="tap-btn w-full p-2.5 rounded-xl font-bold text-xs flex items-center gap-3 text-[#1E293B] bg-[#ECEEFE] hover:bg-[#DCE2FE] transition-colors text-left border border-[#DCE2FE]"
           >
             <span class="text-base">⚡</span>
             <span>Meus Exercícios Personalizados</span>
@@ -173,7 +173,7 @@
             type="button"
             id="btn-drawer-ai-plan"
             @click="handleAction('generate-ai-plan')"
-            class="tap-btn w-full p-2.5 rounded-xl font-bold text-xs flex items-center gap-3 text-sky-400 hover:bg-slate-800 hover:text-sky-300 transition-colors text-left"
+            class="tap-btn w-full p-2.5 rounded-xl font-bold text-xs flex items-center gap-3 text-[#007BFF] bg-[#ECEEFE] hover:bg-[#DCE2FE] transition-colors text-left border border-[#DCE2FE]"
           >
             <span class="text-base">🤖</span>
             <span>Gerar Ficha com IA (Gemini)</span>
@@ -182,7 +182,7 @@
 
         <!-- Dados & Segurança (Backup / Importação) -->
         <div class="space-y-1">
-          <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 px-2">
+          <p class="text-[10px] font-black uppercase tracking-widest text-[#64748B] px-2">
             Dados & Dispositivo
           </p>
 
@@ -190,7 +190,7 @@
             type="button"
             id="btn-export-backup"
             @click="handleAction('export-backup')"
-            class="tap-btn w-full p-2.5 rounded-xl font-bold text-xs flex items-center gap-3 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors text-left border border-slate-800"
+            class="tap-btn w-full p-2.5 rounded-xl font-bold text-xs flex items-center gap-3 text-[#1E293B] hover:bg-[#ECEEFE] transition-colors text-left border border-[#DCE2FE] bg-white"
             title="Exportar Dados (Backup)"
           >
             <span class="text-base">💾</span>
@@ -201,7 +201,7 @@
             type="button"
             id="btn-import-backup"
             @click="handleAction('import-backup')"
-            class="tap-btn w-full p-2.5 rounded-xl font-bold text-xs flex items-center gap-3 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors text-left border border-slate-800"
+            class="tap-btn w-full p-2.5 rounded-xl font-bold text-xs flex items-center gap-3 text-[#1E293B] hover:bg-[#ECEEFE] transition-colors text-left border border-[#DCE2FE] bg-white"
             title="Restaurar backup"
           >
             <span class="text-base">📂</span>
@@ -212,7 +212,7 @@
             type="button"
             id="btn-install-app"
             @click="handleAction('install-app')"
-            class="tap-btn w-full p-2.5 rounded-xl font-bold text-xs flex items-center gap-3 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors text-left border border-slate-800"
+            class="tap-btn w-full p-2.5 rounded-xl font-bold text-xs flex items-center gap-3 text-[#1E293B] hover:bg-[#ECEEFE] transition-colors text-left border border-[#DCE2FE] bg-white"
             title="Instalar App ou Criar Atalho"
           >
             <span class="text-base">📲</span>
@@ -220,9 +220,9 @@
           </button>
         </div>
 
-        <!-- Seletor de Tema Visual (Inspirado nas Imagens) -->
-        <div class="p-3 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
-          <p class="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
+        <!-- Seletor de Tema Visual -->
+        <div class="p-3 rounded-2xl bg-[#ECEEFE] border border-[#DCE2FE] space-y-2">
+          <p class="text-[10px] font-extrabold uppercase tracking-widest text-[#64748B]">
             Tema Visual do App
           </p>
           <div class="grid grid-cols-2 gap-1.5 text-xs">
@@ -232,10 +232,10 @@
               @click="emit('set-theme', 'blue')"
               class="tap-btn p-2 rounded-xl border-2 font-bold flex items-center justify-center gap-1.5 transition-all"
               :class="currentTheme === 'blue'
-                ? 'border-blue-500 bg-blue-500/20 text-white shadow'
-                : 'border-slate-800 bg-slate-900 text-slate-400 hover:border-slate-700'"
+                ? 'border-[#007BFF] bg-[#007BFF] text-white shadow'
+                : 'border-[#DCE2FE] bg-white text-[#64748B] hover:border-[#007BFF]'"
             >
-              <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+              <span class="w-2.5 h-2.5 rounded-full bg-[#007BFF]"></span>
               <span>Azul Atlético</span>
             </button>
 
@@ -245,8 +245,8 @@
               @click="emit('set-theme', 'orange')"
               class="tap-btn p-2 rounded-xl border-2 font-bold flex items-center justify-center gap-1.5 transition-all"
               :class="currentTheme === 'orange'
-                ? 'border-orange-500 bg-orange-500/20 text-white shadow'
-                : 'border-slate-800 bg-slate-900 text-slate-400 hover:border-slate-700'"
+                ? 'border-orange-500 bg-orange-500 text-white shadow'
+                : 'border-[#DCE2FE] bg-white text-[#64748B] hover:border-orange-500'"
             >
               <span class="w-2.5 h-2.5 rounded-full bg-orange-500"></span>
               <span>Laranja Força</span>
@@ -257,9 +257,9 @@
       </div>
 
       <!-- Rodapé do Drawer -->
-      <div class="p-4 border-t border-slate-800 bg-slate-950/60 text-center">
-        <p class="text-[11px] font-bold text-slate-400">TreinoPro • Versão 2.2</p>
-        <p class="text-[10px] text-slate-400">Hipertrofia, Progressão de Cargas & Saúde</p>
+      <div class="p-4 border-t border-[#DCE2FE] bg-[#F8FAFC] text-center">
+        <p class="text-[11px] font-bold text-[#1E293B]">TreinoPro • Versão 2.2</p>
+        <p class="text-[10px] text-[#64748B]">Hipertrofia, Progressão de Cargas & Saúde</p>
       </div>
     </aside>
   </div>
