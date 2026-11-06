@@ -158,21 +158,21 @@ export function generateWorkoutSplit(profile) {
       exercises: buildExerciseList(femaleExercisesA, restrictions, equipment, '3x 12-15 reps', catalog)
     });
 
-    // Treino B: Superiores & Costas (Postura, Lombar & Firmeza)
+    // Treino B: Superiores Sinergistas (Costas & Bíceps / Peito & Tríceps)
     const femaleExercisesB = [
       { muscle: 'costas', pattern: 'pull_vertical', customSeries: '3x 12-15 reps', customRest: '60s' },
       { muscle: 'costas', pattern: 'pull_horizontal', customSeries: '3x 12-15 reps', customRest: '60s' },
-      { muscle: 'peito', pattern: 'push_incline', customSeries: '3x 12 reps', customRest: '60s' },
-      { muscle: 'ombro', pattern: 'lateral_raise', customSeries: '3x 12-15 reps', customRest: '45s' },
-      { muscle: 'triceps', pattern: 'triceps_extension', customSeries: '3x 12-15 reps', customRest: '45s' },
       { muscle: 'biceps', pattern: 'biceps_curl', customSeries: '3x 12 reps', customRest: '45s' },
+      { muscle: 'peito', pattern: 'push_incline', customSeries: '3x 12 reps', customRest: '60s' },
+      { muscle: 'triceps', pattern: 'triceps_extension', customSeries: '3x 12-15 reps', customRest: '45s' },
+      { muscle: 'ombro', pattern: 'lateral_raise', customSeries: '3x 12-15 reps', customRest: '45s' },
       { muscle: 'core', pattern: 'plank', customSeries: '3x 20-35s', customRest: '45s' }
     ];
 
     splits.push({
       id: 'treino-b',
-      title: 'Treino B (Superiores & Costas)',
-      subtitle: 'Costas, Ombros e Braços firmes. Melhora postura e alivia lombar',
+      title: 'Treino B (Costas & Bíceps / Peito & Tríceps)',
+      subtitle: 'Superiores sinergistas para melhora postural, tônus muscular e alívio lombar',
       color: 'indigo',
       accentBg: 'bg-indigo-500/10 border-indigo-500/20 text-indigo-300',
       exercises: buildExerciseList(femaleExercisesB, restrictions, equipment, '3x 12-15 reps', catalog)
@@ -203,11 +203,11 @@ export function generateWorkoutSplit(profile) {
   // CENÁRIO 2: OBJETIVO HIPERTROFIA PRO
   // ==========================================
   if (daysPerWeek <= 3) {
-    // ABC Clássico (Push / Pull / Legs)
+    // ABC Clássico Sinergista (Peito/Tríceps/Ombro, Costas/Bíceps, Pernas/Core)
     splits.push({
       id: 'treino-a',
-      title: 'Treino A (Push)',
-      subtitle: 'Peito, Deltóide Anterior/Lateral e Tríceps',
+      title: 'Treino A (Peito, Ombros & Tríceps)',
+      subtitle: 'Peitoral pesado, deltóide anterior/lateral e isolamento de tríceps',
       color: 'amber',
       accentBg: 'bg-amber-500/10 border-amber-500/20 text-amber-300',
       exercises: buildExerciseList([
@@ -223,8 +223,8 @@ export function generateWorkoutSplit(profile) {
 
     splits.push({
       id: 'treino-b',
-      title: 'Treino B (Pull)',
-      subtitle: 'Costas, Deltóide Posterior e Bíceps',
+      title: 'Treino B (Costas & Bíceps)',
+      subtitle: 'Dorsais completas, deltóide posterior e flexores de cotovelo (bíceps)',
       color: 'blue',
       accentBg: 'bg-blue-500/10 border-blue-500/20 text-blue-300',
       exercises: buildExerciseList([
@@ -233,14 +233,14 @@ export function generateWorkoutSplit(profile) {
         { muscle: 'costas', pattern: 'lat_isolation' },
         { muscle: 'ombro', pattern: 'rear_delt' },
         { muscle: 'biceps', pattern: 'biceps_curl' },
-        { muscle: 'biceps', pattern: 'biceps_curl' } // O excludeIds garante variação (ex: martelo vs direta)
+        { muscle: 'biceps', pattern: 'biceps_curl' }
       ], restrictions, equipment, seriesCount, catalog)
     });
 
     splits.push({
       id: 'treino-c',
-      title: 'Treino C (Legs & Core)',
-      subtitle: 'Quadríceps, Isquiotibiais, Glúteos e Panturrilhas',
+      title: 'Treino C (Pernas Completas & Abdômen)',
+      subtitle: 'Quadríceps, isquiotibiais, glúteos, panturrilha e core',
       color: 'emerald',
       accentBg: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300',
       exercises: buildExerciseList([
@@ -254,79 +254,77 @@ export function generateWorkoutSplit(profile) {
     });
 
   } else if (daysPerWeek === 4) {
-    // Upper / Lower (2x semana)
+    // ABCD Tradicional Sinergista: Peito & Tríceps / Costas & Bíceps / Pernas / Ombros & Core
     splits.push({
       id: 'treino-a',
-      title: 'Treino A (Upper 1 - Força e Base)',
-      subtitle: 'Peitoral Pesado, Costas e Ombros',
+      title: 'Treino A (Peito & Tríceps)',
+      subtitle: 'Peitoral completo e isolamento de tríceps em sinergia anatômica',
       color: 'amber',
       accentBg: 'bg-amber-500/10 border-amber-500/20 text-amber-300',
       exercises: buildExerciseList([
         { muscle: 'peito', pattern: 'push_horizontal' },
         { muscle: 'peito', pattern: 'push_incline' },
-        { muscle: 'costas', pattern: 'pull_horizontal' },
-        { muscle: 'costas', pattern: 'pull_vertical' },
-        { muscle: 'ombro', pattern: 'lateral_raise' },
-        { muscle: 'biceps', pattern: 'biceps_curl' },
+        { muscle: 'peito', pattern: 'fly' },
+        { muscle: 'triceps', pattern: 'triceps_extension' },
+        { muscle: 'triceps', pattern: 'triceps_overhead' },
         { muscle: 'triceps', pattern: 'triceps_extension' }
       ], restrictions, equipment, seriesCount, catalog)
     });
 
     splits.push({
       id: 'treino-b',
-      title: 'Treino B (Lower 1 - Foco Anterior)',
-      subtitle: 'Quadríceps, Panturrilhas e Core',
+      title: 'Treino B (Costas & Bíceps)',
+      subtitle: 'Largura e espessura de dorsais com finalização isolada de bíceps',
       color: 'blue',
       accentBg: 'bg-blue-500/10 border-blue-500/20 text-blue-300',
       exercises: buildExerciseList([
-        { muscle: 'quadriceps', pattern: 'squat' },
-        { muscle: 'quadriceps', pattern: 'leg_press' },
-        { muscle: 'quadriceps', pattern: 'leg_extension' },
-        { muscle: 'posterior', pattern: 'leg_curl' },
-        { muscle: 'panturrilha', pattern: 'calf_raise' },
-        { muscle: 'core', pattern: 'crunch' }
-      ], restrictions, equipment, seriesCount, catalog)
-    });
-
-    splits.push({
-      id: 'treino-c',
-      title: 'Treino C (Upper 2 - Foco Hipertrofia)',
-      subtitle: 'Volume de Costas, Deltoides e Braços',
-      color: 'purple',
-      accentBg: 'bg-purple-500/10 border-purple-500/20 text-purple-300',
-      exercises: buildExerciseList([
         { muscle: 'costas', pattern: 'pull_vertical' },
+        { muscle: 'costas', pattern: 'pull_horizontal' },
+        { muscle: 'costas', pattern: 'pull_horizontal' },
         { muscle: 'costas', pattern: 'lat_isolation' },
-        { muscle: 'peito', pattern: 'fly' },
-        { muscle: 'ombro', pattern: 'push_vertical' },
-        { muscle: 'ombro', pattern: 'rear_delt' },
-        { muscle: 'triceps', pattern: 'triceps_overhead' },
+        { muscle: 'biceps', pattern: 'biceps_curl' },
         { muscle: 'biceps', pattern: 'biceps_curl' }
       ], restrictions, equipment, seriesCount, catalog)
     });
 
     splits.push({
-      id: 'treino-d',
-      title: 'Treino D (Lower 2 - Foco Posterior & Glúteo)',
-      subtitle: 'Isquiotibiais, Glúteos e Cadeia Posterior',
+      id: 'treino-c',
+      title: 'Treino C (Pernas Completas & Panturrilhas)',
+      subtitle: 'Cadeia anterior e posterior de pernas com foco em força e hipertrofia',
       color: 'emerald',
       accentBg: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300',
       exercises: buildExerciseList([
-        { muscle: 'gluteos', pattern: 'hip_thrust' },
-        { muscle: 'posterior', pattern: 'hinge' },
-        { muscle: 'posterior', pattern: 'leg_curl' },
+        { muscle: 'quadriceps', pattern: 'squat' },
         { muscle: 'quadriceps', pattern: 'leg_press' },
+        { muscle: 'quadriceps', pattern: 'leg_extension' },
+        { muscle: 'posterior', pattern: 'leg_curl' },
+        { muscle: 'gluteos', pattern: 'hip_thrust' },
+        { muscle: 'panturrilha', pattern: 'calf_raise' }
+      ], restrictions, equipment, seriesCount, catalog)
+    });
+
+    splits.push({
+      id: 'treino-d',
+      title: 'Treino D (Ombros, Trapézio & Abdômen)',
+      subtitle: 'Deltóides completos (anterior, lateral e posterior) e fortalecimento do core',
+      color: 'purple',
+      accentBg: 'bg-purple-500/10 border-purple-500/20 text-purple-300',
+      exercises: buildExerciseList([
+        { muscle: 'ombro', pattern: 'push_vertical' },
+        { muscle: 'ombro', pattern: 'lateral_raise' },
+        { muscle: 'ombro', pattern: 'rear_delt' },
         { muscle: 'panturrilha', pattern: 'calf_raise' },
+        { muscle: 'core', pattern: 'crunch' },
         { muscle: 'core', pattern: 'plank' }
       ], restrictions, equipment, seriesCount, catalog)
     });
 
   } else {
-    // 5 ou 6 dias: PPL
+    // 5 ou 6 dias: PPL (Push / Pull / Legs) com combinações sinergistas
     splits.push({
       id: 'treino-a',
-      title: 'Treino A (Push - Empurrar)',
-      subtitle: 'Peito, Ombro Frontal/Lateral e Tríceps',
+      title: 'Treino A (Peito, Ombros & Tríceps - Push)',
+      subtitle: 'Padrão de empurrar: peito, ombro frontal/lateral e tríceps',
       color: 'amber',
       accentBg: 'bg-amber-500/10 border-amber-500/20 text-amber-300',
       exercises: buildExerciseList([
@@ -342,8 +340,8 @@ export function generateWorkoutSplit(profile) {
 
     splits.push({
       id: 'treino-b',
-      title: 'Treino B (Pull - Puxar)',
-      subtitle: 'Costas Completa, Deltóide Posterior e Bíceps',
+      title: 'Treino B (Costas & Bíceps - Pull)',
+      subtitle: 'Padrão de puxar: dorsais completas, deltóide posterior e bíceps',
       color: 'blue',
       accentBg: 'bg-blue-500/10 border-blue-500/20 text-blue-300',
       exercises: buildExerciseList([
@@ -358,8 +356,8 @@ export function generateWorkoutSplit(profile) {
 
     splits.push({
       id: 'treino-c',
-      title: 'Treino C (Legs - Pernas Completas)',
-      subtitle: 'Quadríceps, Isquiotibiais, Glúteos e Panturrilhas',
+      title: 'Treino C (Pernas & Abdômen - Legs)',
+      subtitle: 'Quadríceps, isquiotibiais, glúteos, panturrilha e core',
       color: 'emerald',
       accentBg: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300',
       exercises: buildExerciseList([

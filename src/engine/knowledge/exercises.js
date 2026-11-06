@@ -737,6 +737,445 @@ export const EXERCISE_CATALOG = [
     defaultSeries: '3x 10-15 reps',
     rest: '60s',
     tips: 'As mãos mais altas que os pés reduzem a carga no ombro. É a inclinate que substitui o supino inclinado para quem sente dor no ombro.'
+  },
+
+  // --- EXPANSÃO DO CATÁLOGO: EXERCÍCIOS CONSAGRADOS POR GRUPO MUSCULAR ---
+  // PEITO
+  {
+    id: 'crossover_polia_alta',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Cable_Crossover/0.jpg',
+    name: 'Crossover na Polia Alta',
+    muscle: 'peito',
+    pattern: 'fly',
+    equipment: 'gym',
+    jointStress: [],
+    defaultSeries: '3x 12-15 reps',
+    rest: '60s',
+    tips: 'Foco na porção inferior e esternal do peitoral. Cruze levemente as mãos à frente do quadril.'
+  },
+  {
+    id: 'crossover_polia_baixa',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Low_Cable_Crossover/0.jpg',
+    name: 'Crossover na Polia Baixa',
+    muscle: 'peito',
+    pattern: 'fly',
+    equipment: 'gym',
+    jointStress: [],
+    defaultSeries: '3x 12-15 reps',
+    rest: '60s',
+    tips: 'Foco na porção clavicular (superior) do peito. Traga os cabos de baixo para cima na altura do tórax.'
+  },
+  {
+    id: 'supino_inclinado_barra',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Incline_Bench_Press/0.jpg',
+    name: 'Supino Inclinado com Barra',
+    muscle: 'peito',
+    pattern: 'push_incline',
+    equipment: 'gym',
+    jointStress: ['ombro'],
+    defaultSeries: '4x 8-10 reps',
+    rest: '90s',
+    tips: 'Banco inclinado a 30°-45°. Desça a barra controlada até a parte alta do tórax.'
+  },
+  {
+    id: 'supino_declinado_halteres',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Decline_Dumbbell_Bench_Press/0.jpg',
+    name: 'Supino Declinado com Halteres',
+    muscle: 'peito',
+    pattern: 'push_horizontal',
+    equipment: 'gym',
+    jointStress: [],
+    defaultSeries: '3x 10-12 reps',
+    rest: '75s',
+    tips: 'Ênfase na porção inferior (costal) do peito com menor estresse articular nos ombros.'
+  },
+  {
+    id: 'mergulho_paralelas_peito',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dips_Chest_Version/0.jpg',
+    name: 'Mergulho em Paralelas (Foco Peitoral)',
+    muscle: 'peito',
+    pattern: 'push_horizontal',
+    equipment: 'gym_or_home',
+    jointStress: ['ombro', 'cotovelo'],
+    defaultSeries: '3x 8-12 reps',
+    rest: '90s',
+    tips: 'Incline o tronco levemente para a frente e abra os cotovelos para transferir o estímulo ao peitoral inferior.'
+  },
+
+  // COSTAS
+  {
+    id: 'remada_cavalinho',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/T-Bar_Row/0.jpg',
+    name: 'Remada Cavalinho (Barra T)',
+    muscle: 'costas',
+    pattern: 'pull_horizontal',
+    equipment: 'gym',
+    jointStress: ['lombar'],
+    defaultSeries: '4x 8-10 reps',
+    rest: '90s',
+    tips: 'Mantenha a coluna neutra e puxe com os cotovelos próximos às costelas para máxima densidade dorsal.'
+  },
+  {
+    id: 'puxada_triangulo',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/V-bar_Pull_down/0.jpg',
+    name: 'Puxada Alta com Triângulo (Pegada Neutra)',
+    muscle: 'costas',
+    pattern: 'pull_vertical',
+    equipment: 'gym',
+    jointStress: [],
+    defaultSeries: '3x 10-12 reps',
+    rest: '75s',
+    tips: 'Pegada neutra e fechada permite maior amplitude e alongamento do grande dorsal com menor estresse no ombro.'
+  },
+  {
+    id: 'remada_serrote_halteres',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/One-Arm_Dumbbell_Row/0.jpg',
+    name: 'Remada Serrote Unilateral com Halter',
+    muscle: 'costas',
+    pattern: 'pull_horizontal',
+    equipment: 'gym_or_home',
+    jointStress: [],
+    defaultSeries: '3x 10-12 reps',
+    rest: '60s',
+    tips: 'Apoie um joelho e mão no banco. Puxe o halter em direção ao quadril, contraindo a dorsal sem girar o tronco.'
+  },
+  {
+    id: 'pulldown_barra_reta',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Straight-Arm_Dumbbell_Pullover/0.jpg',
+    name: 'Pulldown na Polia com Barra Reta',
+    muscle: 'costas',
+    pattern: 'lat_isolation',
+    equipment: 'gym',
+    jointStress: [],
+    defaultSeries: '3x 12-15 reps',
+    rest: '60s',
+    tips: 'Cotovelos quase retos e travados. Empurre a barra para baixo usando exclusivamente os dorsais.'
+  },
+  {
+    id: 'levantamento_terra',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Deadlift/0.jpg',
+    name: 'Levantamento Terra (Deadlift)',
+    muscle: 'costas',
+    pattern: 'pull_horizontal',
+    equipment: 'gym',
+    jointStress: ['lombar'],
+    defaultSeries: '3x 5-8 reps',
+    rest: '120s',
+    tips: 'Exercício rei da cadeia posterior. Mantenha a barra colada nas canelas e coluna neutra.'
+  },
+
+  // OMBROS
+  {
+    id: 'desenvolvimento_militar_barra',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Standing_Military_Press/0.jpg',
+    name: 'Desenvolvimento Militar com Barra (OHP)',
+    muscle: 'ombro',
+    pattern: 'push_vertical',
+    equipment: 'gym',
+    jointStress: ['ombro', 'lombar'],
+    defaultSeries: '4x 6-8 reps',
+    rest: '90s',
+    tips: 'Glúteos e abdômen travados. Empurre a barra verticalmente passando rente ao queixo e estendendo no topo.'
+  },
+  {
+    id: 'face_pull_corda',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Face_Pull/0.jpg',
+    name: 'Face Pull na Polia com Corda',
+    muscle: 'ombro',
+    pattern: 'rear_delt',
+    equipment: 'gym',
+    jointStress: [],
+    defaultSeries: '3x 12-15 reps',
+    rest: '60s',
+    tips: 'Puxe a corda em direção aos olhos rotacionando os ombros para trás. Essencial para deltoide posterior e saúde articular.'
+  },
+  {
+    id: 'elevacao_lateral_polia_unilateral',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Cable_One_Arm_Lateral_Raise/0.jpg',
+    name: 'Elevação Lateral na Polia Unilateral',
+    muscle: 'ombro',
+    pattern: 'lateral_raise',
+    equipment: 'gym',
+    jointStress: [],
+    defaultSeries: '3x 12-15 reps',
+    rest: '60s',
+    tips: 'Cabo passando por trás ou à frente do corpo, mantendo tensão constante desde o primeiro centímetro.'
+  },
+  {
+    id: 'elevacao_frontal_halteres',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Front_Dumbbell_Raise/0.jpg',
+    name: 'Elevação Frontal com Halteres',
+    muscle: 'ombro',
+    pattern: 'push_vertical',
+    equipment: 'gym_or_home',
+    jointStress: ['ombro'],
+    defaultSeries: '3x 12 reps',
+    rest: '60s',
+    tips: 'Eleve o halter até a linha dos olhos com pegada neutra ou pronada, sem balançar a coluna.'
+  },
+
+  // BÍCEPS
+  {
+    id: 'rosca_inclinada_45',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Incline_Dumbbell_Curl/0.jpg',
+    name: 'Rosca com Halteres no Banco Inclinado (45°)',
+    muscle: 'biceps',
+    pattern: 'biceps_curl',
+    equipment: 'gym_or_home',
+    jointStress: [],
+    defaultSeries: '3x 10-12 reps',
+    rest: '75s',
+    tips: 'A inclinação coloca a cabeça longa do bíceps sob estiramento prévio, gerando alto estímulo hipertrófico.'
+  },
+  {
+    id: 'rosca_concentrada',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Concentration_Curls/0.jpg',
+    name: 'Rosca Concentrada com Halter',
+    muscle: 'biceps',
+    pattern: 'biceps_curl',
+    equipment: 'gym_or_home',
+    jointStress: [],
+    defaultSeries: '3x 12 reps cada braço',
+    rest: '60s',
+    tips: 'Cotovelo apoiado na coxa interna, eliminando qualquer roubo e isolando o pico do bíceps.'
+  },
+  {
+    id: 'rosca_polia_baixa',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Cable_Curl/0.jpg',
+    name: 'Rosca Bíceps na Polia Baixa',
+    muscle: 'biceps',
+    pattern: 'biceps_curl',
+    equipment: 'gym',
+    jointStress: [],
+    defaultSeries: '3x 12 reps',
+    rest: '60s',
+    tips: 'Tensão linear contínua sem ponto morto no ápice da contração.'
+  },
+  {
+    id: 'rosca_spider',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Spider_Curl/0.jpg',
+    name: 'Rosca Spider no Banco Inclinado',
+    muscle: 'biceps',
+    pattern: 'biceps_curl',
+    equipment: 'gym_or_home',
+    jointStress: [],
+    defaultSeries: '3x 10-12 reps',
+    rest: '60s',
+    tips: 'Peito apoiado no banco inclinado. Sem impulso de tronco, ênfase total na cabeça curta do bíceps.'
+  },
+
+  // TRÍCEPS
+  {
+    id: 'triceps_testa_barra_w',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Lying_Close-Grip_Barbell_Triceps_Extension_Behind_The_Head/0.jpg',
+    name: 'Tríceps Testa com Barra W',
+    muscle: 'triceps',
+    pattern: 'triceps_overhead',
+    equipment: 'gym_or_home',
+    jointStress: ['cotovelo'],
+    defaultSeries: '3x 10-12 reps',
+    rest: '75s',
+    tips: 'Cotovelos levemente inclinados para trás em vez de verticais, mantendo a tensão contínua na cabeça longa.'
+  },
+  {
+    id: 'triceps_barra_reta_pulley',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Triceps_Pushdown/0.jpg',
+    name: 'Tríceps Pulley com Barra Reta',
+    muscle: 'triceps',
+    pattern: 'triceps_extension',
+    equipment: 'gym',
+    jointStress: [],
+    defaultSeries: '3x 10-12 reps',
+    rest: '60s',
+    tips: 'Cotovelos colados ao tronco. Empurre a barra até travar a extensão dos antebraços.'
+  },
+  {
+    id: 'triceps_coice_halteres',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_Kickback/0.jpg',
+    name: 'Tríceps Coice com Halter (Kickback)',
+    muscle: 'triceps',
+    pattern: 'triceps_extension',
+    equipment: 'gym_or_home',
+    jointStress: [],
+    defaultSeries: '3x 12-15 reps',
+    rest: '45s',
+    tips: 'Braço paralelo ao solo, estenda apenas o antebraço contraindo o tríceps no topo.'
+  },
+  {
+    id: 'supino_fechado_barra',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Close-Grip_Barbell_Bench_Press/0.jpg',
+    name: 'Supino com Pegada Fechada (Close-Grip)',
+    muscle: 'triceps',
+    pattern: 'triceps_extension',
+    equipment: 'gym',
+    jointStress: ['ombro', 'punho'],
+    defaultSeries: '4x 8-10 reps',
+    rest: '90s',
+    tips: 'Mãos na largura dos ombros. Construtor massivo de força e espessura para o tríceps.'
+  },
+
+  // QUADRÍCEPS
+  {
+    id: 'agachamento_hack',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Hack_Squat/0.jpg',
+    name: 'Agachamento Hack Machine',
+    muscle: 'quadriceps',
+    pattern: 'squat',
+    equipment: 'gym',
+    jointStress: ['joelho'],
+    defaultSeries: '4x 8-10 reps',
+    rest: '90s',
+    tips: 'Costas 100% apoiadas, permitindo profundidade de agachamento com segurança lombar total.'
+  },
+  {
+    id: 'agachamento_bulgaro_halteres',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Split_Squats/0.jpg',
+    name: 'Agachamento Búlgaro com Halteres',
+    muscle: 'quadriceps',
+    pattern: 'squat',
+    equipment: 'gym_or_home',
+    jointStress: ['joelho'],
+    defaultSeries: '3x 10-12 reps cada perna',
+    rest: '75s',
+    tips: 'Pé de trás apoiado no banco. Desça na vertical até a coxa dianteira ficar paralela ao piso.'
+  },
+  {
+    id: 'passada_afundo_caminhando',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_Lunges/0.jpg',
+    name: 'Passada com Halteres (Walking Lunge)',
+    muscle: 'quadriceps',
+    pattern: 'squat',
+    equipment: 'gym_or_home',
+    jointStress: ['joelho'],
+    defaultSeries: '3x 20 passos',
+    rest: '75s',
+    tips: 'Passos controlados, mantendo o joelho alinhado com a ponta do pé sem impacto no chão.'
+  },
+
+  // POSTERIOR & GLÚTEOS
+  {
+    id: 'cadeira_flexora',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Seated_Leg_Curl/0.jpg',
+    name: 'Cadeira Flexora Sentada',
+    muscle: 'posterior',
+    pattern: 'leg_curl',
+    equipment: 'gym',
+    jointStress: [],
+    defaultSeries: '3x 12-15 reps',
+    rest: '60s',
+    tips: 'A flexão de quadril sentada coloca os isquiotibiais em ótimo estiramento, gerando alta hipertrofia.'
+  },
+  {
+    id: 'stiff_barra',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Deadlift_Stiff_Legged/0.jpg',
+    name: 'Stiff com Barra Livre',
+    muscle: 'posterior',
+    pattern: 'hinge',
+    equipment: 'gym',
+    jointStress: ['lombar'],
+    defaultSeries: '4x 8-10 reps',
+    rest: '90s',
+    tips: 'Joelhos semi-flexionados fixos. Empurre o quadril para trás mantendo a barra rente às pernas.'
+  },
+  {
+    id: 'gluteo_polia_coice',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Cable_Glute_Kickback/0.jpg',
+    name: 'Glúteo na Polia (Extensão de Quadril)',
+    muscle: 'gluteos',
+    pattern: 'hip_thrust',
+    equipment: 'gym',
+    jointStress: [],
+    defaultSeries: '3x 12-15 reps cada lado',
+    rest: '60s',
+    tips: 'Tronco levemente inclinado, empurre com o calcanhar e contraia o glúteo máximo por 1s no topo.'
+  },
+  {
+    id: 'cadeira_adutora',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Thigh_Adductor/0.jpg',
+    name: 'Cadeira Adutora',
+    muscle: 'gluteos',
+    pattern: 'abduction',
+    equipment: 'gym',
+    jointStress: [],
+    defaultSeries: '3x 15 reps',
+    rest: '45s',
+    tips: 'Fortalece os adutores da coxa e estabiliza o complexo do quadril e joelho.'
+  },
+
+  // PANTURRILHA
+  {
+    id: 'panturrilha_sentado_soleo',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Seated_Calf_Raise/0.jpg',
+    name: 'Panturrilha Sentado (Máquina Sóleo)',
+    muscle: 'panturrilha',
+    pattern: 'calf_raise',
+    equipment: 'gym',
+    jointStress: [],
+    defaultSeries: '3x 15-20 reps',
+    rest: '45s',
+    tips: 'Joelhos flexionados a 90° isolam o músculo sóleo, dando largura e espessura à panturrilha.'
+  },
+  {
+    id: 'panturrilha_leg_press',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Calf_Press_On_The_Leg_Press_Machine/0.jpg',
+    name: 'Panturrilha no Leg Press 45°',
+    muscle: 'panturrilha',
+    pattern: 'calf_raise',
+    equipment: 'gym',
+    jointStress: [],
+    defaultSeries: '3x 12-15 reps',
+    rest: '60s',
+    tips: 'Apoie a ponta dos pés na borda da plataforma. Desça alongando completamente o tornozelo.'
+  },
+  {
+    id: 'panturrilha_unilateral_degrau',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Standing_Calf_Raises/0.jpg',
+    name: 'Panturrilha Unilateral no Degrau',
+    muscle: 'panturrilha',
+    pattern: 'calf_raise',
+    equipment: 'home',
+    jointStress: [],
+    defaultSeries: '3x 15-20 reps cada perna',
+    rest: '45s',
+    tips: 'Execução lenta com máxima amplitude no degrau, pausando 1s no topo e 1s no ponto de estiramento.'
+  },
+
+  // CORE / ABDÔMEN
+  {
+    id: 'abdominal_infra_paralela',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Hanging_Leg_Raise/0.jpg',
+    name: 'Abdominal Infra na Paralela / Barra (Leg Raise)',
+    muscle: 'core',
+    pattern: 'crunch',
+    equipment: 'gym_or_home',
+    jointStress: [],
+    defaultSeries: '3x 12-15 reps',
+    rest: '60s',
+    tips: 'Foco no abdômen inferior. Curve a bacia para cima aproximando o púbis do umbigo, não apenas levantando as pernas.'
+  },
+  {
+    id: 'abdominal_crunch_polia',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Kneeling_Cable_Crunch/0.jpg',
+    name: 'Abdominal Crunch na Polia com Corda',
+    muscle: 'core',
+    pattern: 'crunch',
+    equipment: 'gym',
+    jointStress: [],
+    defaultSeries: '3x 15 reps',
+    rest: '60s',
+    tips: 'Ajoelhado de costas para a polia, enrole a coluna trazendo as costelas em direção ao quadril.'
+  },
+  {
+    id: 'prancha_lateral',
+    imageUrl: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Side_Bridge/0.jpg',
+    name: 'Prancha Lateral Isométrica',
+    muscle: 'core',
+    pattern: 'plank',
+    equipment: 'gym_or_home',
+    jointStress: [],
+    defaultSeries: '3x 25-40s cada lado',
+    rest: '45s',
+    tips: 'Fortalecimento de oblíquos e estabilizadores laterais da coluna e pelve.'
   }
 ];
 
