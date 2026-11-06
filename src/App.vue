@@ -57,7 +57,7 @@
               </span>
             </div>
             <p id="app-user-subtitle" class="text-[11px] text-slate-400 flex items-center gap-1.5 truncate">
-              <span class="text-slate-200 font-semibold">{{ userProfile?.userName || 'Atleta' }}</span>
+              <span class="text-slate-200 font-semibold">Olá, {{ userProfile?.userName || 'Atleta' }}</span>
               <span>•</span>
               <span :class="isWeightLoss ? 'text-rose-400' : currentTheme === 'orange' ? 'text-orange-400' : 'text-blue-400'" class="font-bold">
                 {{ userProfile?.weightKg }} kg
