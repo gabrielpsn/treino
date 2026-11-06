@@ -200,6 +200,10 @@ test('Instalação: exibe instrução em snackbar em vez de alert nativo', async
     await d.dismiss();
   });
 
+  if (await page.locator('#btn-open-menu').isVisible() && !await page.locator('#btn-install-app').isVisible()) {
+    await page.locator('#btn-open-menu').click();
+    await page.locator('#app-side-drawer').waitFor({ state: 'visible' });
+  }
   await page.locator('#btn-install-app').click();
 
   // Em chromium headless o beforeinstallprompt não dispara, então caímos no

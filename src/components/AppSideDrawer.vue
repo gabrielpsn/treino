@@ -189,7 +189,7 @@
           <button
             type="button"
             id="btn-export-backup"
-            @click="emit('export-backup')"
+            @click="handleAction('export-backup')"
             class="tap-btn w-full p-2.5 rounded-xl font-bold text-xs flex items-center gap-3 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors text-left border border-slate-800"
             title="Exportar Dados (Backup)"
           >
@@ -200,7 +200,7 @@
           <button
             type="button"
             id="btn-import-backup"
-            @click="emit('import-backup')"
+            @click="handleAction('import-backup')"
             class="tap-btn w-full p-2.5 rounded-xl font-bold text-xs flex items-center gap-3 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors text-left border border-slate-800"
             title="Restaurar backup"
           >
@@ -211,7 +211,7 @@
           <button
             type="button"
             id="btn-install-app"
-            @click="emit('install-app')"
+            @click="handleAction('install-app')"
             class="tap-btn w-full p-2.5 rounded-xl font-bold text-xs flex items-center gap-3 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors text-left border border-slate-800"
             title="Instalar App ou Criar Atalho"
           >

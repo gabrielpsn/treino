@@ -193,8 +193,8 @@
           <h4 class="font-black text-sm text-white flex items-center gap-1.5">
             <span>💡</span> Dica de Execução do Especialista
           </h4>
-          <p class="text-slate-300 leading-relaxed font-medium">
-            {{ exercise.tips || 'Mantenha a postura ereta, abdômen contraído e controle a fase excêntrica do movimento para máxima hipertrofia.' }}
+          <p id="detail-exercise-tips" class="text-slate-300 leading-relaxed font-medium">
+            {{ exercise.tips || exercise.notes || 'Mantenha a postura ereta, abdômen contraído e controle a fase excêntrica do movimento para máxima hipertrofia.' }}
           </p>
         </div>
 

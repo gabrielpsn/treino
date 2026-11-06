@@ -51,6 +51,10 @@ async function firstSplitOrder(page) {
 
 /** Exporta o backup e devolve o objeto JSON baixado. */
 async function exportBackup(page) {
+  if (await page.locator('#btn-open-menu').isVisible() && !await page.locator('#btn-export-backup').isVisible()) {
+    await page.locator('#btn-open-menu').click();
+    await page.locator('#app-side-drawer').waitFor({ state: 'visible' });
+  }
   const [download] = await Promise.all([
     page.waitForEvent('download'),
     page.locator('#btn-export-backup').click()
@@ -61,6 +65,10 @@ async function exportBackup(page) {
 
 /** Troca o backup do aparelho: usa o file chooser do input escondido. */
 async function selectBackupFile(page, content) {
+  if (await page.locator('#btn-open-menu').isVisible() && !await page.locator('#btn-import-backup').isVisible()) {
+    await page.locator('#btn-open-menu').click();
+    await page.locator('#app-side-drawer').waitFor({ state: 'visible' });
+  }
   const [chooser] = await Promise.all([
     page.waitForEvent('filechooser'),
     page.locator('#btn-import-backup').click()

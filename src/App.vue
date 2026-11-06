@@ -667,20 +667,6 @@
                         <span>ℹ️</span>
                         <span class="hidden sm:inline">Exemplo</span>
                       </button>
-                    </div>
-
-                    <!-- Badge de Série Estilizado (Inspirado na Imagem 2) -->
-                    <div class="flex items-center gap-1.5 flex-wrap pt-0.5">
-                      <span class="px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                        SET {{ workoutLogs[ex.id]?.sets?.length || 1 }}
-                      </span>
-                      <span class="text-[11px] font-bold text-slate-300">
-                        {{ ex.defaultSeries || '3x 8-12 reps' }}
-                      </span>
-                      <span class="text-[11px] text-slate-400">
-                        • pausa {{ ex.rest || '60s' }}
-                      </span>
-                    </div>
 
 <button
                     type="button"
@@ -766,6 +752,10 @@
                     </div>
 
                     <div class="flex flex-wrap items-center gap-2 text-xs text-slate-400">
+                      <!-- Badge de Série Estilizado (Inspirado na Imagem 2) -->
+                      <span class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                        SET {{ workoutLogs[ex.id]?.sets?.length || 1 }}
+                      </span>
                       <span :class="isWeightLoss ? 'text-rose-400' : 'text-amber-400'" class="font-semibold">{{ ex.defaultSeries }}</span>
                       <!-- Reps sugeridas pela IA: o app não impõe repetição, o
                            campo continua editável e é o que vale. -->
@@ -1774,7 +1764,7 @@ const isDrawerOpen = ref(false);
 const isExerciseDetailsOpen = ref(false);
 const selectedExerciseForDetails = ref(null);
 const currentTheme = ref('blue'); // 'blue' (Image 2 Tecnofit) | 'orange' (Image 1 Gym)
-const showSplitBodyMap = ref(true);
+const showSplitBodyMap = ref(false);
 
 function openExerciseDetails(exercise) {
   selectedExerciseForDetails.value = exercise;

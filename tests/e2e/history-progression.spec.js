@@ -29,6 +29,10 @@ async function onboardHome(page) {
 }
 
 async function exportBackup(page) {
+  if (await page.locator('#btn-open-menu').isVisible() && !await page.locator('#btn-export-backup').isVisible()) {
+    await page.locator('#btn-open-menu').click();
+    await page.locator('#app-side-drawer').waitFor({ state: 'visible' });
+  }
   const [download] = await Promise.all([
     page.waitForEvent('download'),
     page.locator('#btn-export-backup').click()
@@ -37,6 +41,10 @@ async function exportBackup(page) {
 }
 
 async function importBackup(page, content) {
+  if (await page.locator('#btn-open-menu').isVisible() && !await page.locator('#btn-import-backup').isVisible()) {
+    await page.locator('#btn-open-menu').click();
+    await page.locator('#app-side-drawer').waitFor({ state: 'visible' });
+  }
   const [chooser] = await Promise.all([
     page.waitForEvent('filechooser'),
     page.locator('#btn-import-backup').click()
