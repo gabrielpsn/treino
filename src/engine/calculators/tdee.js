@@ -31,6 +31,21 @@ export function calculateTargetCalories(tdee, experienceLevel = 'intermediate', 
     return Math.max(1400, tdee - deficit);
   }
 
+  if (goal === 'maintenance') {
+    return tdee;
+  }
+
+  if (goal === 'recomposition') {
+    // Leve déficit para trocas metabólicas
+    return Math.max(1400, tdee - 150);
+  }
+
+  if (goal === 'strength') {
+    // Leve superávit para suporte neuromuscular e recuperação sem ganho de gordura
+    const surplus = experienceLevel === 'beginner' ? 250 : 180;
+    return tdee + surplus;
+  }
+
   // Hipertrofia Limpa (Lean Bulk)
   let surplus = 300;
   if (experienceLevel === 'beginner') surplus = 380;
@@ -40,17 +55,29 @@ export function calculateTargetCalories(tdee, experienceLevel = 'intermediate', 
   return tdee + surplus;
 }
 
-
-
 // 4. Divisão de Macronutrientes (Hipertrofia ou Perda de Peso)
 export function calculateMacros(targetCalories, weightKg, experienceLevel = 'intermediate', goal = 'hypertrophy') {
-  // Proteína: 2.0g a 2.2g/kg (fundamental tanto para construir músculo quanto para preservar massa magra em déficit)
-  const proteinMultiplier = goal === 'weight_loss' ? 2.0 : 2.0;
+  // Proteína: 1.8g a 2.2g/kg (fundamental tanto para construir músculo quanto para preservar massa magra em déficit)
+  let proteinMultiplier = 2.0;
+  let fatMultiplier = 0.9;
+
+  if (goal === 'weight_loss') {
+    proteinMultiplier = 2.0;
+    fatMultiplier = 0.8;
+  } else if (goal === 'recomposition') {
+    proteinMultiplier = 2.2;
+    fatMultiplier = 0.8;
+  } else if (goal === 'strength') {
+    proteinMultiplier = 2.0;
+    fatMultiplier = 1.0;
+  } else if (goal === 'maintenance') {
+    proteinMultiplier = 1.8;
+    fatMultiplier = 0.9;
+  }
+
   const proteinGrams = Math.round(weightKg * proteinMultiplier);
   const proteinKcal = proteinGrams * 4;
 
-  // Gorduras: 0.8g/kg em déficit, 0.9g/kg em superávit
-  const fatMultiplier = goal === 'weight_loss' ? 0.8 : 0.9;
   const fatGrams = Math.round(weightKg * fatMultiplier);
   const fatKcal = fatGrams * 9;
 

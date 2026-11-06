@@ -131,4 +131,17 @@ describe('ExercisePickerModal — modo adicionar', () => {
     });
     expect(wrapper.findAll('[id^="btn-alternative-"]').length).toBe(0);
   });
+
+  it('permite mudar o grupo muscular para adicionar exercício de outro grupo à ficha', async () => {
+    const wrapper = mountPicker({ mode: 'add' });
+    const btnTriceps = wrapper.find('#btn-filter-muscle-triceps');
+    expect(btnTriceps.exists()).toBe(true);
+    await btnTriceps.trigger('click');
+
+    const buttons = wrapper.findAll('[id^="btn-alternative-"]');
+    expect(buttons.length).toBeGreaterThan(0);
+    for (const btn of buttons) {
+      expect(btn.text().toLowerCase()).toContain('tríceps');
+    }
+  });
 });

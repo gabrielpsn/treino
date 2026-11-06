@@ -14,7 +14,12 @@ import {
   validateCustomExercise,
   listCustomExercises,
   saveCustomExercise,
-  deleteCustomExercise
+  deleteCustomExercise,
+  MUSCLE_LABELS,
+  MUSCLE_ORDER,
+  getMuscleBadgeClass,
+  getMuscleDotColor,
+  getMuscleTextColor
 } from '../../src/db/customExercises.js';
 import { EXERCISE_CATALOG } from '../../src/engine/knowledge/exercises.js';
 import { getSafeExercise, generateWorkoutSplit } from '../../src/engine/generators/workoutGenerator.js';
@@ -296,5 +301,36 @@ describe('edição preserva o id', () => {
     const updated = await saveCustomExercise({ ...saved, rest: '120s' }, { database });
     expect(updated.id).toBe(saved.id);
     expect((await listCustomExercises({ database }))[0].rest).toBe('120s');
+  });
+});
+
+describe('visualização e divisão por grupos musculares', () => {
+  it('MUSCLE_ORDER contém todos os músculos do sistema', () => {
+    for (const muscle of MUSCLE_OPTIONS) {
+      expect(MUSCLE_ORDER).toContain(muscle);
+    }
+    for (const muscle of Object.keys(MUSCLE_LABELS)) {
+      expect(MUSCLE_ORDER).toContain(muscle);
+    }
+  });
+
+  it('retorna classes e cores válidas para cada grupo muscular', () => {
+    for (const muscle of MUSCLE_ORDER) {
+      const badge = getMuscleBadgeClass(muscle);
+      expect(badge).toContain('border');
+      expect(badge).toContain('text-');
+
+      const dot = getMuscleDotColor(muscle);
+      expect(dot).toMatch(/^bg-[a-z]+-400$/);
+
+      const text = getMuscleTextColor(muscle);
+      expect(text).toMatch(/^text-[a-z]+-400$/);
+    }
+  });
+
+  it('retorna fallback neutro para grupos desconhecidos', () => {
+    expect(getMuscleBadgeClass('desconhecido')).toContain('bg-slate-700/30');
+    expect(getMuscleDotColor('desconhecido')).toBe('bg-slate-400');
+    expect(getMuscleTextColor('desconhecido')).toBe('text-slate-300');
   });
 });

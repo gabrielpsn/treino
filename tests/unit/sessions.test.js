@@ -14,7 +14,8 @@ import {
   getLastSetsForExercises,
   getOpenSessionIds,
   getExerciseTimeline,
-  deleteSession
+  deleteSession,
+  deleteSet
 } from '../../src/db/sessions.js';
 
 let created = [];
@@ -47,6 +48,12 @@ describe('buildSetId', () => {
 
   it('gera chaves diferentes para exercícios diferentes na mesma sessão', () => {
     expect(buildSetId(7, 'supino')).not.toBe(buildSetId(7, 'cruzeiro'));
+  });
+
+  it('gera chaves diferentes para séries diferentes do mesmo exercício', () => {
+    expect(buildSetId(7, 'supino', 1)).toBe('7:supino');
+    expect(buildSetId(7, 'supino', 2)).toBe('7:supino:2');
+    expect(buildSetId(7, 'supino', 3)).toBe('7:supino:3');
   });
 });
 
@@ -159,6 +166,33 @@ describe('recordSet', () => {
     const sets = await db.session_sets.toArray();
     expect(sets).toHaveLength(1);
     expect(sets[0].weight).toBe('85');
+  });
+
+  it('permite registrar múltiplas séries do mesmo exercício na mesma sessão', async () => {
+    const { db, now } = freshDatabase();
+    const sessionId = await recordSet(
+      { splitId: 'treino-a', exerciseId: 'supino', weight: '80', reps: '10', isDone: true, setNumber: 1 },
+      { database: db, now }
+    );
+    await recordSet(
+      { splitId: 'treino-a', exerciseId: 'supino', weight: '85', reps: '8', isDone: true, sessionId, setNumber: 2 },
+      { database: db, now }
+    );
+    await recordSet(
+      { splitId: 'treino-a', exerciseId: 'supino', weight: '90', reps: '6', isDone: true, sessionId, setNumber: 3 },
+      { database: db, now }
+    );
+
+    const sets = await getSetsForSession(sessionId, { database: db });
+    expect(sets).toHaveLength(3);
+    expect(sets.map(s => s.setNumber)).toEqual([1, 2, 3]);
+    expect(sets.map(s => s.weight)).toEqual(['80', '85', '90']);
+
+    // Deletar série específica
+    await deleteSet(sessionId, 'supino', 3, { database: db });
+    const remaining = await getSetsForSession(sessionId, { database: db });
+    expect(remaining).toHaveLength(2);
+    expect(remaining.map(s => s.setNumber)).toEqual([1, 2]);
   });
 
   it('aceita reescrever um campo preservando os outros', async () => {

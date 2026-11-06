@@ -129,7 +129,9 @@ export function generateWorkoutSplit(profile) {
   } = profile;
 
   const splits = [];
-  const seriesCount = experienceLevel === 'beginner' ? '3x 8-10 reps' : experienceLevel === 'advanced' ? '4x 8-12 reps' : '3x 10-12 reps';
+  const seriesCount = goal === 'strength'
+    ? '4x 4-6 reps'
+    : (experienceLevel === 'beginner' ? '3x 8-10 reps' : experienceLevel === 'advanced' ? '4x 8-12 reps' : '3x 10-12 reps');
 
   // ==========================================
   // CENÁRIO 1: OBJETIVO PERDA DE PESO / EMAGRECIMENTO & PROTEÇÃO ARTICULAR
@@ -261,8 +263,8 @@ export function generateWorkoutSplit(profile) {
       accentBg: 'bg-amber-500/10 border-amber-500/20 text-amber-300',
       exercises: buildExerciseList([
         { muscle: 'peito', pattern: 'push_horizontal' },
-        { muscle: 'costas', pattern: 'pull_horizontal' },
         { muscle: 'peito', pattern: 'push_incline' },
+        { muscle: 'costas', pattern: 'pull_horizontal' },
         { muscle: 'costas', pattern: 'pull_vertical' },
         { muscle: 'ombro', pattern: 'lateral_raise' },
         { muscle: 'biceps', pattern: 'biceps_curl' },
@@ -294,8 +296,8 @@ export function generateWorkoutSplit(profile) {
       accentBg: 'bg-purple-500/10 border-purple-500/20 text-purple-300',
       exercises: buildExerciseList([
         { muscle: 'costas', pattern: 'pull_vertical' },
-        { muscle: 'peito', pattern: 'fly' },
         { muscle: 'costas', pattern: 'lat_isolation' },
+        { muscle: 'peito', pattern: 'fly' },
         { muscle: 'ombro', pattern: 'push_vertical' },
         { muscle: 'ombro', pattern: 'rear_delt' },
         { muscle: 'triceps', pattern: 'triceps_overhead' },

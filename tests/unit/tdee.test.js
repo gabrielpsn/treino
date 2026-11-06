@@ -74,9 +74,23 @@ describe('calculateTargetCalories', () => {
   it('usa hipertrofia como padrão quando o objetivo não é informado', () => {
     expect(calculateTargetCalories(2800, 'intermediate')).toBe(3100);
   });
+
+  it('calcula calorias alvo para novos objetivos (manutenção, força e recomposição)', () => {
+    const tdee = 2500;
+    expect(calculateTargetCalories(tdee, 'intermediate', 'maintenance')).toBe(2500);
+    expect(calculateTargetCalories(tdee, 'intermediate', 'recomposition')).toBe(2350); // tdee - 150
+    expect(calculateTargetCalories(tdee, 'intermediate', 'strength')).toBe(2680); // tdee + 180
+  });
 });
 
 describe('calculateMacros', () => {
+  it('calcula macros com alta proteína na recomposição', () => {
+    const macros = calculateMacros(2400, 80, 'intermediate', 'recomposition');
+    // 80 * 2.2 = 176g
+    expect(macros.proteinGrams).toBe(176);
+    expect(macros.fatGrams).toBe(64); // 80 * 0.8
+  });
+
   it('mantém a soma dos macros consistente com as calorias alvo', () => {
     const target = 2800;
     const macros = calculateMacros(target, 80, 'intermediate', 'hypertrophy');

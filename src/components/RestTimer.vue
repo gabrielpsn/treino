@@ -28,6 +28,26 @@
     <div>
       <h5 class="text-xs font-bold text-white uppercase tracking-wider">Descanso Entre Séries</h5>
       <p class="text-xs text-slate-400">Recupere o ATP-CP para a próxima carga</p>
+      <div class="flex items-center gap-1.5 mt-1">
+        <button
+          type="button"
+          id="btn-rest-timer-minus-15"
+          class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
+          @click="adjustTime(-15)"
+          title="Reduzir 15 segundos"
+        >
+          -15s
+        </button>
+        <button
+          type="button"
+          id="btn-rest-timer-plus-15"
+          class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
+          @click="adjustTime(15)"
+          title="Adicionar 15 segundos"
+        >
+          +15s
+        </button>
+      </div>
     </div>
 
     <button
@@ -78,10 +98,40 @@ function startTimer(seconds = 60) {
       return;
     }
     stopTimer();
+    playBeep();
     if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
       navigator.vibrate([100, 50, 100]);
     }
   }, 1000);
+}
+
+function adjustTime(deltaSeconds) {
+  const next = Math.max(5, Math.min(600, timeLeft.value + deltaSeconds));
+  timeLeft.value = next;
+  if (next > totalTime.value) {
+    totalTime.value = next;
+  }
+}
+
+function playBeep() {
+  try {
+    if (typeof window === 'undefined') return;
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return;
+    const ctx = new AudioContextClass();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, ctx.currentTime);
+    gain.gain.setValueAtTime(0.2, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.3);
+  } catch {
+    // Ignora se o navegador restringir áudio automático
+  }
 }
 
 function stopTimer() {
@@ -101,6 +151,7 @@ onBeforeUnmount(() => {
 
 defineExpose({
   startTimer,
-  stopTimer
+  stopTimer,
+  adjustTime
 });
 </script>

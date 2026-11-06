@@ -94,6 +94,88 @@ export const MUSCLE_LABELS = {
   cardio: 'Cardio'
 };
 
+export const MUSCLE_ORDER = [
+  'peito',
+  'costas',
+  'ombro',
+  'trapezio',
+  'biceps',
+  'triceps',
+  'quadriceps',
+  'posterior',
+  'gluteos',
+  'panturrilha',
+  'core',
+  'cardio'
+];
+
+export function getMuscleBadgeClass(muscle) {
+  switch (muscle) {
+    case 'peito':
+      return 'bg-rose-500/15 text-rose-300 border border-rose-500/30';
+    case 'costas':
+      return 'bg-blue-500/15 text-blue-300 border border-blue-500/30';
+    case 'ombro':
+      return 'bg-amber-500/15 text-amber-300 border border-amber-500/30';
+    case 'biceps':
+      return 'bg-indigo-500/15 text-indigo-300 border border-indigo-500/30';
+    case 'triceps':
+      return 'bg-purple-500/15 text-purple-300 border border-purple-500/30';
+    case 'quadriceps':
+      return 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30';
+    case 'posterior':
+      return 'bg-teal-500/15 text-teal-300 border border-teal-500/30';
+    case 'gluteos':
+      return 'bg-pink-500/15 text-pink-300 border border-pink-500/30';
+    case 'panturrilha':
+      return 'bg-lime-500/15 text-lime-300 border border-lime-500/30';
+    case 'core':
+      return 'bg-yellow-500/15 text-yellow-300 border border-yellow-500/30';
+    case 'cardio':
+      return 'bg-sky-500/15 text-sky-300 border border-sky-500/30';
+    case 'trapezio':
+      return 'bg-orange-500/15 text-orange-300 border border-orange-500/30';
+    default:
+      return 'bg-slate-700/30 text-slate-300 border border-slate-600/30';
+  }
+}
+
+export function getMuscleDotColor(muscle) {
+  switch (muscle) {
+    case 'peito': return 'bg-rose-400';
+    case 'costas': return 'bg-blue-400';
+    case 'ombro': return 'bg-amber-400';
+    case 'biceps': return 'bg-indigo-400';
+    case 'triceps': return 'bg-purple-400';
+    case 'quadriceps': return 'bg-emerald-400';
+    case 'posterior': return 'bg-teal-400';
+    case 'gluteos': return 'bg-pink-400';
+    case 'panturrilha': return 'bg-lime-400';
+    case 'core': return 'bg-yellow-400';
+    case 'cardio': return 'bg-sky-400';
+    case 'trapezio': return 'bg-orange-400';
+    default: return 'bg-slate-400';
+  }
+}
+
+export function getMuscleTextColor(muscle) {
+  switch (muscle) {
+    case 'peito': return 'text-rose-400';
+    case 'costas': return 'text-blue-400';
+    case 'ombro': return 'text-amber-400';
+    case 'biceps': return 'text-indigo-400';
+    case 'triceps': return 'text-purple-400';
+    case 'quadriceps': return 'text-emerald-400';
+    case 'posterior': return 'text-teal-400';
+    case 'gluteos': return 'text-pink-400';
+    case 'panturrilha': return 'text-lime-400';
+    case 'core': return 'text-yellow-400';
+    case 'cardio': return 'text-sky-400';
+    case 'trapezio': return 'text-orange-400';
+    default: return 'text-slate-300';
+  }
+}
+
 export const EQUIPMENT_LABELS = {
   gym: 'Academia',
   home: 'Casa',

@@ -230,6 +230,24 @@ describe('generateWorkoutSplit', () => {
       }
     }
   });
+
+  it('organiza e divide os exercícios por grupos musculares consecutivos em cada split', () => {
+    for (const days of [3, 4, 5, 6]) {
+      const { splits } = generateWorkoutSplit({ ...baseProfile, daysPerWeek: days });
+      for (const split of splits) {
+        // Verifica que exercícios do mesmo grupo muscular aparecem em blocos contíguos
+        const seenMuscles = new Set();
+        let lastMuscle = null;
+        for (const ex of split.exercises) {
+          if (ex.muscle !== lastMuscle) {
+            expect(seenMuscles.has(ex.muscle)).toBe(false);
+            seenMuscles.add(ex.muscle);
+            lastMuscle = ex.muscle;
+          }
+        }
+      }
+    }
+  });
 });
 
 describe('isExerciseSafe', () => {

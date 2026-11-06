@@ -30,7 +30,7 @@ const SESSION_FIELDS = [
   'splitId', 'goal', 'source', 'note', 'createdAt'
 ];
 
-const SET_FIELDS = ['id', 'sessionId', 'exerciseId', 'splitId', 'weight', 'reps', 'rir', 'isDone', 'recordedAt'];
+const SET_FIELDS = ['id', 'sessionId', 'exerciseId', 'splitId', 'setNumber', 'weight', 'reps', 'rir', 'isDone', 'recordedAt'];
 
 // Perfil: o formato é do onboarding, não do histórico. Coagir cada campo no
 // restore é o que impede que um arquivo editado à mão traga `restrictions:
@@ -225,11 +225,12 @@ function normalizeBackup(raw, warnings) {
     }
     session.sets.push({
       ...pick(row, SET_FIELDS.filter(field => field !== 'id')),
-      // O id é derivado de (sessão, exercício): recalcular garante que um id
+      // O id é derivado de (sessão, exercício, série): recalcular garante que um id
       // adulterado no arquivo não crie duas linhas para o mesmo par.
-      id: buildSetId(session.id, row.exerciseId),
+      id: buildSetId(session.id, row.exerciseId, row.setNumber),
       sessionId: session.id,
       exerciseId: row.exerciseId,
+      setNumber: Number(row.setNumber) || 1,
       isDone: !!row.isDone,
       weight: row.weight ?? '',
       reps: row.reps ?? '',

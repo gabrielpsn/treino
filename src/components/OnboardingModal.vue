@@ -87,24 +87,24 @@
           <p v-if="errors.userName" id="error-user-name" class="text-[11px] text-rose-400 mt-1">{{ errors.userName }}</p>
         </div>
 
-        <!-- Escolha do Objetivo Principal (Hipertrofia vs Emagrecimento) -->
+        <!-- Escolha do Objetivo Principal -->
         <div>
           <label class="block text-xs font-semibold text-slate-400 mb-1">Qual é o seu objetivo principal agora?</label>
-          <div class="grid grid-cols-2 gap-3 pt-1">
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-1">
             <button 
               type="button"
               id="btn-goal-hypertrophy"
               @click="setGoal('hypertrophy')"
               :class="form.goal === 'hypertrophy' ? 'border-amber-500 bg-amber-500/10 text-white font-bold ring-1 ring-amber-500/50' : 'border-slate-800 bg-slate-950/60 text-slate-400 hover:border-slate-700'"
-              class="p-3.5 rounded-2xl border text-left transition-all flex flex-col justify-between gap-1"
+              class="p-3 rounded-2xl border text-left transition-all flex flex-col justify-between gap-1"
             >
               <div class="flex items-center justify-between">
                 <span class="text-xl">⚡</span>
                 <span v-if="form.goal === 'hypertrophy'" class="text-amber-400 text-xs font-bold">✓ Ativo</span>
               </div>
               <div>
-                <strong class="text-sm text-white block">Hipertrofia & Massa</strong>
-                <span class="text-[11px] text-slate-400 leading-tight block mt-0.5">Superávit limpo, progressão de carga e força</span>
+                <strong class="text-xs sm:text-sm text-white block">Hipertrofia</strong>
+                <span class="text-[10px] text-slate-400 leading-tight block mt-0.5">Superávit limpo e massa muscular</span>
               </div>
             </button>
 
@@ -113,15 +113,66 @@
               id="btn-goal-weight-loss"
               @click="setGoal('weight_loss')"
               :class="form.goal === 'weight_loss' ? 'border-rose-500 bg-rose-500/10 text-white font-bold ring-1 ring-rose-500/50' : 'border-slate-800 bg-slate-950/60 text-slate-400 hover:border-slate-700'"
-              class="p-3.5 rounded-2xl border text-left transition-all flex flex-col justify-between gap-1"
+              class="p-3 rounded-2xl border text-left transition-all flex flex-col justify-between gap-1"
             >
               <div class="flex items-center justify-between">
                 <span class="text-xl">🔥</span>
                 <span v-if="form.goal === 'weight_loss'" class="text-rose-400 text-xs font-bold">✓ Ativo</span>
               </div>
               <div>
-                <strong class="text-sm text-white block">Perda de Peso & Definição</strong>
-                <span class="text-[11px] text-slate-400 leading-tight block mt-0.5">Déficit calórico, proteção articular & queima</span>
+                <strong class="text-xs sm:text-sm text-white block">Emagrecimento</strong>
+                <span class="text-[10px] text-slate-400 leading-tight block mt-0.5">Déficit calórico e queima de gordura</span>
+              </div>
+            </button>
+
+            <button 
+              type="button"
+              id="btn-goal-strength"
+              @click="setGoal('strength')"
+              :class="form.goal === 'strength' ? 'border-amber-500 bg-amber-500/10 text-white font-bold ring-1 ring-amber-500/50' : 'border-slate-800 bg-slate-950/60 text-slate-400 hover:border-slate-700'"
+              class="p-3 rounded-2xl border text-left transition-all flex flex-col justify-between gap-1"
+            >
+              <div class="flex items-center justify-between">
+                <span class="text-xl">🏋️</span>
+                <span v-if="form.goal === 'strength'" class="text-amber-400 text-xs font-bold">✓ Ativo</span>
+              </div>
+              <div>
+                <strong class="text-xs sm:text-sm text-white block">Força Pura</strong>
+                <span class="text-[10px] text-slate-400 leading-tight block mt-0.5">Compostos pesados e 4-6 reps</span>
+              </div>
+            </button>
+
+            <button 
+              type="button"
+              id="btn-goal-recomposition"
+              @click="setGoal('recomposition')"
+              :class="form.goal === 'recomposition' ? 'border-cyan-500 bg-cyan-500/10 text-white font-bold ring-1 ring-cyan-500/50' : 'border-slate-800 bg-slate-950/60 text-slate-400 hover:border-slate-700'"
+              class="p-3 rounded-2xl border text-left transition-all flex flex-col justify-between gap-1"
+            >
+              <div class="flex items-center justify-between">
+                <span class="text-xl">⚖️</span>
+                <span v-if="form.goal === 'recomposition'" class="text-cyan-400 text-xs font-bold">✓ Ativo</span>
+              </div>
+              <div>
+                <strong class="text-xs sm:text-sm text-white block">Recomposição</strong>
+                <span class="text-[10px] text-slate-400 leading-tight block mt-0.5">Massa magra + queima simultânea</span>
+              </div>
+            </button>
+
+            <button 
+              type="button"
+              id="btn-goal-maintenance"
+              @click="setGoal('maintenance')"
+              :class="form.goal === 'maintenance' ? 'border-emerald-500 bg-emerald-500/10 text-white font-bold ring-1 ring-emerald-500/50' : 'border-slate-800 bg-slate-950/60 text-slate-400 hover:border-slate-700'"
+              class="p-3 rounded-2xl border text-left transition-all flex flex-col justify-between gap-1 col-span-2 sm:col-span-1"
+            >
+              <div class="flex items-center justify-between">
+                <span class="text-xl">🌱</span>
+                <span v-if="form.goal === 'maintenance'" class="text-emerald-400 text-xs font-bold">✓ Ativo</span>
+              </div>
+              <div>
+                <strong class="text-xs sm:text-sm text-white block">Manutenção</strong>
+                <span class="text-[10px] text-slate-400 leading-tight block mt-0.5">Equilíbrio, tônus e longevidade</span>
               </div>
             </button>
           </div>
@@ -280,6 +331,27 @@
         </div>
 
         <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-2">Preferência Alimentar</label>
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2" role="group" aria-label="Preferência alimentar">
+            <button
+              v-for="diet in dietaryList"
+              :key="diet.id"
+              :id="`btn-dietary-${diet.id}`"
+              type="button"
+              @click="form.dietaryPreference = diet.id"
+              :class="form.dietaryPreference === diet.id ? (form.goal === 'weight_loss' ? 'border-rose-500 bg-rose-500/10 text-white font-semibold ring-1 ring-rose-500/40' : 'border-amber-500 bg-amber-500/10 text-white font-semibold ring-1 ring-amber-500/40') : 'border-slate-800 bg-slate-950/60 text-slate-400 hover:border-slate-700'"
+              class="p-2.5 rounded-xl border text-left text-xs transition-all flex flex-col justify-between"
+            >
+              <div class="flex items-center justify-between">
+                <span>{{ diet.icon }} <strong class="text-white">{{ diet.label }}</strong></span>
+                <span v-if="form.dietaryPreference === diet.id" :class="form.goal === 'weight_loss' ? 'text-rose-400' : 'text-amber-400'" class="font-bold">✓</span>
+              </div>
+              <span class="text-[10px] text-slate-500 mt-1 line-clamp-1">{{ diet.desc }}</span>
+            </button>
+          </div>
+        </div>
+
+        <div>
           <label class="block text-xs font-semibold text-slate-400 mb-2">Tem dores ou restrições articulares? (Opcional)</label>
           <div class="grid grid-cols-3 gap-2" role="group" aria-label="Restrições articulares">
             <button 
@@ -295,6 +367,39 @@
             </button>
           </div>
           <p class="text-[11px] text-slate-500 mt-1">Se marcado, o sistema substitui exercícios de alta compressão por variantes guiadas e seguras.</p>
+        </div>
+
+        <!-- Opção de preservação de fichas ao editar perfil existente -->
+        <div v-if="isEditing" class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2 mt-3">
+          <label class="block text-xs font-semibold text-slate-300">Como aplicar as mudanças nas suas fichas?</label>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <button
+              type="button"
+              id="btn-preserve-workouts-yes"
+              @click="preserveWorkouts = true"
+              :class="preserveWorkouts ? 'border-amber-500 bg-amber-500/10 text-white font-semibold ring-1 ring-amber-500/40' : 'border-slate-800 bg-slate-900 text-slate-400 hover:border-slate-700'"
+              class="p-2.5 rounded-xl border text-left text-xs transition-all flex flex-col justify-between"
+            >
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-slate-200">Manter fichas atuais</span>
+                <span v-if="preserveWorkouts" class="text-amber-400 font-bold">✓</span>
+              </div>
+              <span class="text-[11px] text-slate-500 mt-0.5">Atualiza apenas calorias, água e taxas corporais</span>
+            </button>
+            <button
+              type="button"
+              id="btn-preserve-workouts-no"
+              @click="preserveWorkouts = false"
+              :class="!preserveWorkouts ? 'border-amber-500 bg-amber-500/10 text-white font-semibold ring-1 ring-amber-500/40' : 'border-slate-800 bg-slate-900 text-slate-400 hover:border-slate-700'"
+              class="p-2.5 rounded-xl border text-left text-xs transition-all flex flex-col justify-between"
+            >
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-slate-200">Regerar fichas do zero</span>
+                <span v-if="!preserveWorkouts" class="text-amber-400 font-bold">✓</span>
+              </div>
+              <span class="text-[11px] text-slate-500 mt-0.5">Cria novos treinos recomendados para seu perfil</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -330,7 +435,7 @@
           :class="form.goal === 'weight_loss' ? 'bg-rose-500 hover:bg-rose-400 text-white shadow-rose-500/20' : 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-amber-500/20'"
           class="px-6 py-2.5 rounded-xl font-black text-sm shadow-lg transition-all flex items-center gap-2"
         >
-          <span>Gerar Meu Plano Inteligente</span>
+          <span>{{ isEditing ? (preserveWorkouts ? 'Salvar e Atualizar Metas' : 'Regerar Meu Plano') : 'Gerar Meu Plano Inteligente' }}</span>
           <span>{{ form.goal === 'weight_loss' ? '🔥' : '⚡' }}</span>
         </button>
       </div>
@@ -341,6 +446,7 @@
 
 <script setup>
 import { ref, computed, watch, nextTick } from 'vue';
+import { DIETARY_PREFERENCES } from '../engine/knowledge/foodTemplates.js';
 
 const props = defineProps({
   isOpen: {
@@ -359,6 +465,8 @@ const TOTAL_STEPS = 3;
 
 const step = ref(1);
 const panelRef = ref(null);
+const isEditing = computed(() => !!props.initialProfile);
+const preserveWorkouts = ref(true);
 
 const form = ref({
   userName: 'João',
@@ -370,8 +478,11 @@ const form = ref({
   daysPerWeek: 4,
   experienceLevel: 'intermediate',
   equipment: 'gym',
-  restrictions: []
+  restrictions: [],
+  dietaryPreference: 'omnivore'
 });
+
+const dietaryList = DIETARY_PREFERENCES;
 
 // Biometria em branco de propósito: o app não deve inventar peso, idade ou
 // altura para o usuário. Os cálculos scavem direto do que for digitado e a
@@ -404,7 +515,8 @@ watch(
         daysPerWeek: val.daysPerWeek || 4,
         experienceLevel: val.experienceLevel || 'intermediate',
         equipment: val.equipment || 'gym',
-        restrictions: val.restrictions ? [...val.restrictions] : []
+        restrictions: val.restrictions ? [...val.restrictions] : [],
+        dietaryPreference: val.dietaryPreference || 'omnivore'
       };
     }
   },
@@ -505,6 +617,10 @@ function validateProfile() {
 
 function submitProfile() {
   if (!validateProfile()) return;
-  emit('save', { ...form.value, restrictions: [...form.value.restrictions] });
+  emit('save', {
+    ...form.value,
+    restrictions: [...form.value.restrictions],
+    preserveWorkouts: isEditing.value ? preserveWorkouts.value : false
+  });
 }
 </script>

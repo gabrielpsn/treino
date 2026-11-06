@@ -22,6 +22,7 @@ export function buildPersonalizedPlan(userProfile) {
   const goal = userProfile.goal || 'hypertrophy';
   const defaultName = userProfile.gender === 'female' ? 'Maria' : 'João';
   const userName = userProfile.userName || defaultName;
+  const dietaryPreference = userProfile.dietaryPreference || 'omnivore';
 
   // 1. Cálculos Fisiológicos
   const bmr = calculateBMR(userProfile);
@@ -51,7 +52,7 @@ export function buildPersonalizedPlan(userProfile) {
       title: template.title,
       tag: template.tag,
       objective: template.description,
-      items: template.buildText(deficitRatio, creatine)
+      items: template.buildText(deficitRatio, creatine, dietaryPreference)
     }));
   } else {
     // Base de cálculo para o cardápio padrão de hipertrofia (~2400 kcal)
@@ -60,7 +61,7 @@ export function buildPersonalizedPlan(userProfile) {
       title: template.title,
       tag: template.tag,
       objective: template.description,
-      items: template.buildText(caloriesRatio, creatine)
+      items: template.buildText(caloriesRatio, creatine, dietaryPreference)
     }));
   }
 
@@ -93,7 +94,8 @@ export function buildPersonalizedPlan(userProfile) {
   return {
     id: 'current_active_plan',
     createdAt: new Date().toISOString(),
-    profile: { ...userProfile, userName, goal },
+    profile: { ...userProfile, userName, goal, dietaryPreference },
+    dietaryPreference,
     physiology: {
       bmr,
       tdee,

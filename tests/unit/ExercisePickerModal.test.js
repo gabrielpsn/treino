@@ -139,4 +139,34 @@ describe('ExercisePickerModal — emissão de eventos', () => {
     await wrapper.find('[role="dialog"]').trigger('click');
     expect(wrapper.emitted('close')).toBeTruthy();
   });
+
+  it('permite buscar exercícios pelo campo de busca', async () => {
+    const wrapper = mountPicker();
+    const searchInput = wrapper.find('#input-search-exercise');
+    expect(searchInput.exists()).toBe(true);
+
+    await searchInput.setValue('supino');
+    const buttons = wrapper.findAll('button[id^="btn-alternative-"]');
+    expect(buttons.length).toBeGreaterThan(0);
+    for (const btn of buttons) {
+      expect(btn.text().toLowerCase()).toContain('supino');
+    }
+  });
+
+  it('permite trocar o filtro muscular livremente', async () => {
+    const wrapper = mountPicker();
+    const btnAll = wrapper.find('#btn-filter-muscle-all');
+    expect(btnAll.exists()).toBe(true);
+
+    await btnAll.trigger('click');
+    const allButtons = wrapper.findAll('button[id^="btn-alternative-"]');
+    // Mostra exercícios de vários grupos musculares
+    expect(allButtons.length).toBeGreaterThan(10);
+
+    const btnBiceps = wrapper.find('#btn-filter-muscle-biceps');
+    await btnBiceps.trigger('click');
+    const bicepsButtons = wrapper.findAll('button[id^="btn-alternative-"]');
+    expect(bicepsButtons.length).toBeGreaterThan(0);
+    expect(bicepsButtons.length).toBeLessThan(allButtons.length);
+  });
 });

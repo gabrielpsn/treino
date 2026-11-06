@@ -4,9 +4,12 @@ import { db, getDayKey, getCurrentWeekKey } from './index';
 // registradas dentro dela. Este módulo concentra toda a leitura/escrita do
 // histórico para que o App.vue não precise conhecer detalhes de chave.
 
-// Id determinístico por (sessão, exercício). Permite reescrever a mesma série
+// Id determinístico por (sessão, exercício, série). Permite reescrever a mesma série
 // quantas vezes for necessário sem nunca duplicá-la.
-export function buildSetId(sessionId, exerciseId) {
+export function buildSetId(sessionId, exerciseId, setNumber) {
+  if (setNumber !== undefined && setNumber !== null && Number(setNumber) > 1) {
+    return `${sessionId}:${exerciseId}:${setNumber}`;
+  }
   return `${sessionId}:${exerciseId}`;
 }
 
@@ -59,7 +62,7 @@ export async function openSession(splitId, { database = db, now = new Date() } =
 // Grava (ou sobrescreve) a série do exercício na sessão aberta do split.
 // Retorna o id da sessão usada, ou null se nada foi gravado.
 export async function recordSet(
-  { splitId, exerciseId, weight = '', reps = '', rir = '', isDone = false, sessionId = null },
+  { splitId, exerciseId, weight = '', reps = '', rir = '', isDone = false, sessionId = null, setNumber = 1 },
   { database = db, now = new Date() } = {}
 ) {
   if (!splitId || !exerciseId) return null;
@@ -68,11 +71,13 @@ export async function recordSet(
   const resolvedSessionId = sessionId ?? (await openSession(splitId, { database, now }))?.id;
   if (!resolvedSessionId) return null;
 
+  const resolvedSetNumber = Number(setNumber) || 1;
   await database.session_sets.put({
-    id: buildSetId(resolvedSessionId, exerciseId),
+    id: buildSetId(resolvedSessionId, exerciseId, resolvedSetNumber),
     sessionId: resolvedSessionId,
     exerciseId,
     splitId,
+    setNumber: resolvedSetNumber,
     weight,
     reps,
     rir,
@@ -81,6 +86,11 @@ export async function recordSet(
   });
 
   return resolvedSessionId;
+}
+
+export async function deleteSet(sessionId, exerciseId, setNumber = 1, { database = db } = {}) {
+  const id = buildSetId(sessionId, exerciseId, setNumber);
+  await database.session_sets.delete(id);
 }
 
 export async function closeSession(sessionId, { database = db, now = new Date() } = {}) {

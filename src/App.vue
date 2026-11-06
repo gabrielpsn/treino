@@ -25,13 +25,13 @@
           <div class="min-w-0">
             <div class="flex items-center gap-2">
               <h1 id="app-title" class="text-base sm:text-lg font-black tracking-tight text-white uppercase truncate">
-                {{ isWeightLoss ? 'Emagrecimento Saudável' : 'Hipertrofia Pro' }}
+                {{ appTitle }}
               </h1>
               <span 
                 :class="isWeightLoss ? 'bg-rose-500/20 text-rose-400 border-rose-500/30' : 'bg-amber-500/20 text-amber-400 border-amber-500/30'"
                 class="text-[10px] px-2 py-0.5 rounded-full font-bold border flex-shrink-0"
               >
-                {{ isWeightLoss ? 'Definição' : 'PWA' }}
+                {{ goalBadge }}
               </span>
             </div>
             <p id="app-user-subtitle" class="text-xs text-slate-400 flex items-center gap-1.5 truncate">
@@ -177,22 +177,27 @@
     </div>
 
     <!-- Conteúdo Principal -->
-    <main class="max-w-5xl mx-auto px-4 py-6 flex-1 w-full space-y-6">
+    <main class="max-w-5xl mx-auto px-4 py-6 pb-20 flex-1 w-full space-y-6">
 
       <!-- BANNER DE BOAS-VINDAS / RESUMO INTELIGENTE -->
       <div v-if="activePlan?.physiology" id="banner-physiology-summary" class="bg-gradient-to-r from-slate-900 via-slate-900/90 to-slate-900 border border-slate-800/80 rounded-2xl p-4 sm:p-5 shadow-xl flex flex-wrap items-center justify-between gap-4">
         <div>
-          <span :class="isWeightLoss ? 'text-rose-400' : 'text-amber-500'" class="text-xs font-bold uppercase tracking-wider">
-            {{ isWeightLoss ? 'Diagnóstico & Déficit Calórico' : 'Metas Diárias Calculadas' }}
-          </span>
+          <div class="flex items-center gap-2">
+            <span :class="isWeightLoss ? 'text-rose-400' : 'text-amber-500'" class="text-xs font-bold uppercase tracking-wider">
+              {{ isWeightLoss ? 'Diagnóstico & Déficit Calórico' : 'Metas Diárias Calculadas' }}
+            </span>
+            <span v-if="isCustomNutritionActive" class="text-[10px] bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 px-2 py-0.5 rounded-full font-semibold">
+              Metas Customizadas
+            </span>
+          </div>
           <h2 class="text-base sm:text-lg font-bold text-white mt-0.5">
             {{ isWeightLoss ? 'Meta Nutricional:' : 'Superávit Anabólico:' }}
-            <span :class="isWeightLoss ? 'text-rose-400' : 'text-amber-400'">{{ activePlan.physiology.targetCalories }} kcal</span> / dia
+            <span :class="isWeightLoss ? 'text-rose-400' : 'text-amber-400'">{{ effectiveTargetCalories }} kcal</span> / dia
           </h2>
           <p class="text-xs text-slate-400 mt-1">
-            Proteína: <strong class="text-slate-200">{{ activePlan.physiology.macros.proteinGrams }}g</strong> • 
-            Carboidrato: <strong class="text-slate-200">{{ activePlan.physiology.macros.carbsGrams }}g</strong> • 
-            Gorduras: <strong class="text-slate-200">{{ activePlan.physiology.macros.fatGrams }}g</strong>
+            Proteína: <strong class="text-slate-200">{{ effectiveMacros.proteinGrams }}g</strong> • 
+            Carboidrato: <strong class="text-slate-200">{{ effectiveMacros.carbsGrams }}g</strong> • 
+            Gorduras: <strong class="text-slate-200">{{ effectiveMacros.fatGrams }}g</strong>
             <span v-if="activePlan.physiology.imc"> • IMC: <strong :class="isWeightLoss ? 'text-amber-400' : 'text-slate-200'">{{ activePlan.physiology.imc }} ({{ activePlan.physiology.imcStatus }})</strong></span>
           </p>
         </div>
@@ -373,16 +378,63 @@
         <div v-for="split in activePlan?.workoutSplits" :key="split.id">
           <div v-if="currentSplitTab === split.id" :id="`container-${split.id}`" class="space-y-4">
 
-            <div class="flex justify-end">
-              <button
-                type="button"
-                :id="`btn-add-exercise-${split.id}`"
-                @click="openAdderFor(split.id)"
-                class="tap-btn px-3 py-1.5 rounded-xl text-xs font-bold border border-slate-700 text-slate-300 hover:text-white hover:border-amber-500/60 transition-colors"
-                title="Adicionar um exercício a esta ficha"
-              >
-                + Adicionar exercício
-              </button>
+            <!-- Barra de Ações e Filtros por Grupo Muscular -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+              <!-- Filtros rápidos por grupo muscular -->
+              <div class="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full text-xs">
+                <span class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider hidden md:inline-block mr-1">Músculos:</span>
+                <button
+                  type="button"
+                  :id="`btn-filter-all-${split.id}`"
+                  @click="activeMuscleFilter[split.id] = 'all'"
+                  :class="(!activeMuscleFilter[split.id] || activeMuscleFilter[split.id] === 'all')
+                    ? (isWeightLoss ? 'bg-rose-500 text-white font-bold' : 'bg-amber-500 text-slate-950 font-black')
+                    : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'"
+                  class="tap-btn px-2.5 py-1 rounded-xl text-xs transition-colors flex-shrink-0"
+                >
+                  Todos ({{ split.exercises.length }})
+                </button>
+
+                <button
+                  v-for="m in getSplitMuscleGroups(split)"
+                  :key="m"
+                  :id="`btn-filter-${split.id}-${m}`"
+                  @click="toggleMuscleFilter(split.id, m)"
+                  :class="activeMuscleFilter[split.id] === m
+                    ? (isWeightLoss ? 'bg-rose-500 text-white font-bold' : 'bg-amber-500 text-slate-950 font-black')
+                    : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'"
+                  class="tap-btn px-2.5 py-1 rounded-xl text-xs transition-colors flex items-center gap-1.5 flex-shrink-0"
+                >
+                  <span class="w-1.5 h-1.5 rounded-full" :class="getMuscleDotColor(m)"></span>
+                  <span>{{ MUSCLE_LABELS[m] || m }}</span>
+                  <span class="text-[10px] opacity-75">({{ getMuscleCountInSplit(split, m) }})</span>
+                </button>
+              </div>
+
+              <!-- Botões de ação do split -->
+              <div class="flex items-center gap-2 self-end sm:self-auto flex-shrink-0">
+                <button
+                  type="button"
+                  :id="`btn-group-by-muscle-${split.id}`"
+                  @click="sortSplitByMuscle(split.id)"
+                  class="tap-btn px-2.5 py-1.5 rounded-xl text-xs font-semibold border border-slate-800 bg-slate-900/60 text-slate-400 hover:text-slate-200 hover:border-slate-700 transition-colors flex items-center gap-1"
+                  title="Organizar e agrupar exercícios por grupo muscular"
+                >
+                  <span aria-hidden="true">⚡</span>
+                  <span class="hidden sm:inline">Agrupar por Músculo</span>
+                  <span class="sm:hidden">Agrupar</span>
+                </button>
+
+                <button
+                  type="button"
+                  :id="`btn-add-exercise-${split.id}`"
+                  @click="openAdderFor(split.id)"
+                  class="tap-btn px-3 py-1.5 rounded-xl text-xs font-bold border border-slate-700 text-slate-300 hover:text-white hover:border-amber-500/60 transition-colors"
+                  title="Adicionar um exercício a esta ficha"
+                >
+                  + Adicionar exercício
+                </button>
+              </div>
             </div>
             
             <!-- Descrição / Dicas do Split -->
@@ -392,31 +444,62 @@
               </div>
             </div>
 
-            <!-- Cards de Exercícios -->
+            <!-- Cards de Exercícios Divididos por Grupos Musculares -->
             <div class="grid gap-3">
-              <div 
-                v-for="ex in split.exercises" 
-                :key="ex.id"
-                :id="`exercise-card-${ex.id}`"
-                class="p-4 rounded-2xl border transition-all flex flex-col md:flex-row md:items-center justify-between gap-4 min-w-0"
-                :class="workoutLogs[ex.id]?.isDone ? 'bg-slate-900/40 border-slate-800/60 opacity-75' : 'bg-slate-900 border-slate-800 hover:border-slate-700'"
-              >
-                <!-- Lado Esquerdo: Checkbox + Título + Dicas -->
-                <div class="flex items-start md:items-center gap-3.5 flex-1 min-w-0">
-                  <button 
-                    type="button"
-                    :id="`btn-check-${ex.id}`"
-                    @click="toggleExerciseCheck(ex.id, split.id)"
-                    :aria-pressed="!!workoutLogs[ex.id]?.isDone"
-                    :aria-label="workoutLogs[ex.id]?.isDone ? `Marcar ${ex.name} como pendente` : `Marcar ${ex.name} como concluído`"
-                    class="check-btn mt-1 md:mt-0"
-                    :class="workoutLogs[ex.id]?.isDone ? (isWeightLoss ? 'bg-rose-500 border-rose-400 text-white font-black text-sm' : 'bg-amber-500 border-amber-400 text-slate-950 font-black text-sm') : 'border-slate-700 hover:border-amber-500/60 text-transparent'"
-                  >
-                    ✓
-                  </button>
+              <template v-for="(ex, index) in getVisibleExercises(split)" :key="ex.id">
+                <!-- Cabeçalho de Divisão do Grupo Muscular -->
+                <div
+                  v-if="shouldShowMuscleHeader(split, ex, index)"
+                  :id="`muscle-header-${split.id}-${ex.muscle}`"
+                  class="flex items-center justify-between gap-3 pt-3 pb-1 border-b border-slate-800/80 mt-1"
+                >
+                  <div class="flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full" :class="getMuscleDotColor(ex.muscle)"></span>
+                    <h5 class="text-xs font-black tracking-wider uppercase" :class="getMuscleTextColor(ex.muscle)">
+                      {{ MUSCLE_LABELS[ex.muscle] || ex.muscle }}
+                    </h5>
+                    <span class="text-[11px] font-medium text-slate-500">
+                      • {{ getMuscleCountInSplit(split, ex.muscle) }} {{ getMuscleCountInSplit(split, ex.muscle) === 1 ? 'exercício' : 'exercícios' }}
+                    </span>
+                  </div>
+                  <span :class="getMuscleBadgeClass(ex.muscle)" class="text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider hidden sm:inline-block">
+                    Grupo Muscular
+                  </span>
+                </div>
 
-                  <div class="space-y-0.5 min-w-0">
-                    <div class="flex items-center gap-2 flex-wrap">
+                <div 
+                  :id="`exercise-card-${ex.id}`"
+                  class="p-4 rounded-2xl border transition-all flex flex-col md:flex-row md:items-center justify-between gap-4 min-w-0"
+                  :class="workoutLogs[ex.id]?.isDone ? 'bg-slate-900/40 border-slate-800/60 opacity-75' : 'bg-slate-900 border-slate-800 hover:border-slate-700'"
+                >
+                  <!-- Lado Esquerdo: Checkbox + Título + Dicas -->
+                  <div class="flex items-start md:items-center gap-3.5 flex-1 min-w-0">
+                    <button 
+                      type="button"
+                      :id="`btn-check-${ex.id}`"
+                      @click="toggleExerciseCheck(ex.id, split.id)"
+                      :aria-pressed="!!workoutLogs[ex.id]?.isDone"
+                      :aria-label="workoutLogs[ex.id]?.isDone ? `Marcar ${ex.name} como pendente` : `Marcar ${ex.name} como concluído`"
+                      class="check-btn mt-1 md:mt-0"
+                      :class="workoutLogs[ex.id]?.isDone ? (isWeightLoss ? 'bg-rose-500 border-rose-400 text-white font-black text-sm' : 'bg-amber-500 border-amber-400 text-slate-950 font-black text-sm') : 'border-slate-700 hover:border-amber-500/60 text-transparent'"
+                    >
+                      ✓
+                    </button>
+
+                    <div class="space-y-1 min-w-0">
+                      <!-- Badge do Grupo Muscular -->
+                      <div class="flex items-center gap-2">
+                        <span
+                          :id="`muscle-badge-${ex.id}`"
+                          :class="getMuscleBadgeClass(ex.muscle)"
+                          class="text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider inline-flex items-center gap-1"
+                        >
+                          <span class="w-1.5 h-1.5 rounded-full" :class="getMuscleDotColor(ex.muscle)"></span>
+                          {{ MUSCLE_LABELS[ex.muscle] || ex.muscle }}
+                        </span>
+                      </div>
+
+                      <div class="flex items-center gap-2 flex-wrap">
                       <a 
                         v-if="ex.imageUrl"
                         :href="ex.imageUrl" 
@@ -585,60 +668,131 @@
                 </div>
 
                 <!-- Lado Direito: Inputs de Carga e Reps (Ocultos se for Cardio Contínuo) -->
-                <div v-if="ex.muscle !== 'cardio'" class="flex flex-wrap items-center gap-2 sm:gap-3 self-end md:self-auto w-full md:w-auto">
-                  <div class="flex items-center gap-2 bg-slate-950 px-3 py-2 rounded-xl border border-slate-800 flex-1 md:flex-initial">
-                    <label :for="`input-weight-${ex.id}`" class="text-xs text-slate-500 font-medium">Carga:</label>
-                    <input 
-                      :id="`input-weight-${ex.id}`"
-                      type="number" 
-                      step="0.5" 
-                      min="0"
-                      inputmode="decimal"
-                      placeholder="0"
-                      :aria-label="`Carga em kg para ${ex.name}`"
-                      :value="workoutLogs[ex.id]?.weight"
-                      @input="e => updateLog(ex.id, split.id, 'weight', e.target.value)"
-                      :class="isWeightLoss ? 'text-rose-300' : 'text-amber-300'"
-                      class="log-input w-16 text-sm font-bold text-right focus:outline-none focus:text-white"
-                    />
-                    <span class="text-xs text-slate-500">kg</span>
+                <div v-if="ex.muscle !== 'cardio'" class="flex flex-col gap-2 self-end md:self-auto w-full md:w-auto">
+                  <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+                    <div class="flex items-center gap-2 bg-slate-950 px-3 py-2 rounded-xl border border-slate-800 flex-1 md:flex-initial">
+                      <label :for="`input-weight-${ex.id}`" class="text-xs text-slate-500 font-medium">Carga:</label>
+                      <input 
+                        :id="`input-weight-${ex.id}`"
+                        type="number" 
+                        step="0.5" 
+                        min="0"
+                        inputmode="decimal"
+                        placeholder="0"
+                        :aria-label="`Carga em kg para ${ex.name}`"
+                        :value="workoutLogs[ex.id]?.weight"
+                        @input="e => updateLog(ex.id, split.id, 'weight', e.target.value)"
+                        :class="isWeightLoss ? 'text-rose-300' : 'text-amber-300'"
+                        class="log-input w-16 text-sm font-bold text-right focus:outline-none focus:text-white"
+                      />
+                      <span class="text-xs text-slate-500">kg</span>
+                    </div>
+
+                    <div class="flex items-center gap-2 bg-slate-950 px-3 py-2 rounded-xl border border-slate-800 flex-1 md:flex-initial">
+                      <label :for="`input-reps-${ex.id}`" class="text-xs text-slate-500 font-medium">Reps:</label>
+                      <input 
+                        :id="`input-reps-${ex.id}`"
+                        type="number" 
+                        min="0"
+                        max="500"
+                        inputmode="numeric"
+                        placeholder="12"
+                        :aria-label="`Repetições para ${ex.name}`"
+                        :value="workoutLogs[ex.id]?.reps"
+                        @input="e => updateLog(ex.id, split.id, 'reps', e.target.value)"
+                        :class="isWeightLoss ? 'text-rose-300' : 'text-amber-300'"
+                        class="log-input w-12 text-sm font-bold text-right focus:outline-none focus:text-white"
+                      />
+                    </div>
+
+                    <!-- RIR: reps em reserva do último esforço. -->
+                    <div class="flex items-center gap-2 bg-slate-950 px-3 py-2 rounded-xl border border-slate-800 flex-1 md:flex-initial">
+                      <label :for="`input-rir-${ex.id}`" class="text-xs text-slate-500 font-medium">RIR:</label>
+                      <input
+                        :id="`input-rir-${ex.id}`"
+                        type="number"
+                        min="0"
+                        max="10"
+                        inputmode="numeric"
+                        placeholder="—"
+                        :aria-label="`RIR (reps em reserva) para ${ex.name}`"
+                        :value="workoutLogs[ex.id]?.rir"
+                        @input="e => updateLog(ex.id, split.id, 'rir', e.target.value)"
+                        :class="isWeightLoss ? 'text-rose-300' : 'text-amber-300'"
+                        class="log-input w-10 text-sm font-bold text-right focus:outline-none focus:text-white"
+                      />
+                    </div>
+
+                    <button
+                      type="button"
+                      :id="`btn-add-set-${ex.id}`"
+                      @click="addExerciseSet(ex.id, split.id)"
+                      class="tap-btn px-2.5 py-2 rounded-xl text-xs font-bold border border-slate-800 bg-slate-950/80 hover:bg-slate-800 text-slate-300 hover:text-white transition-colors flex items-center gap-1"
+                      title="Adicionar mais uma série para este exercício"
+                    >
+                      <span aria-hidden="true">+</span> Série
+                    </button>
                   </div>
 
-                  <div class="flex items-center gap-2 bg-slate-950 px-3 py-2 rounded-xl border border-slate-800 flex-1 md:flex-initial">
-                    <label :for="`input-reps-${ex.id}`" class="text-xs text-slate-500 font-medium">Reps:</label>
-                    <input 
-                      :id="`input-reps-${ex.id}`"
-                      type="number" 
-                      min="0"
-                      max="500"
-                      inputmode="numeric"
-                      placeholder="12"
-                      :aria-label="`Repetições para ${ex.name}`"
-                      :value="workoutLogs[ex.id]?.reps"
-                      @input="e => updateLog(ex.id, split.id, 'reps', e.target.value)"
-                      :class="isWeightLoss ? 'text-rose-300' : 'text-amber-300'"
-                      class="log-input w-12 text-sm font-bold text-right focus:outline-none focus:text-white"
-                    />
-                  </div>
+                  <!-- Séries adicionais (Série 2, 3...) -->
+                  <div v-if="workoutLogs[ex.id]?.sets?.length > 1" class="space-y-1.5 pt-1 border-t border-slate-800/60">
+                    <div
+                      v-for="s in workoutLogs[ex.id].sets.slice(1)"
+                      :key="s.setNumber"
+                      class="flex items-center justify-between gap-2 bg-slate-950/60 px-3 py-1.5 rounded-xl border border-slate-800/80 text-xs"
+                    >
+                      <div class="flex items-center gap-2">
+                        <button
+                          type="button"
+                          :id="`btn-check-set-${ex.id}-${s.setNumber}`"
+                          @click="toggleSetDone(ex.id, split.id, s.setNumber)"
+                          class="w-5 h-5 rounded-lg border flex items-center justify-center font-bold text-[10px] transition-colors"
+                          :class="s.isDone ? (isWeightLoss ? 'bg-rose-500 border-rose-400 text-white' : 'bg-amber-500 border-amber-400 text-slate-950') : 'border-slate-700 text-transparent hover:border-amber-400'"
+                        >
+                          ✓
+                        </button>
+                        <span class="font-semibold text-slate-300">Série {{ s.setNumber }}</span>
+                      </div>
 
-                  <!-- RIR: reps em reserva do último esforço. Uma casa só — é
-                       o suficiente para a progressão e não ocupa a linha do
-                       celular como um seletor de escala ocuparia. -->
-                  <div class="flex items-center gap-2 bg-slate-950 px-3 py-2 rounded-xl border border-slate-800 flex-1 md:flex-initial">
-                    <label :for="`input-rir-${ex.id}`" class="text-xs text-slate-500 font-medium">RIR:</label>
-                    <input
-                      :id="`input-rir-${ex.id}`"
-                      type="number"
-                      min="0"
-                      max="10"
-                      inputmode="numeric"
-                      placeholder="—"
-                      :aria-label="`RIR (reps em reserva) para ${ex.name}`"
-                      :value="workoutLogs[ex.id]?.rir"
-                      @input="e => updateLog(ex.id, split.id, 'rir', e.target.value)"
-                      :class="isWeightLoss ? 'text-rose-300' : 'text-amber-300'"
-                      class="log-input w-10 text-sm font-bold text-right focus:outline-none focus:text-white"
-                    />
+                      <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-1 bg-slate-900 px-2 py-1 rounded-lg border border-slate-800">
+                          <input
+                            :id="`input-weight-${ex.id}-${s.setNumber}`"
+                            type="number"
+                            step="0.5"
+                            placeholder="0"
+                            :value="s.weight"
+                            @input="e => updateSetField(ex.id, split.id, s.setNumber, 'weight', e.target.value)"
+                            :class="isWeightLoss ? 'text-rose-300' : 'text-amber-300'"
+                            class="w-12 text-right bg-transparent font-bold focus:outline-none"
+                          />
+                          <span class="text-[10px] text-slate-500">kg</span>
+                        </div>
+
+                        <div class="flex items-center gap-1 bg-slate-900 px-2 py-1 rounded-lg border border-slate-800">
+                          <input
+                            :id="`input-reps-${ex.id}-${s.setNumber}`"
+                            type="number"
+                            placeholder="12"
+                            :value="s.reps"
+                            @input="e => updateSetField(ex.id, split.id, s.setNumber, 'reps', e.target.value)"
+                            :class="isWeightLoss ? 'text-rose-300' : 'text-amber-300'"
+                            class="w-10 text-right bg-transparent font-bold focus:outline-none"
+                          />
+                          <span class="text-[10px] text-slate-500">reps</span>
+                        </div>
+
+                        <button
+                          type="button"
+                          :id="`btn-remove-set-${ex.id}-${s.setNumber}`"
+                          @click="removeExerciseSet(ex.id, split.id, s.setNumber)"
+                          class="text-slate-500 hover:text-rose-400 p-1 text-xs"
+                          title="Remover esta série"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
                 <div v-else class="text-xs text-sky-400 font-semibold bg-sky-500/10 px-3 py-1.5 rounded-xl border border-sky-500/20">
@@ -646,6 +800,7 @@
                 </div>
 
               </div>
+            </template>
             </div>
 
           </div>
@@ -669,6 +824,247 @@
           <p class="text-xs text-slate-400">
             {{ isWeightLoss ? 'Déficit calórico calculado para emagrecer com alta saciedade e estímulos naturais.' : 'Cardápio proporcional calibrado exatamente para seu gasto energético e meta de crescimento.' }}
           </p>
+        </div>
+
+        <!-- Barra de Seleção de Preferência Alimentar -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-slate-900 border border-slate-800">
+          <div>
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Estilo de Dieta</span>
+            <p class="text-xs text-slate-300">Escolha o padrão para adaptar os alimentos do cardápio</p>
+          </div>
+          <div class="flex flex-wrap gap-1.5" role="group" aria-label="Preferência alimentar">
+            <button
+              v-for="diet in DIETARY_PREFERENCES"
+              :key="diet.id"
+              :id="`btn-diet-switch-${diet.id}`"
+              type="button"
+              @click="setDietaryPreference(diet.id)"
+              :class="currentDietaryPreference === diet.id ? (isWeightLoss ? 'bg-rose-500 text-white font-bold shadow-md shadow-rose-500/20' : 'bg-amber-500 text-slate-950 font-bold shadow-md shadow-amber-500/20') : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'"
+              class="tap-btn px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5"
+            >
+              <span>{{ diet.icon }}</span>
+              <span>{{ diet.label }}</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Hábitos Diários Interativos: Água e Creatina -->
+        <div id="section-daily-habits" class="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div>
+              <span class="text-xs font-bold uppercase tracking-wider text-cyan-400">Hábitos de Hoje</span>
+              <h4 class="text-base sm:text-lg font-bold text-white mt-0.5">Hidratação & Creatina Diária</h4>
+            </div>
+            <span class="text-xs text-slate-400 font-medium capitalize">{{ todayDateFormatted }}</span>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-4">
+            <!-- Rastreador de Água -->
+            <div class="p-4 rounded-2xl bg-slate-950/60 border border-cyan-500/20 space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span class="text-xl">💧</span>
+                  <span class="text-sm font-bold text-white">Meta de Água</span>
+                </div>
+                <span id="water-progress-text" class="text-xs font-bold text-cyan-400">
+                  {{ todayWaterMl }} / {{ targetWaterMl }} ml ({{ waterPercent }}%)
+                </span>
+              </div>
+
+              <!-- Barra de Progresso de Água -->
+              <div class="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden" role="progressbar" :aria-valuenow="waterPercent" aria-valuemin="0" aria-valuemax="100">
+                <div
+                  id="water-progress-bar"
+                  class="h-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-all duration-300 rounded-full"
+                  :style="{ width: `${waterPercent}%` }"
+                ></div>
+              </div>
+
+              <!-- Botões de Ingestão de Água -->
+              <div class="flex flex-wrap gap-2 pt-1">
+                <button
+                  id="btn-water-add-250"
+                  @click="addWater(250)"
+                  type="button"
+                  class="tap-btn px-3 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-xs font-bold transition-all"
+                >
+                  +250 ml
+                </button>
+                <button
+                  id="btn-water-add-500"
+                  @click="addWater(500)"
+                  type="button"
+                  class="tap-btn px-3 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-xs font-bold transition-all"
+                >
+                  +500 ml
+                </button>
+                <button
+                  id="btn-water-add-1000"
+                  @click="addWater(1000)"
+                  type="button"
+                  class="tap-btn px-3 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-xs font-bold transition-all"
+                >
+                  +1 L
+                </button>
+                <button
+                  id="btn-water-sub-250"
+                  @click="addWater(-250)"
+                  type="button"
+                  class="tap-btn px-2.5 py-1.5 rounded-xl bg-slate-800 text-slate-400 hover:text-white border border-slate-700/60 text-xs transition-all"
+                  title="Diminuir 250ml"
+                >
+                  -250
+                </button>
+                <button
+                  id="btn-water-reset"
+                  @click="resetWater"
+                  type="button"
+                  class="tap-btn px-2.5 py-1.5 rounded-xl bg-slate-800 text-slate-400 hover:text-rose-400 border border-slate-700/60 text-xs transition-all ml-auto"
+                >
+                  Zerar
+                </button>
+              </div>
+            </div>
+
+            <!-- Rastreador de Creatina -->
+            <div class="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 flex flex-col justify-between">
+              <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-2">
+                  <span class="text-xl">⚡</span>
+                  <span class="text-sm font-bold text-white">Creatina do Dia</span>
+                </div>
+                <span class="text-xs text-slate-400 font-semibold">{{ activePlan?.physiology?.creatine }}g / dose</span>
+              </div>
+              <p class="text-xs text-slate-400 mb-3">
+                Consumo diário contínuo, inclusive nos dias de descanso. Tome com sua principal refeição rica em carboidratos.
+              </p>
+              <button
+                id="btn-toggle-creatine-today"
+                @click="toggleCreatineToday"
+                type="button"
+                :class="isCreatineTakenToday ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50 shadow-md shadow-emerald-500/10' : 'bg-slate-900 text-slate-300 border-slate-700 hover:border-slate-500'"
+                class="tap-btn w-full p-2.5 rounded-xl border font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer"
+              >
+                <span>{{ isCreatineTakenToday ? '✓ Creatina Ingerida Hoje!' : 'Registrar Creatina de Hoje' }}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Personalização de Calorias & Macros -->
+        <div id="section-custom-nutrition" class="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
+            <div>
+              <span class="text-xs font-bold uppercase tracking-wider" :class="isWeightLoss ? 'text-rose-400' : 'text-amber-400'">
+                Metas Nutricionais & Macros
+              </span>
+              <h4 class="text-base sm:text-lg font-bold text-white mt-0.5">
+                {{ isCustomNutritionActive ? 'Metas Personalizadas Manuais' : 'Metas Recomendadas para seu Perfil' }}
+              </h4>
+            </div>
+            <button
+              id="btn-toggle-custom-nutrition-form"
+              @click="isEditingCustomNutrition = !isEditingCustomNutrition"
+              type="button"
+              class="tap-btn text-xs px-3 py-1.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-200 transition-colors flex items-center gap-1.5 self-start sm:self-auto"
+            >
+              <span>⚙️</span>
+              <span>{{ isEditingCustomNutrition ? 'Fechar Ajuste' : 'Personalizar Metas (Nutricionista)' }}</span>
+            </button>
+          </div>
+
+          <!-- Visor dos macros atuais -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div class="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800 text-center">
+              <span class="block text-[10px] text-slate-500 uppercase font-bold">Calorias / Dia</span>
+              <span id="display-calories" class="text-lg font-black text-white">{{ effectiveTargetCalories }} kcal</span>
+            </div>
+            <div class="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800 text-center">
+              <span class="block text-[10px] text-slate-500 uppercase font-bold">Proteína</span>
+              <span id="display-protein" class="text-lg font-black text-emerald-400">{{ effectiveMacros.proteinGrams }}g</span>
+            </div>
+            <div class="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800 text-center">
+              <span class="block text-[10px] text-slate-500 uppercase font-bold">Carboidratos</span>
+              <span id="display-carbs" class="text-lg font-black text-amber-400">{{ effectiveMacros.carbsGrams }}g</span>
+            </div>
+            <div class="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800 text-center">
+              <span class="block text-[10px] text-slate-500 uppercase font-bold">Gorduras</span>
+              <span id="display-fat" class="text-lg font-black text-rose-400">{{ effectiveMacros.fatGrams }}g</span>
+            </div>
+          </div>
+
+          <!-- Formulário de personalização de metas -->
+          <div v-if="isEditingCustomNutrition" id="form-custom-nutrition" class="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-3 pt-4">
+            <p class="text-xs text-slate-400">
+              Defina os alvos específicos prescritos pelo seu nutricionista ou personalize suas preferências calóricas:
+            </p>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div>
+                <label for="input-custom-calories" class="block text-[11px] font-semibold text-slate-400 mb-1">Calorias (kcal)</label>
+                <input
+                  id="input-custom-calories"
+                  v-model.number="customNutritionForm.targetCalories"
+                  type="number"
+                  min="1000"
+                  max="6000"
+                  class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white font-semibold text-sm focus:outline-none focus:border-cyan-500"
+                />
+              </div>
+              <div>
+                <label for="input-custom-protein" class="block text-[11px] font-semibold text-slate-400 mb-1">Proteína (g)</label>
+                <input
+                  id="input-custom-protein"
+                  v-model.number="customNutritionForm.proteinGrams"
+                  type="number"
+                  min="30"
+                  max="400"
+                  class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white font-semibold text-sm focus:outline-none focus:border-cyan-500"
+                />
+              </div>
+              <div>
+                <label for="input-custom-carbs" class="block text-[11px] font-semibold text-slate-400 mb-1">Carboidratos (g)</label>
+                <input
+                  id="input-custom-carbs"
+                  v-model.number="customNutritionForm.carbsGrams"
+                  type="number"
+                  min="20"
+                  max="700"
+                  class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white font-semibold text-sm focus:outline-none focus:border-cyan-500"
+                />
+              </div>
+              <div>
+                <label for="input-custom-fat" class="block text-[11px] font-semibold text-slate-400 mb-1">Gorduras (g)</label>
+                <input
+                  id="input-custom-fat"
+                  v-model.number="customNutritionForm.fatGrams"
+                  type="number"
+                  min="15"
+                  max="200"
+                  class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white font-semibold text-sm focus:outline-none focus:border-cyan-500"
+                />
+              </div>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-2">
+              <button
+                v-if="isCustomNutritionActive"
+                id="btn-reset-custom-nutrition"
+                type="button"
+                @click="resetCustomNutrition"
+                class="tap-btn px-3 py-2 rounded-xl text-xs text-rose-400 hover:text-rose-300 border border-rose-500/30 bg-rose-500/10 transition-colors"
+              >
+                Restaurar Cálculo Automático
+              </button>
+              <button
+                id="btn-save-custom-nutrition"
+                type="button"
+                @click="saveCustomNutrition"
+                class="tap-btn px-4 py-2 rounded-xl text-xs font-bold bg-cyan-500 hover:bg-cyan-400 text-slate-950 transition-colors"
+              >
+                Salvar Metas
+              </button>
+            </div>
+          </div>
         </div>
 
         <!-- Destaques Creatina e Componentes Naturais -->
@@ -887,14 +1283,18 @@
       @update="onTrainingUpdate"
       @rest="triggerRestTimer"
       @finish="onTrainingFinish"
+      @swap="handleTrainingSwap"
+      @add-set="id => addExerciseSet(id, trainingSplit?.id)"
+      @update-set="(id, setNum, field, val) => updateSetField(id, trainingSplit?.id, setNum, field, val)"
+      @toggle-set="(id, setNum) => toggleSetDone(id, trainingSplit?.id, setNum)"
     />
 
     <!-- Modal de Onboarding / Perfil Personalizado -->
     <OnboardingModal 
       :is-open="isOnboardingOpen" 
-      :initial-profile="userProfile"
+      :initial-profile="isFirstAccess ? null : userProfile"
       @save="handleSaveProfile"
-      @close="isOnboardingOpen = false"
+      @close="isOnboardingOpen = false; isFirstAccess = false"
     />
 
     <!-- Modal de Troca de Exercício Individual -->
@@ -945,9 +1345,10 @@
 <script setup>
 import { ref, shallowRef, computed, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import confetti from 'canvas-confetti';
-import { db, buildWeekCheckId, getCurrentWeekKey, migrateLegacyWeeklyChecks, migrateLegacyLogsToSession } from './db';
-import { openSession, recordSet, listSessions, getLastSetsForExercises, getOpenSessionIds, closeSession } from './db/sessions';
+import { db, buildWeekCheckId, getCurrentWeekKey, getDayKey, migrateLegacyWeeklyChecks, migrateLegacyLogsToSession } from './db';
+import { openSession, recordSet, listSessions, getLastSetsForExercises, getOpenSessionIds, closeSession, deleteSet } from './db/sessions';
 import { buildPersonalizedPlan } from './engine/generators/planGenerator';
+import { DIETARY_PREFERENCES } from './engine/knowledge/foodTemplates.js';
 import { requestAiPlan, AiPlanError } from './engine/ai/planFromAi';
 import { parseWeight, parseReps } from './engine/history';
 import { calculatePersonalRecords, suggestNextLoad, getLastSetsForExercise } from './engine/progression';
@@ -962,7 +1363,12 @@ import {
   buildFullCatalog,
   listCustomExercises,
   saveCustomExercise,
-  deleteCustomExercise
+  deleteCustomExercise,
+  MUSCLE_LABELS,
+  MUSCLE_ORDER,
+  getMuscleBadgeClass,
+  getMuscleDotColor,
+  getMuscleTextColor
 } from './db/customExercises';
 import {
   buildBackup,
@@ -982,6 +1388,7 @@ const currentSplitTab = ref('treino-a');
 const isAiPlanLoading = ref(false);
 const aiPlanMessage = ref(null);
 const isOnboardingOpen = ref(false);
+const isFirstAccess = ref(false);
 
 // Corrida entre o carregamento inicial (mount) e o primeiro save: se a
 // migração/lentidão do IndexedDB fizer `hydrateFromDatabase` ler o perfil como
@@ -1097,9 +1504,173 @@ const isWeightLoss = computed(() => {
   return userProfile.value?.goal === 'weight_loss' || activePlan.value?.profile?.goal === 'weight_loss';
 });
 
+const appTitle = computed(() => {
+  const goal = userProfile.value?.goal || activePlan.value?.profile?.goal;
+  if (goal === 'weight_loss') return 'Emagrecimento Saudável';
+  if (goal === 'strength') return 'Força & Carga Pro';
+  if (goal === 'recomposition') return 'Recomposição Corporal';
+  if (goal === 'maintenance') return 'Saúde & Manutenção';
+  return 'Hipertrofia Pro';
+});
+
+const goalBadge = computed(() => {
+  const goal = userProfile.value?.goal || activePlan.value?.profile?.goal;
+  if (goal === 'weight_loss') return 'Definição';
+  if (goal === 'strength') return 'Força';
+  if (goal === 'recomposition') return 'Recomp';
+  if (goal === 'maintenance') return 'Saúde';
+  return 'PWA';
+});
+
 const completedDaysCount = computed(() => {
   return Object.values(weeklyChecks.value).filter(Boolean).length;
 });
+
+// ---------------------------------------------------------------------------
+// Personalização Nutricional, Hábitos e Hidratação
+// ---------------------------------------------------------------------------
+const currentDietaryPreference = computed(() => {
+  return activePlan.value?.dietaryPreference || userProfile.value?.dietaryPreference || 'omnivore';
+});
+
+async function setDietaryPreference(prefId) {
+  if (!userProfile.value) return;
+  userProfile.value.dietaryPreference = prefId;
+  await db.user_profile.put({ id: 'current_user', ...JSON.parse(JSON.stringify(userProfile.value)) });
+  await applyAndSavePlan(userProfile.value, true, true);
+}
+
+const isEditingCustomNutrition = ref(false);
+const customNutritionForm = ref({
+  targetCalories: 2000,
+  proteinGrams: 150,
+  carbsGrams: 200,
+  fatGrams: 60
+});
+
+const isCustomNutritionActive = computed(() => {
+  return !!activePlan.value?.customNutrition?.enabled;
+});
+
+const effectiveTargetCalories = computed(() => {
+  if (isCustomNutritionActive.value && activePlan.value?.customNutrition?.targetCalories) {
+    return activePlan.value.customNutrition.targetCalories;
+  }
+  return activePlan.value?.physiology?.targetCalories || 0;
+});
+
+const effectiveMacros = computed(() => {
+  if (isCustomNutritionActive.value && activePlan.value?.customNutrition) {
+    return {
+      proteinGrams: activePlan.value.customNutrition.proteinGrams,
+      carbsGrams: activePlan.value.customNutrition.carbsGrams,
+      fatGrams: activePlan.value.customNutrition.fatGrams
+    };
+  }
+  return activePlan.value?.physiology?.macros || { proteinGrams: 0, carbsGrams: 0, fatGrams: 0 };
+});
+
+function initCustomNutritionForm() {
+  if (activePlan.value?.customNutrition?.enabled) {
+    customNutritionForm.value = {
+      targetCalories: activePlan.value.customNutrition.targetCalories,
+      proteinGrams: activePlan.value.customNutrition.proteinGrams,
+      carbsGrams: activePlan.value.customNutrition.carbsGrams,
+      fatGrams: activePlan.value.customNutrition.fatGrams
+    };
+  } else if (activePlan.value?.physiology) {
+    customNutritionForm.value = {
+      targetCalories: activePlan.value.physiology.targetCalories,
+      proteinGrams: activePlan.value.physiology.macros?.proteinGrams || 150,
+      carbsGrams: activePlan.value.physiology.macros?.carbsGrams || 200,
+      fatGrams: activePlan.value.physiology.macros?.fatGrams || 60
+    };
+  }
+}
+
+async function saveCustomNutrition() {
+  if (!activePlan.value) return;
+  const rawPlan = JSON.parse(JSON.stringify(activePlan.value));
+  rawPlan.customNutrition = {
+    enabled: true,
+    targetCalories: Math.round(Number(customNutritionForm.value.targetCalories) || 2000),
+    proteinGrams: Math.round(Number(customNutritionForm.value.proteinGrams) || 150),
+    carbsGrams: Math.round(Number(customNutritionForm.value.carbsGrams) || 200),
+    fatGrams: Math.round(Number(customNutritionForm.value.fatGrams) || 60)
+  };
+  await db.active_plan.put(rawPlan);
+  activePlan.value = rawPlan;
+  isEditingCustomNutrition.value = false;
+}
+
+async function resetCustomNutrition() {
+  if (!activePlan.value) return;
+  const rawPlan = JSON.parse(JSON.stringify(activePlan.value));
+  delete rawPlan.customNutrition;
+  await db.active_plan.put(rawPlan);
+  activePlan.value = rawPlan;
+  initCustomNutritionForm();
+  isEditingCustomNutrition.value = false;
+}
+
+const todayKey = computed(() => getDayKey());
+const todayHabits = computed(() => {
+  return activePlan.value?.dailyHabits?.[todayKey.value] || { waterMl: 0, creatineTaken: false };
+});
+const todayWaterMl = computed(() => todayHabits.value.waterMl || 0);
+const targetWaterMl = computed(() => {
+  const liters = activePlan.value?.physiology?.water?.liters || 2.5;
+  return Math.round(liters * 1000);
+});
+const waterPercent = computed(() => {
+  if (!targetWaterMl.value) return 0;
+  return Math.min(100, Math.round((todayWaterMl.value / targetWaterMl.value) * 100));
+});
+const isCreatineTakenToday = computed(() => !!todayHabits.value.creatineTaken);
+const todayDateFormatted = computed(() => {
+  return new Date().toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' });
+});
+
+async function addWater(amountMl) {
+  if (!activePlan.value) return;
+  const rawPlan = JSON.parse(JSON.stringify(activePlan.value));
+  if (!rawPlan.dailyHabits) rawPlan.dailyHabits = {};
+  const current = rawPlan.dailyHabits[todayKey.value] || { waterMl: 0, creatineTaken: false };
+  current.waterMl = Math.max(0, (current.waterMl || 0) + amountMl);
+  rawPlan.dailyHabits[todayKey.value] = current;
+  await db.active_plan.put(rawPlan);
+  activePlan.value = rawPlan;
+}
+
+async function resetWater() {
+  if (!activePlan.value) return;
+  const rawPlan = JSON.parse(JSON.stringify(activePlan.value));
+  if (!rawPlan.dailyHabits) rawPlan.dailyHabits = {};
+  const current = rawPlan.dailyHabits[todayKey.value] || { waterMl: 0, creatineTaken: false };
+  current.waterMl = 0;
+  rawPlan.dailyHabits[todayKey.value] = current;
+  await db.active_plan.put(rawPlan);
+  activePlan.value = rawPlan;
+}
+
+async function toggleCreatineToday() {
+  if (!activePlan.value) return;
+  const rawPlan = JSON.parse(JSON.stringify(activePlan.value));
+  if (!rawPlan.dailyHabits) rawPlan.dailyHabits = {};
+  const current = rawPlan.dailyHabits[todayKey.value] || { waterMl: 0, creatineTaken: false };
+  current.creatineTaken = !current.creatineTaken;
+  rawPlan.dailyHabits[todayKey.value] = current;
+  await db.active_plan.put(rawPlan);
+  activePlan.value = rawPlan;
+
+  if (current.creatineTaken) {
+    confetti({
+      particleCount: 50,
+      spread: 60,
+      origin: { y: 0.7 }
+    });
+  }
+}
 
 const WEEK_REFRESH_INTERVAL_MS = 60 * 1000;
 let weekWatcherTimer = null;
@@ -1227,6 +1798,7 @@ async function hydrateFromDatabase(profileRecord) {
     if (profileSavedDuringLoad) return;
 
     // Primeiro acesso: abre o onboarding com homem/João por padrão inicial
+    isFirstAccess.value = true;
     isOnboardingOpen.value = true;
     const defaultProfile = {
       userName: 'João',
@@ -1238,7 +1810,8 @@ async function hydrateFromDatabase(profileRecord) {
       daysPerWeek: 4,
       experienceLevel: 'intermediate',
       equipment: 'gym',
-      restrictions: []
+      restrictions: [],
+      dietaryPreference: 'omnivore'
     };
     userProfile.value = defaultProfile;
     await db.user_profile.put({ id: 'current_user', ...defaultProfile });
@@ -1253,6 +1826,7 @@ async function hydrateFromDatabase(profileRecord) {
     // usuário a passar pela tela de CRUD a cada visita.
     if (planRecord && !hasCustomExercises.value) {
       activePlan.value = planRecord;
+      initCustomNutritionForm();
       if (activePlan.value.workoutSplits?.length > 0) {
         currentSplitTab.value = activePlan.value.workoutSplits[0].id;
       }
@@ -1265,6 +1839,15 @@ async function hydrateFromDatabase(profileRecord) {
   const logs = await db.workout_logs.toArray();
   const mapLogs = {};
   logs.forEach(l => {
+    if (!l.sets || !Array.isArray(l.sets) || l.sets.length === 0) {
+      l.sets = [{
+        setNumber: 1,
+        weight: l.weight || '',
+        reps: l.reps || '',
+        rir: l.rir ?? '',
+        isDone: !!l.isDone
+      }];
+    }
     mapLogs[l.exerciseId] = l;
   });
   workoutLogs.value = mapLogs;
@@ -1297,11 +1880,15 @@ async function loadLastSets() {
 
 async function handleSaveProfile(newProfile) {
   try {
+    isFirstAccess.value = false;
     const rawProfile = JSON.parse(JSON.stringify(newProfile));
+    const preserveWorkouts = !!rawProfile.preserveWorkouts;
+    delete rawProfile.preserveWorkouts;
+
     // Marcado antes de qualquer await: se o carregamento inicial ainda estiver
     // rodando, ele não pode aplicar o perfil default por cima do save novo.
     profileSavedDuringLoad = true;
-    const plan = await applyAndSavePlan(rawProfile, true);
+    const plan = await applyAndSavePlan(rawProfile, true, preserveWorkouts);
 
     userProfile.value = rawProfile;
     await db.user_profile.put({ id: 'current_user', ...rawProfile });
@@ -1323,7 +1910,7 @@ async function handleSaveProfile(newProfile) {
   }
 }
 
-async function applyAndSavePlan(profile, persist = true) {
+async function applyAndSavePlan(profile, persist = true, keepExistingSplits = false) {
   // O catálogo mesclado entra aqui e não só em regeneratePlanWithCustomExercises:
   // qualquer geração de plano (onboarding, reset de perfil) precisa enxergar os
   // exercícios próprios.
@@ -1331,7 +1918,25 @@ async function applyAndSavePlan(profile, persist = true) {
     ...profile,
     catalog: fullCatalog.value
   });
-  const rawPlan = JSON.parse(JSON.stringify(generated));
+  let rawPlan = JSON.parse(JSON.stringify(generated));
+
+  if (keepExistingSplits && activePlan.value?.workoutSplits?.length) {
+    // Preserva as fichas e semana existentes, mantendo as customizações do usuário
+    rawPlan.workoutSplits = JSON.parse(JSON.stringify(activePlan.value.workoutSplits));
+    if (activePlan.value.weekSchedule) {
+      rawPlan.weekSchedule = JSON.parse(JSON.stringify(activePlan.value.weekSchedule));
+    }
+    if (activePlan.value.planSource) {
+      rawPlan.planSource = activePlan.value.planSource;
+    }
+  }
+
+  if (activePlan.value?.customNutrition) {
+    rawPlan.customNutrition = JSON.parse(JSON.stringify(activePlan.value.customNutrition));
+  }
+  if (activePlan.value?.dailyHabits) {
+    rawPlan.dailyHabits = JSON.parse(JSON.stringify(activePlan.value.dailyHabits));
+  }
 
   if (persist) {
     await db.active_plan.put(rawPlan);
@@ -1340,8 +1945,11 @@ async function applyAndSavePlan(profile, persist = true) {
   // Só troca o plano em memória depois que a escrita terminou, para não
   // exibir um plano que falhou ao ser salvo.
   activePlan.value = rawPlan;
-  if (rawPlan.workoutSplits?.length > 0) {
-    currentSplitTab.value = rawPlan.workoutSplits[0].id;
+  initCustomNutritionForm();
+  if (!activePlan.value.workoutSplits?.find(s => s.id === currentSplitTab.value)) {
+    if (rawPlan.workoutSplits?.length > 0) {
+      currentSplitTab.value = rawPlan.workoutSplits[0].id;
+    }
   }
 
   // O plano novo pode ter exercícios diferentes dos antigos, então os selos de
@@ -1470,7 +2078,12 @@ const writeToken = new Map();
 async function persistExerciseLog(exerciseId, splitId, patch, errorMessage) {
   const previous = workoutLogs.value[exerciseId];
   const hadNoPreviousLog = previous === undefined;
-  const current = previous || { weight: '', reps: '', isDone: false };
+  const current = previous || { weight: '', reps: '', rir: '', isDone: false, sets: [] };
+
+  const currentSets = Array.isArray(current.sets) && current.sets.length > 0
+    ? current.sets.map(s => ({ ...s }))
+    : [{ setNumber: 1, weight: current.weight || '', reps: current.reps || '', rir: current.rir || '', isDone: !!current.isDone }];
+
   const updated = {
     ...current,
     ...patch,
@@ -1479,6 +2092,27 @@ async function persistExerciseLog(exerciseId, splitId, patch, errorMessage) {
     workoutId: splitId,
     updatedAt: new Date().toISOString()
   };
+
+  if (patch.sets) {
+    updated.sets = patch.sets;
+    if (patch.sets[0]) {
+      updated.weight = patch.sets[0].weight;
+      updated.reps = patch.sets[0].reps;
+      updated.rir = patch.sets[0].rir;
+      updated.isDone = patch.sets.every(s => s.isDone);
+    }
+  } else {
+    // Sincroniza campos de topo (weight, reps, rir, isDone) com a série 1
+    currentSets[0] = {
+      ...currentSets[0],
+      setNumber: 1,
+      weight: updated.weight ?? currentSets[0].weight,
+      reps: updated.reps ?? currentSets[0].reps,
+      rir: updated.rir ?? currentSets[0].rir,
+      isDone: updated.isDone ?? currentSets[0].isDone
+    };
+    updated.sets = currentSets;
+  }
 
   // Otimista e síncrono, antes de qualquer await. Os campos de carga disparam
   // @input a cada tecla: esperar o IndexedDB para atualizar o estado fazia a
@@ -1491,10 +2125,20 @@ async function persistExerciseLog(exerciseId, splitId, patch, errorMessage) {
     db.transaction('rw', db.workout_logs, db.workout_sessions, db.session_sets, async () => {
       const sessionId = await resolveOpenSessionId(splitId);
       await db.workout_logs.put(updated);
-      await recordSet(
-        { splitId, exerciseId, weight: updated.weight, reps: updated.reps, rir: updated.rir ?? '', isDone: updated.isDone },
-        { sessionId }
-      );
+      for (const s of updated.sets) {
+        await recordSet(
+          {
+            splitId,
+            exerciseId,
+            weight: s.weight,
+            reps: s.reps,
+            rir: s.rir ?? '',
+            isDone: !!s.isDone,
+            setNumber: s.setNumber || 1
+          },
+          { sessionId }
+        );
+      }
     })
   );
 
@@ -1511,6 +2155,105 @@ async function persistExerciseLog(exerciseId, splitId, patch, errorMessage) {
     nextLogs[exerciseId] = current;
   }
   workoutLogs.value = nextLogs;
+}
+
+async function addExerciseSet(exerciseId, splitId) {
+  const current = workoutLogs.value[exerciseId] || { weight: '', reps: '', rir: '', isDone: false, sets: [] };
+  const sets = Array.isArray(current.sets) && current.sets.length > 0
+    ? current.sets.map(s => ({ ...s }))
+    : [{ setNumber: 1, weight: current.weight || '', reps: current.reps || '', rir: current.rir || '', isDone: !!current.isDone }];
+
+  const lastSet = sets[sets.length - 1];
+  const newSetNumber = sets.length + 1;
+  const newSet = {
+    setNumber: newSetNumber,
+    weight: lastSet ? lastSet.weight : '',
+    reps: lastSet ? lastSet.reps : '',
+    rir: lastSet ? lastSet.rir : '',
+    isDone: false
+  };
+
+  sets.push(newSet);
+  await persistExerciseLog(
+    exerciseId,
+    splitId,
+    { sets },
+    'Não foi possível adicionar nova série.'
+  );
+
+  const ex = activePlan.value.workoutSplits
+    ?.find(s => s.id === splitId)
+    ?.exercises?.find(e => e.id === exerciseId);
+  if (ex) triggerRestTimer(ex.rest);
+}
+
+async function removeExerciseSet(exerciseId, splitId, setNumber) {
+  const current = workoutLogs.value[exerciseId];
+  if (!current || !Array.isArray(current.sets) || current.sets.length <= 1) return;
+
+  const sessionId = activeSessionId.value;
+  const sets = current.sets
+    .filter(s => s.setNumber !== setNumber)
+    .map((s, idx) => ({ ...s, setNumber: idx + 1 }));
+
+  if (sessionId) {
+    try {
+      await deleteSet(sessionId, exerciseId, setNumber);
+    } catch {
+      // Ignora erro se série ainda não estava no banco
+    }
+  }
+
+  await persistExerciseLog(
+    exerciseId,
+    splitId,
+    { sets },
+    'Não foi possível remover a série.'
+  );
+}
+
+async function updateSetField(exerciseId, splitId, setNumber, field, value) {
+  const current = workoutLogs.value[exerciseId] || { weight: '', reps: '', rir: '', isDone: false, sets: [] };
+  const sets = Array.isArray(current.sets) && current.sets.length > 0
+    ? current.sets.map(s => ({ ...s }))
+    : [{ setNumber: 1, weight: current.weight || '', reps: current.reps || '', rir: current.rir || '', isDone: !!current.isDone }];
+
+  const target = sets.find(s => s.setNumber === setNumber);
+  if (target) {
+    target[field] = value;
+  }
+
+  await persistExerciseLog(
+    exerciseId,
+    splitId,
+    { sets },
+    'Não foi possível atualizar a série.'
+  );
+}
+
+async function toggleSetDone(exerciseId, splitId, setNumber) {
+  const current = workoutLogs.value[exerciseId] || { weight: '', reps: '', rir: '', isDone: false, sets: [] };
+  const sets = Array.isArray(current.sets) && current.sets.length > 0
+    ? current.sets.map(s => ({ ...s }))
+    : [{ setNumber: 1, weight: current.weight || '', reps: current.reps || '', rir: current.rir || '', isDone: !!current.isDone }];
+
+  const target = sets.find(s => s.setNumber === setNumber);
+  if (target) {
+    target.isDone = !target.isDone;
+    if (target.isDone) {
+      const ex = activePlan.value.workoutSplits
+        ?.find(s => s.id === splitId)
+        ?.exercises?.find(e => e.id === exerciseId);
+      if (ex) triggerRestTimer(ex.rest);
+    }
+  }
+
+  await persistExerciseLog(
+    exerciseId,
+    splitId,
+    { sets },
+    'Não foi possível marcar a série.'
+  );
 }
 
 async function toggleDayCheck(dayId) {
@@ -1708,6 +2451,11 @@ function openExercisePicker(exercise, splitId) {
   isPickerOpen.value = true;
 }
 
+function handleTrainingSwap(exercise) {
+  if (!exercise || !trainingSplit.value) return;
+  openExercisePicker(exercise, trainingSplit.value.id);
+}
+
 // --- Editor de ficha (ordenar, remover, adicionar) ---
 
 function openAdderFor(splitId) {
@@ -1724,8 +2472,8 @@ function handleExerciseAdded(exercise) {
 
 // Abre o CRUD já com o grupo do seletor pré-escolhido, para o usuário não ter
 // que escolher de novo o mesmo grupo muscular.
-function handleCreateFromAdder() {
-  const muscle = adderGroup.value?.muscle ?? null;
+function handleCreateFromAdder(muscleParam) {
+  const muscle = (typeof muscleParam === 'string' ? muscleParam : null) || adderGroup.value?.muscle || null;
   closeAdder();
   isCustomExercisesOpen.value = true;
   customExercisePreset.value = muscle ? { muscle } : null;
@@ -1817,6 +2565,64 @@ function addExerciseToSplit(exercise, splitId) {
     splitId,
     (list) => [...list, exercise],
     'Não foi possível adicionar o exercício.'
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Organização e visualização por grupos musculares
+// ---------------------------------------------------------------------------
+const activeMuscleFilter = ref({});
+
+function getSplitMuscleGroups(split) {
+  if (!split?.exercises) return [];
+  const muscles = new Set(split.exercises.map(e => e.muscle).filter(Boolean));
+  return MUSCLE_ORDER.filter(m => muscles.has(m));
+}
+
+function getMuscleCountInSplit(split, muscle) {
+  if (!split?.exercises) return 0;
+  return split.exercises.filter(e => e.muscle === muscle).length;
+}
+
+function getVisibleExercises(split) {
+  if (!split?.exercises) return [];
+  const filter = activeMuscleFilter.value[split.id];
+  if (!filter || filter === 'all') return split.exercises;
+  return split.exercises.filter(e => e.muscle === filter);
+}
+
+function shouldShowMuscleHeader(split, ex, index) {
+  const filter = activeMuscleFilter.value[split.id];
+  if (filter && filter !== 'all') {
+    return index === 0;
+  }
+  const list = getVisibleExercises(split);
+  if (index === 0) return true;
+  return list[index - 1]?.muscle !== ex.muscle;
+}
+
+function toggleMuscleFilter(splitId, muscle) {
+  if (activeMuscleFilter.value[splitId] === muscle) {
+    activeMuscleFilter.value[splitId] = 'all';
+  } else {
+    activeMuscleFilter.value[splitId] = muscle;
+  }
+}
+
+function sortSplitByMuscle(splitId) {
+  return mutateSplitExercises(
+    splitId,
+    (list) => {
+      const sorted = [...list].sort((a, b) => {
+        const orderA = MUSCLE_ORDER.indexOf(a.muscle);
+        const orderB = MUSCLE_ORDER.indexOf(b.muscle);
+        const rankA = orderA === -1 ? 999 : orderA;
+        const rankB = orderB === -1 ? 999 : orderB;
+        return rankA - rankB;
+      });
+      return sorted;
+    },
+    'Não foi possível agrupar os exercícios por músculo.'
   );
 }
 

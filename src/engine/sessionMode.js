@@ -37,6 +37,7 @@ export function buildTrainingQueue(exercises = [], logs = {}) {
   const items = (exercises || []).map(ex => ({
     exerciseId: ex.id,
     name: ex.name,
+    muscle: ex.muscle,
     isDone: !!logs[ex.id]?.isDone
   }));
 

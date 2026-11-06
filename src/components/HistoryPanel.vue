@@ -183,10 +183,13 @@
           >
             <div
               v-for="set in setsOf(session)"
-              :key="set.exerciseId"
+              :key="set.id || `${set.exerciseId}-${set.setNumber || 1}`"
               class="flex items-center justify-between gap-3 text-xs"
             >
-              <span class="text-slate-300 truncate">{{ exerciseName(set.exerciseId) }}</span>
+              <span class="text-slate-300 truncate">
+                {{ exerciseName(set.exerciseId) }}
+                <span v-if="set.setNumber && set.setNumber > 1" class="text-slate-500 text-[10px] ml-1">(série {{ set.setNumber }})</span>
+              </span>
               <span class="text-slate-400 shrink-0 tabular-nums">
                 <template v-if="hasLoad(set)">
                   {{ formatWeight(set.weight) }} kg × {{ set.reps }} reps
@@ -246,7 +249,11 @@ function durationFor(session) {
 }
 
 function setsOf(session) {
-  return [...(session.sets || [])].sort((a, b) => String(a.exerciseId).localeCompare(String(b.exerciseId)));
+  return [...(session.sets || [])].sort((a, b) => {
+    const exComp = String(a.exerciseId).localeCompare(String(b.exerciseId));
+    if (exComp !== 0) return exComp;
+    return (Number(a.setNumber) || 1) - (Number(b.setNumber) || 1);
+  });
 }
 
 function hasLoad(set) {

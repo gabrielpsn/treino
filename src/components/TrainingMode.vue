@@ -44,7 +44,17 @@
         class="p-4 rounded-2xl border border-amber-500/30 bg-slate-900 space-y-3"
       >
         <div>
-          <p class="text-[10px] uppercase tracking-widest text-amber-400 font-bold">Exercício atual</p>
+          <div class="flex items-center justify-between gap-2">
+            <p class="text-[10px] uppercase tracking-widest text-amber-400 font-bold">Exercício atual</p>
+            <span
+              v-if="focusExercise.muscle"
+              :class="getMuscleBadgeClass(focusExercise.muscle)"
+              class="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider inline-flex items-center gap-1"
+            >
+              <span class="w-1.5 h-1.5 rounded-full" :class="getMuscleDotColor(focusExercise.muscle)"></span>
+              {{ MUSCLE_LABELS[focusExercise.muscle] || focusExercise.muscle }}
+            </span>
+          </div>
           <h2 class="text-lg font-extrabold text-white leading-tight">{{ focusExercise.name }}</h2>
           <p class="text-xs text-slate-400 mt-0.5">
             {{ focusExercise.defaultSeries }}
@@ -54,54 +64,81 @@
           <p v-if="focusExercise.tips" class="text-[11px] text-slate-500 italic mt-1">💡 {{ focusExercise.tips }}</p>
         </div>
 
-        <div v-if="focusExercise.muscle !== 'cardio'" class="flex gap-3">
-          <div class="flex items-center gap-2 bg-slate-950 px-3 py-2.5 rounded-xl border border-slate-800 flex-1">
-            <label for="training-input-weight" class="text-xs text-slate-500 font-medium">Carga:</label>
-            <input
-              id="training-input-weight"
-              type="number"
-              step="0.5"
-              min="0"
-              inputmode="decimal"
-              placeholder="0"
-              aria-label="Carga em kg do exercício atual"
-              :value="logs[focusExercise.id]?.weight"
-              @input="$emit('update', focusExercise.id, 'weight', $event.target.value)"
-              class="w-full min-w-0 bg-transparent text-amber-300 text-base font-bold text-right focus:outline-none"
-            />
-            <span class="text-xs text-slate-500">kg</span>
+        <div v-if="focusExercise.muscle !== 'cardio'" class="space-y-3">
+          <!-- Abas de Séries do Exercício Atual -->
+          <div class="flex items-center gap-1.5 overflow-x-auto pb-1">
+            <button
+              v-for="s in focusSets"
+              :key="s.setNumber"
+              type="button"
+              :id="`btn-training-set-${s.setNumber}`"
+              @click="activeSetNumber = s.setNumber"
+              :class="activeSetNumber === s.setNumber ? 'bg-amber-500 text-slate-950 font-black' : (s.isDone ? 'bg-slate-800 text-slate-300 border border-slate-700' : 'bg-slate-950 text-slate-400 border border-slate-800')"
+              class="px-2.5 py-1 rounded-lg text-xs transition-colors flex items-center gap-1 flex-shrink-0"
+            >
+              <span>Série {{ s.setNumber }}</span>
+              <span v-if="s.isDone" class="text-[10px]" :class="activeSetNumber === s.setNumber ? 'text-slate-950 font-bold' : 'text-amber-400'">✓</span>
+            </button>
+            <button
+              type="button"
+              id="btn-training-add-set"
+              @click="$emit('add-set', focusExercise.id)"
+              class="px-2 py-1 rounded-lg text-xs font-bold border border-slate-800 bg-slate-950 text-slate-400 hover:text-white transition-colors flex-shrink-0"
+              title="Adicionar mais uma série"
+            >
+              + Série
+            </button>
           </div>
 
-          <div class="flex items-center gap-2 bg-slate-950 px-3 py-2.5 rounded-xl border border-slate-800 flex-1">
-            <label for="training-input-reps" class="text-xs text-slate-500 font-medium">Reps:</label>
-            <input
-              id="training-input-reps"
-              type="number"
-              min="0"
-              max="500"
-              inputmode="numeric"
-              placeholder="12"
-              aria-label="Repetições do exercício atual"
-              :value="logs[focusExercise.id]?.reps"
-              @input="$emit('update', focusExercise.id, 'reps', $event.target.value)"
-              class="w-full min-w-0 bg-transparent text-amber-300 text-base font-bold text-right focus:outline-none"
-            />
-          </div>
+          <div class="flex gap-3">
+            <div class="flex items-center gap-2 bg-slate-950 px-3 py-2.5 rounded-xl border border-slate-800 flex-1">
+              <label for="training-input-weight" class="text-xs text-slate-500 font-medium">Carga:</label>
+              <input
+                id="training-input-weight"
+                type="number"
+                step="0.5"
+                min="0"
+                inputmode="decimal"
+                placeholder="0"
+                aria-label="Carga em kg do exercício atual"
+                :value="activeSetWeight"
+                @input="onWeightInput"
+                class="w-full min-w-0 bg-transparent text-amber-300 text-base font-bold text-right focus:outline-none"
+              />
+              <span class="text-xs text-slate-500">kg</span>
+            </div>
 
-          <div class="flex items-center gap-2 bg-slate-950 px-3 py-2.5 rounded-xl border border-slate-800 w-24">
-            <label for="training-input-rir" class="text-xs text-slate-500 font-medium">RIR:</label>
-            <input
-              id="training-input-rir"
-              type="number"
-              min="0"
-              max="10"
-              inputmode="numeric"
-              placeholder="—"
-              aria-label="RIR (reps em reserva) do exercício atual"
-              :value="logs[focusExercise.id]?.rir"
-              @input="$emit('update', focusExercise.id, 'rir', $event.target.value)"
-              class="w-full min-w-0 bg-transparent text-amber-300 text-base font-bold text-right focus:outline-none"
-            />
+            <div class="flex items-center gap-2 bg-slate-950 px-3 py-2.5 rounded-xl border border-slate-800 flex-1">
+              <label for="training-input-reps" class="text-xs text-slate-500 font-medium">Reps:</label>
+              <input
+                id="training-input-reps"
+                type="number"
+                min="0"
+                max="500"
+                inputmode="numeric"
+                placeholder="12"
+                aria-label="Repetições do exercício atual"
+                :value="activeSetReps"
+                @input="onRepsInput"
+                class="w-full min-w-0 bg-transparent text-amber-300 text-base font-bold text-right focus:outline-none"
+              />
+            </div>
+
+            <div class="flex items-center gap-2 bg-slate-950 px-3 py-2.5 rounded-xl border border-slate-800 w-24">
+              <label for="training-input-rir" class="text-xs text-slate-500 font-medium">RIR:</label>
+              <input
+                id="training-input-rir"
+                type="number"
+                min="0"
+                max="10"
+                inputmode="numeric"
+                placeholder="—"
+                aria-label="RIR (reps em reserva) do exercício atual"
+                :value="activeSetRir"
+                @input="onRirInput"
+                class="w-full min-w-0 bg-transparent text-amber-300 text-base font-bold text-right focus:outline-none"
+              />
+            </div>
           </div>
         </div>
 
@@ -126,6 +163,16 @@
           >
             ⏱️ Descanso
           </button>
+          <button
+            type="button"
+            id="btn-training-swap"
+            class="tap-btn px-3 py-3 rounded-xl text-xs font-bold border border-slate-800 text-slate-400 hover:text-amber-400 hover:border-slate-700 transition-colors flex items-center gap-1"
+            title="Aparelho ocupado? Trocar por variação equivalente"
+            @click="$emit('swap', focusExercise)"
+          >
+            <span aria-hidden="true">🔄</span>
+            <span class="hidden sm:inline">Trocar</span>
+          </button>
         </div>
       </section>
 
@@ -147,8 +194,17 @@
             >
               {{ item.name }}
             </span>
-            <span v-if="item.isDone" class="text-amber-400 font-black flex-shrink-0" aria-hidden="true">✓</span>
-            <span v-else class="text-[11px] text-slate-500 flex-shrink-0" aria-hidden="true">○</span>
+            <div class="flex items-center gap-2 flex-shrink-0">
+              <span
+                v-if="item.muscle"
+                :class="getMuscleBadgeClass(item.muscle)"
+                class="text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider hidden sm:inline-block"
+              >
+                {{ MUSCLE_LABELS[item.muscle] || item.muscle }}
+              </span>
+              <span v-if="item.isDone" class="text-amber-400 font-black flex-shrink-0" aria-hidden="true">✓</span>
+              <span v-else class="text-[11px] text-slate-500 flex-shrink-0" aria-hidden="true">○</span>
+            </div>
           </button>
         </li>
       </ul>
@@ -177,8 +233,9 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 import { formatElapsed, elapsedSince, buildTrainingQueue } from '../engine/sessionMode';
+import { MUSCLE_LABELS, getMuscleBadgeClass, getMuscleDotColor } from '../db/customExercises';
 
 const props = defineProps({
   split: { type: Object, default: null },
@@ -186,9 +243,10 @@ const props = defineProps({
   startedAt: { type: String, default: null }
 });
 
-defineEmits(['close', 'toggle', 'update', 'rest', 'finish']);
+const emit = defineEmits(['close', 'toggle', 'update', 'rest', 'finish', 'swap', 'add-set', 'update-set', 'toggle-set']);
 
 const manualFocusId = ref(null);
+const activeSetNumber = ref(1);
 const now = ref(Date.now());
 let tick = null;
 
@@ -205,6 +263,58 @@ const effectiveFocusId = computed(() => {
 const focusExercise = computed(() =>
   props.split?.exercises?.find(ex => ex.id === effectiveFocusId.value) || null
 );
+
+watch(
+  () => focusExercise.value?.id,
+  () => {
+    activeSetNumber.value = 1;
+  }
+);
+
+const focusSets = computed(() => {
+  const exId = focusExercise.value?.id;
+  if (!exId) return [];
+  const log = props.logs[exId];
+  if (log?.sets && Array.isArray(log.sets) && log.sets.length > 0) {
+    return log.sets;
+  }
+  return [{ setNumber: 1, weight: log?.weight || '', reps: log?.reps || '', rir: log?.rir || '', isDone: !!log?.isDone }];
+});
+
+const currentSet = computed(() => {
+  return focusSets.value.find(s => s.setNumber === activeSetNumber.value) || focusSets.value[0] || {};
+});
+
+const activeSetWeight = computed(() => currentSet.value.weight ?? '');
+const activeSetReps = computed(() => currentSet.value.reps ?? '');
+const activeSetRir = computed(() => currentSet.value.rir ?? '');
+
+function onWeightInput(e) {
+  const val = e.target.value;
+  if (activeSetNumber.value === 1) {
+    emit('update', focusExercise.value.id, 'weight', val);
+  } else {
+    emit('update-set', focusExercise.value.id, activeSetNumber.value, 'weight', val);
+  }
+}
+
+function onRepsInput(e) {
+  const val = e.target.value;
+  if (activeSetNumber.value === 1) {
+    emit('update', focusExercise.value.id, 'reps', val);
+  } else {
+    emit('update-set', focusExercise.value.id, activeSetNumber.value, 'reps', val);
+  }
+}
+
+function onRirInput(e) {
+  const val = e.target.value;
+  if (activeSetNumber.value === 1) {
+    emit('update', focusExercise.value.id, 'rir', val);
+  } else {
+    emit('update-set', focusExercise.value.id, activeSetNumber.value, 'rir', val);
+  }
+}
 
 const focusIsDone = computed(() => !!props.logs[focusExercise.value?.id]?.isDone);
 

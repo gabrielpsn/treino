@@ -224,6 +224,19 @@ describe('buildPersonalizedPlan — refeições', () => {
     const ids = buildPersonalizedPlan(maleProfile).meals.map(m => m.id);
     expect(new Set(ids).size).toBe(ids.length);
   });
+
+  it('adapta as refeições de acordo com a preferência alimentar informada', () => {
+    const omnivorePlan = buildPersonalizedPlan({ ...maleProfile, dietaryPreference: 'omnivore' });
+    const veganPlan = buildPersonalizedPlan({ ...maleProfile, dietaryPreference: 'vegan' });
+    const vegetarianPlan = buildPersonalizedPlan({ ...maleProfile, dietaryPreference: 'vegetarian' });
+    const lowCarbPlan = buildPersonalizedPlan({ ...maleProfile, dietaryPreference: 'low_carb' });
+
+    expect(veganPlan.profile.dietaryPreference).toBe('vegan');
+    expect(veganPlan.meals[0].items.toLowerCase()).toContain('tofu');
+    expect(vegetarianPlan.meals[1].items.toLowerCase()).toMatch(/tofu|ovos/);
+    expect(lowCarbPlan.meals[0].items.toLowerCase()).toMatch(/abacate|queijo/);
+    expect(omnivorePlan.meals[0].items).not.toBe(veganPlan.meals[0].items);
+  });
 });
 
 describe('buildPersonalizedPlan — determinismo', () => {
