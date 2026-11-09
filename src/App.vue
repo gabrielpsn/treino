@@ -54,25 +54,6 @@
           </div>
         </div>
 
-        <!-- Lado Direito: Acesso Rápido ao Menu / Perfil -->
-        <div class="flex items-center gap-2">
-          <button
-            type="button"
-            id="btn-header-avatar"
-            @click="isDrawerOpen = true"
-            class="tap-btn flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white transition-colors"
-            title="Ver opções do atleta"
-          >
-            <div
-              class="w-6 h-6 rounded-full font-bold text-xs flex items-center justify-center border bg-white/20 text-white border-white/30"
-            >
-              {{ (userProfile?.userName || 'A').charAt(0).toUpperCase() }}
-            </div>
-            <span class="text-xs font-bold text-white hidden sm:inline">Menu</span>
-            <span class="text-xs text-white/80">▾</span>
-          </button>
-        </div>
-
       </div>
 
       <!-- input escondido: acionado pelo menu lateral para importar arquivo JSON -->
