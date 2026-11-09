@@ -186,6 +186,36 @@
               {{ ironCoins }} 🪙
             </span>
           </button>
+
+          <button
+            type="button"
+            id="btn-drawer-league"
+            @click="handleAction('open-league')"
+            class="tap-btn w-full p-2.5 rounded-xl font-bold text-xs flex items-center justify-between text-[#0F172A] bg-[#F8FAFC] hover:bg-[#F1F5F9] transition-colors text-left border border-[#E2E8F0]"
+          >
+            <div class="flex items-center gap-3">
+              <span class="text-base">🏆</span>
+              <span>Liga Semanal por Elo</span>
+            </div>
+            <span class="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-800 uppercase">
+              {{ leagueTier }}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            id="btn-drawer-wrapped"
+            @click="handleAction('open-wrapped')"
+            class="tap-btn w-full p-2.5 rounded-xl font-bold text-xs flex items-center justify-between text-[#0F172A] bg-[#F8FAFC] hover:bg-[#F1F5F9] transition-colors text-left border border-[#E2E8F0]"
+          >
+            <div class="flex items-center gap-3">
+              <span class="text-base">✨</span>
+              <span>Retrospectiva (Wrapped)</span>
+            </div>
+            <span class="text-[10px] font-black px-2 py-0.5 rounded-full bg-[#0066FF]/10 text-[#0066FF]">
+              Carreira
+            </span>
+          </button>
         </div>
 
         <!-- Gestão de Fichas e Treino -->
@@ -344,6 +374,10 @@ const props = defineProps({
     type: String,
     default: ''
   },
+  leagueTier: {
+    type: String,
+    default: 'bronze'
+  },
   isAppInstalled: Boolean
 });
 
@@ -365,7 +399,9 @@ const emit = defineEmits([
   'install-app',
   'set-theme',
   'open-skill-tree',
-  'open-shop'
+  'open-shop',
+  'open-league',
+  'open-wrapped'
 ]);
 
 function handleNavigate(tab) {

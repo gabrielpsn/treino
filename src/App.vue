@@ -1453,8 +1453,22 @@
         role="tabpanel"
         aria-labelledby="tab-btn-history"
         tabindex="0"
-        class="focus:outline-none"
+        class="focus:outline-none space-y-6"
       >
+        <!-- Boss Fight Mensal (Dano por Tonelagem) -->
+        <MonthlyBossWidget
+          :monthly-tonnage-kg="monthlyTonnageKg"
+          :claimed-months="gamificationState.claimedBossMonths || []"
+          @claim-reward="handleClaimBossReward"
+        />
+
+        <!-- Radar de Séries Semanais por Músculo (Alvo: 10 a 20 séries) -->
+        <WeeklyVolumeRadar
+          :weekly-sessions="weeklySessions"
+          :live-workout-logs="workoutLogs"
+          :exercise-muscle-map="exerciseMuscleMap"
+        />
+
         <HistoryPanel
           :sessions="historySessions"
           :split-titles="splitTitles"
@@ -1719,6 +1733,7 @@
       :iron-coins="gamificationState.ironCoins || 0"
       :equipped-title-name="equippedTitleObj.title"
       :equipped-title-icon="equippedTitleObj.icon"
+      :league-tier="gamificationState.leagueTier || 'bronze'"
       :is-app-installed="isAppInstalled"
       @close="isDrawerOpen = false"
       @navigate="tab => currentMainTab = tab"
@@ -1732,6 +1747,8 @@
       @set-theme="handleEquipTheme"
       @open-skill-tree="isSkillTreeOpen = true"
       @open-shop="isShopOpen = true"
+      @open-league="isLeagueModalOpen = true"
+      @open-wrapped="isWrappedModalOpen = true"
     />
 
     <!-- Modal de Demonstração e Detalhes do Exercício -->
@@ -1791,6 +1808,24 @@
       @close="isShopOpen = false"
     />
 
+    <!-- Modal da Liga Competitiva Semanal por Elo -->
+    <WeeklyLeagueModal
+      :is-open="isLeagueModalOpen"
+      :user-score="userLeagueScore"
+      :current-tier="gamificationState.leagueTier || 'bronze'"
+      :user-name="userProfile?.userName || 'Atleta'"
+      @close="isLeagueModalOpen = false"
+    />
+
+    <!-- Modal da Retrospectiva da Carreira (Wrapped) -->
+    <CareerWrappedModal
+      :is-open="isWrappedModalOpen"
+      :history-sessions="historySessions"
+      :gamification-state="gamificationState"
+      :user-profile="userProfile"
+      @close="isWrappedModalOpen = false"
+    />
+
   </div>
 </template>
 
@@ -1802,7 +1837,7 @@ import { openSession, recordSet, listSessions, getLastSetsForExercises, getOpenS
 import { buildPersonalizedPlan } from './engine/generators/planGenerator';
 import { DIETARY_PREFERENCES } from './engine/knowledge/foodTemplates.js';
 import { requestAiPlan, AiPlanError } from './engine/ai/planFromAi';
-import { parseWeight, parseReps } from './engine/history';
+import { parseWeight, parseReps, sessionVolume } from './engine/history';
 import { calculatePersonalRecords, suggestNextLoad, getLastSetsForExercise } from './engine/progression';
 import OnboardingModal from './components/OnboardingModal.vue';
 import HistoryPanel from './components/HistoryPanel.vue';
@@ -1824,6 +1859,10 @@ import WorkoutDayCompletionModal from './components/WorkoutDayCompletionModal.vu
 import AiPlanLoadingModal from './components/AiPlanLoadingModal.vue';
 import RpgSkillTreeModal from './components/RpgSkillTreeModal.vue';
 import CosmeticsShopModal from './components/CosmeticsShopModal.vue';
+import MonthlyBossWidget from './components/MonthlyBossWidget.vue';
+import WeeklyVolumeRadar from './components/WeeklyVolumeRadar.vue';
+import WeeklyLeagueModal from './components/WeeklyLeagueModal.vue';
+import CareerWrappedModal from './components/CareerWrappedModal.vue';
 import {
   calculateSessionGamification,
   checkBadges,
@@ -1843,7 +1882,9 @@ import {
   unlockAndEquipTheme,
   equipTheme,
   unlockAndEquipTitle,
-  equipTitle
+  equipTitle,
+  claimBossVictory,
+  promoteLeague
 } from './db/gamification.js';
 import { playPlateClick, playPrFanfare, triggerHaptic } from './engine/audioHaptics.js';
 import { usePwaUpdate } from './composables/usePwaUpdate';
@@ -1948,12 +1989,14 @@ function reportStorageError(message, err) {
   storageError.value = message;
 }
 
-// Menu Lateral (Drawer), Detalhes de Exercício, Habilidades, Loja e Tema Visual
+// Menu Lateral (Drawer), Detalhes de Exercício, Habilidades, Loja, Ligas e Tema Visual
 const isDrawerOpen = ref(false);
 const isExerciseDetailsOpen = ref(false);
 const selectedExerciseForDetails = ref(null);
 const isSkillTreeOpen = ref(false);
 const isShopOpen = ref(false);
+const isLeagueModalOpen = ref(false);
+const isWrappedModalOpen = ref(false);
 const currentTheme = ref(gamificationState.value?.equippedTheme || 'blue');
 
 const appRootThemeClasses = computed(() => {
@@ -2005,6 +2048,20 @@ function handleUnlockTitle({ titleId, price }) {
   if (res.success) {
     gamificationState.value = res.updated;
     confetti({ particleCount: 40, spread: 60 });
+  }
+}
+
+function handleClaimBossReward({ monthKey, rewardCoins, rewardXp }) {
+  const res = claimBossVictory({ monthKey, rewardCoins, rewardXp });
+  if (res.success) {
+    gamificationState.value = res.updated;
+    confetti({
+      particleCount: 80,
+      spread: 70,
+      origin: { y: 0.6 }
+    });
+    playPrFanfare();
+    triggerHaptic('success');
   }
 }
 const showSplitBodyMap = ref(false);
@@ -2507,6 +2564,7 @@ async function loadUserData() {
     await loadCustomExercises();
     const profileRecord = await db.user_profile.get('current_user');
     await hydrateFromDatabase(profileRecord);
+    await loadHistory();
   } catch (err) {
     reportStorageError(
       'Não foi possível acessar o armazenamento local do navegador. Seu histórico pode não ser salvo. Verifique se cookies/armazenamento não estão bloqueados.',
@@ -3180,20 +3238,71 @@ const personalRecords = computed(() => {
   return out;
 });
 
-// Gamificação ao vivo da sessão atual (tonelagem em tempo real, PRs e XP)
-const liveSessionGamification = computed(() => {
-  const exerciseMuscleMap = {};
+// Mapeamento de id do exercício para o músculo primário (usado pelo radar e gamificação)
+const exerciseMuscleMap = computed(() => {
+  const map = {};
   for (const split of activePlan.value?.workoutSplits || []) {
     for (const ex of split.exercises || []) {
-      if (ex.id && ex.muscle) exerciseMuscleMap[ex.id] = ex.muscle;
+      if (ex.id && ex.muscle) map[ex.id] = ex.muscle;
     }
   }
+  return map;
+});
+
+// Gamificação ao vivo da sessão atual (tonelagem em tempo real, PRs e XP)
+const liveSessionGamification = computed(() => {
   return calculateSessionGamification({
     workoutLogs: workoutLogs.value,
     existingPrs: personalRecords.value,
-    exerciseMuscleMap,
+    exerciseMuscleMap: exerciseMuscleMap.value,
     isFinished: false
   });
+});
+
+const currentMonthKey = computed(() => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  return `${year}-${month}`;
+});
+
+const monthlyTonnageKg = computed(() => {
+  const monthPrefix = currentMonthKey.value;
+  let totalKg = 0;
+  for (const session of historySessions.value) {
+    if (session.dayKey && session.dayKey.startsWith(monthPrefix)) {
+      totalKg += sessionVolume(session.sets || []);
+    }
+  }
+  totalKg += liveSessionGamification.value?.tonnageKg || 0;
+  return Math.round(totalKg);
+});
+
+const weeklySessions = computed(() => {
+  const currentWeek = currentWeekKey.value;
+  return historySessions.value.filter(s => s.weekKey === currentWeek);
+});
+
+const userLeagueScore = computed(() => {
+  let doneSets = 0;
+  for (const session of weeklySessions.value) {
+    for (const set of session.sets || []) {
+      if (set.isDone) doneSets++;
+    }
+  }
+  for (const log of Object.values(workoutLogs.value || {})) {
+    if (!log) continue;
+    if (Array.isArray(log.sets) && log.sets.length > 0) {
+      for (const set of log.sets) {
+        if (set.isDone) doneSets++;
+      }
+    } else if (log.isDone) {
+      doneSets++;
+    }
+  }
+  const prsCount = Object.keys(personalRecords.value || {}).length;
+  const streak = gamificationState.value?.dailyStreak || 1;
+  return (doneSets * 10) + (prsCount * 50) + (streak * 20);
 });
 
 const dailyStreak = computed(() => gamificationState.value?.dailyStreak || 0);
@@ -3270,17 +3379,10 @@ async function finishCurrentSession() {
   if (!ok) return;
 
   // Gamificação: consolida impacto, tonelagem, XP, moedas e branches RPG
-  const exerciseMuscleMap = {};
-  for (const split of activePlan.value?.workoutSplits || []) {
-    for (const ex of split.exercises || []) {
-      if (ex.id && ex.muscle) exerciseMuscleMap[ex.id] = ex.muscle;
-    }
-  }
-
   const stats = calculateSessionGamification({
     workoutLogs: workoutLogs.value,
     existingPrs: personalRecords.value,
-    exerciseMuscleMap,
+    exerciseMuscleMap: exerciseMuscleMap.value,
     isFinished: true
   });
 

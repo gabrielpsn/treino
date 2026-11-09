@@ -590,3 +590,279 @@ export function calculateDailyStreak(lastActiveDate, currentStreak = 0, todayStr
     };
   }
 }
+
+/**
+ * ---------------------------------------------------------------------------
+ * FASE 3: Boss Fight Mensal, Volume Semanal por Músculo, Ligas e Wrapped
+ * ---------------------------------------------------------------------------
+ */
+
+export const MONTHLY_BOSSES = [
+  {
+    id: 'colosso_ferro',
+    name: 'Colosso de Ferro',
+    title: 'O Guardião das Anilhas Primordiais',
+    icon: '👹',
+    maxHp: 40000, // 40 toneladas no mês
+    rewardCoins: 500,
+    rewardXp: 1000,
+    description: 'Um gigante forjado com o peso de mil barras. Cada kg erguido no mês abate seu HP.'
+  },
+  {
+    id: 'tita_aco',
+    name: 'Titã Forjado em Aço',
+    title: 'O Flagelo dos Halteres',
+    icon: '🤖',
+    maxHp: 50000, // 50 toneladas no mês
+    rewardCoins: 600,
+    rewardXp: 1200,
+    description: 'Armadura impenetrável que só cede à sobrecarga progressiva inabalável.'
+  },
+  {
+    id: 'dragao_sobrecarga',
+    name: 'Dragão da Sobrecarga',
+    title: 'Soberano das Séries Pesadas',
+    icon: '🐉',
+    maxHp: 60000, // 60 toneladas no mês
+    rewardCoins: 800,
+    rewardXp: 1500,
+    description: 'A fera mística do ferro que cospe fogo para quem mantém a constância absoluta.'
+  }
+];
+
+export function getActiveMonthlyBoss(date = new Date()) {
+  const monthIdx = date.getMonth();
+  return MONTHLY_BOSSES[monthIdx % MONTHLY_BOSSES.length];
+}
+
+export function calculateMonthlyBossStatus({
+  monthlyTonnageKg = 0,
+  date = new Date()
+}) {
+  const boss = getActiveMonthlyBoss(date);
+  const damage = Math.max(0, Math.round(Number(monthlyTonnageKg) || 0));
+  const currentHp = Math.max(0, boss.maxHp - damage);
+  const damagePercent = Math.min(100, Math.round((damage / boss.maxHp) * 100));
+  const isDefeated = damage >= boss.maxHp;
+
+  // Dias restantes no mês
+  const year = date.getFullYear();
+  const month = date.getMonth();
+  const lastDayOfMonth = new Date(year, month + 1, 0).getDate();
+  const currentDay = date.getDate();
+  const daysRemaining = Math.max(1, lastDayOfMonth - currentDay);
+
+  const neededPerDay = isDefeated ? 0 : Math.ceil(currentHp / daysRemaining);
+
+  return {
+    boss,
+    monthKey: `${year}-${String(month + 1).padStart(2, '0')}`,
+    totalDamageKg: damage,
+    currentHp,
+    maxHp: boss.maxHp,
+    damagePercent,
+    isDefeated,
+    daysRemaining,
+    neededKgPerDay: neededPerDay
+  };
+}
+
+/**
+ * Análise de Séries Semanais por Grupo Muscular vs Zona Ótima (10 a 20 séries).
+ */
+export const MUSCLE_GROUPS_CONFIG = [
+  { id: 'peito', label: 'Peitoral', icon: '🛡️', targetMin: 10, targetMax: 20 },
+  { id: 'costas', label: 'Costas / Dorsal', icon: '🦅', targetMin: 10, targetMax: 20 },
+  { id: 'ombro', label: 'Ombros / Deltoides', icon: '🎯', targetMin: 10, targetMax: 20 },
+  { id: 'quadriceps', label: 'Quadríceps', icon: '🦵', targetMin: 10, targetMax: 20 },
+  { id: 'posterior', label: 'Posterior de Coxa', icon: '⚡', targetMin: 10, targetMax: 20 },
+  { id: 'gluteos', label: 'Glúteos', icon: '🍑', targetMin: 8, targetMax: 18 },
+  { id: 'biceps', label: 'Bíceps', icon: '💪', targetMin: 8, targetMax: 16 },
+  { id: 'triceps', label: 'Tríceps', icon: '🔨', targetMin: 8, targetMax: 16 },
+  { id: 'core', label: 'Core / Abdômen', icon: '🧱', targetMin: 8, targetMax: 16 }
+];
+
+export function calculateWeeklyMuscleVolume({
+  weeklySessions = [],
+  liveWorkoutLogs = {},
+  exerciseMuscleMap = {}
+}) {
+  const setsCountByMuscle = {};
+  for (const group of MUSCLE_GROUPS_CONFIG) {
+    setsCountByMuscle[group.id] = 0;
+  }
+
+  // 1. Conta séries das sessões concluídas na semana
+  for (const session of weeklySessions) {
+    for (const set of session.sets || []) {
+      if (set.isDone || set.weight > 0) {
+        const muscle = exerciseMuscleMap[set.exerciseId] || '';
+        if (muscle && setsCountByMuscle[muscle] !== undefined) {
+          setsCountByMuscle[muscle]++;
+        }
+      }
+    }
+  }
+
+  // 2. Conta séries da sessão ao vivo
+  for (const [exId, log] of Object.entries(liveWorkoutLogs || {})) {
+    if (!log) continue;
+    const muscle = exerciseMuscleMap[exId] || '';
+    if (!muscle || setsCountByMuscle[muscle] === undefined) continue;
+
+    const sets = Array.isArray(log.sets) && log.sets.length > 0
+      ? log.sets
+      : [{ isDone: !!log.isDone, weight: log.weight }];
+
+    for (const s of sets) {
+      if (s.isDone) setsCountByMuscle[muscle]++;
+    }
+  }
+
+  // 3. Monta o diagnóstico por grupo
+  const breakdown = MUSCLE_GROUPS_CONFIG.map((group) => {
+    const count = setsCountByMuscle[group.id] || 0;
+    const percent = Math.min(100, Math.round((count / group.targetMin) * 100));
+    let status = 'low'; // low | optimal | max
+    let statusLabel = 'Abaixo da meta (manutenção)';
+
+    if (count >= group.targetMin && count <= group.targetMax) {
+      status = 'optimal';
+      statusLabel = 'Zona Ótima de Hipertrofia 🎯';
+    } else if (count > group.targetMax) {
+      status = 'max';
+      statusLabel = 'Volume Máximo Recuperável (MRV)';
+    }
+
+    return {
+      ...group,
+      doneSets: count,
+      percent,
+      status,
+      statusLabel,
+      setsNeeded: Math.max(0, group.targetMin - count)
+    };
+  });
+
+  const optimalCount = breakdown.filter(b => b.status === 'optimal' || b.status === 'max').length;
+  const laggingGroups = breakdown.filter(b => b.status === 'low' && b.setsNeeded > 0);
+
+  return {
+    breakdown,
+    optimalCount,
+    totalGroups: breakdown.length,
+    laggingGroups
+  };
+}
+
+/**
+ * Ligas Competitivas Semanais por Elo (Estilo RPG / Ranking PWA).
+ */
+export const LEAGUE_TIERS = {
+  bronze: { id: 'bronze', name: 'Liga Bronze', icon: '🥉', color: '#CD7F32', nextTier: 'silver' },
+  silver: { id: 'silver', name: 'Liga Prata', icon: '🥈', color: '#94A3B8', nextTier: 'gold' },
+  gold: { id: 'gold', name: 'Liga Ouro', icon: '🥇', color: '#F59E0B', nextTier: 'diamond' },
+  diamond: { id: 'diamond', name: 'Liga Diamante', icon: '💎', color: '#00F0FF', nextTier: null }
+};
+
+export function calculateLeagueLeaderboard({
+  userScore = 0,
+  currentTier = 'bronze',
+  userName = 'Você'
+}) {
+  const tier = LEAGUE_TIERS[currentTier] || LEAGUE_TIERS.bronze;
+  const cleanScore = Math.max(0, Number(userScore) || 0);
+
+  // Rivais com pontuações dinâmicas calculadas de acordo com o elo
+  const baseOpponents = [
+    { name: 'Alexandre Titan', score: Math.round(cleanScore * 1.25) + 80, avatar: '🦁' },
+    { name: 'Renata Foco', score: Math.round(cleanScore * 1.1) + 40, avatar: '⚡' },
+    { name: 'Marcos Sobrecarga', score: Math.round(cleanScore * 0.95) + 20, avatar: '🛡️' },
+    { name: 'Carla Cross', score: Math.round(cleanScore * 0.85) + 10, avatar: '🔥' },
+    { name: 'Bruno Supino', score: Math.round(cleanScore * 0.75), avatar: '🦾' },
+    { name: 'Juliana Puxada', score: Math.round(cleanScore * 0.65), avatar: '🦅' },
+    { name: 'Felipe LegDay', score: Math.round(cleanScore * 0.5), avatar: '🦵' },
+    { name: 'Lucas Iron', score: Math.round(cleanScore * 0.35), avatar: '⛓️' },
+    { name: 'Camila Core', score: Math.round(cleanScore * 0.2), avatar: '🧱' }
+  ];
+
+  const all = [
+    ...baseOpponents,
+    { name: userName, score: cleanScore, avatar: '👑', isUser: true }
+  ];
+
+  all.sort((a, b) => b.score - a.score);
+
+  const leaderboard = all.map((entry, idx) => ({
+    ...entry,
+    position: idx + 1,
+    inPromotionZone: idx < 3
+  }));
+
+  const userEntry = leaderboard.find(e => e.isUser);
+
+  return {
+    tier,
+    userPosition: userEntry ? userEntry.position : 1,
+    isPromoted: userEntry ? userEntry.inPromotionZone : false,
+    leaderboard
+  };
+}
+
+/**
+ * Retrospectiva da Carreira do Atleta (Estilo Wrapped).
+ */
+export function calculateCareerWrapped({
+  historySessions = [],
+  gamificationState = {},
+  userProfile = {}
+}) {
+  let totalSets = 0;
+  let totalReps = 0;
+  let heaviestSet = { weight: 0, reps: 0, exerciseName: 'Nenhum' };
+  const exerciseCounts = {};
+
+  for (const session of historySessions) {
+    for (const set of session.sets || []) {
+      if (set.isDone || set.weight > 0) {
+        totalSets++;
+        const reps = Number(set.reps) || 0;
+        const weight = Number(set.weight) || 0;
+        totalReps += reps;
+
+        if (weight > heaviestSet.weight) {
+          heaviestSet = { weight, reps, exerciseName: set.exerciseId };
+        }
+
+        exerciseCounts[set.exerciseId] = (exerciseCounts[set.exerciseId] || 0) + 1;
+      }
+    }
+  }
+
+  // Encontra o exercício mais executado
+  let topExerciseId = 'supino_reto_barra';
+  let maxCount = 0;
+  for (const [id, count] of Object.entries(exerciseCounts)) {
+    if (count > maxCount) {
+      maxCount = count;
+      topExerciseId = id;
+    }
+  }
+
+  const tonnage = gamificationState.lifetimeTonnageKg || 0;
+
+  return {
+    athleteName: userProfile?.userName || 'Atleta',
+    totalTonnageKg: tonnage,
+    realWorldEquivalence: getRealWorldEquivalence(tonnage),
+    totalSessions: historySessions.length,
+    totalSets,
+    totalReps,
+    heaviestWeightKg: heaviestSet.weight,
+    favoriteExerciseId: topExerciseId,
+    favoriteExerciseSetsCount: maxCount,
+    maxStreak: gamificationState.dailyStreak || 1,
+    ironCoins: gamificationState.ironCoins || 0,
+    totalXp: gamificationState.totalXp || 0
+  };
+}

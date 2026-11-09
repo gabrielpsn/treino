@@ -26,7 +26,9 @@ const DEFAULT_STATE = {
   unlockedThemes: ['blue', 'orange'],
   equippedTheme: 'blue',
   unlockedTitles: ['iniciante_ferro'],
-  equippedTitle: 'iniciante_ferro'
+  equippedTitle: 'iniciante_ferro',
+  claimedBossMonths: [],
+  leagueTier: 'bronze'
 };
 
 export function loadGamificationState() {
@@ -59,7 +61,9 @@ export function loadGamificationState() {
       unlockedThemes: Array.isArray(parsed.unlockedThemes) && parsed.unlockedThemes.length > 0 ? parsed.unlockedThemes : ['blue', 'orange'],
       equippedTheme: parsed.equippedTheme || 'blue',
       unlockedTitles: Array.isArray(parsed.unlockedTitles) && parsed.unlockedTitles.length > 0 ? parsed.unlockedTitles : ['iniciante_ferro'],
-      equippedTitle: parsed.equippedTitle || 'iniciante_ferro'
+      equippedTitle: parsed.equippedTitle || 'iniciante_ferro',
+      claimedBossMonths: Array.isArray(parsed.claimedBossMonths) ? parsed.claimedBossMonths : [],
+      leagueTier: parsed.leagueTier || 'bronze'
     };
   } catch {
     return { ...DEFAULT_STATE };
@@ -90,7 +94,9 @@ export function saveGamificationState(state) {
       unlockedThemes: Array.isArray(state?.unlockedThemes) ? state.unlockedThemes : ['blue', 'orange'],
       equippedTheme: state?.equippedTheme || 'blue',
       unlockedTitles: Array.isArray(state?.unlockedTitles) ? state.unlockedTitles : ['iniciante_ferro'],
-      equippedTitle: state?.equippedTitle || 'iniciante_ferro'
+      equippedTitle: state?.equippedTitle || 'iniciante_ferro',
+      claimedBossMonths: Array.isArray(state?.claimedBossMonths) ? state.claimedBossMonths : [],
+      leagueTier: state?.leagueTier || 'bronze'
     };
     window.localStorage.setItem(GAMIFICATION_STORAGE_KEY, JSON.stringify(safeState));
   } catch {
@@ -317,4 +323,45 @@ export function recordRestDay(todayDateStr) {
 
   saveGamificationState(updated);
   return { updated, alreadyClaimed: false, xpGained: restXp };
+}
+
+/**
+ * Reivindica as recompensas de derrotar o Boss Mensal (Coins + XP).
+ */
+export function claimBossVictory({
+  monthKey,
+  rewardCoins = 500,
+  rewardXp = 1000
+}) {
+  const current = loadGamificationState();
+  const claimedList = Array.isArray(current.claimedBossMonths) ? current.claimedBossMonths : [];
+
+  if (claimedList.includes(monthKey)) {
+    return { success: false, updated: current, alreadyClaimed: true };
+  }
+
+  const updated = {
+    ...current,
+    totalXp: current.totalXp + rewardXp,
+    ironCoins: current.ironCoins + rewardCoins,
+    claimedBossMonths: [...claimedList, monthKey]
+  };
+
+  saveGamificationState(updated);
+  return { success: true, updated, alreadyClaimed: false };
+}
+
+/**
+ * Promove o atleta para o próximo elo da Liga Semanal.
+ */
+export function promoteLeague(nextTier, bonusCoins = 150) {
+  const current = loadGamificationState();
+  const updated = {
+    ...current,
+    leagueTier: nextTier,
+    ironCoins: current.ironCoins + Math.max(0, Number(bonusCoins) || 0)
+  };
+
+  saveGamificationState(updated);
+  return updated;
 }
