@@ -986,6 +986,18 @@
               <span>{{ isAiPlanLoading ? 'Gerando...' : 'Personalizar Dieta & Treino com IA' }}</span>
             </button>
           </div>
+
+          <!-- Status da geração por IA na tela de Dieta -->
+          <p
+            v-if="aiPlanMessage"
+            id="ai-plan-diet-status"
+            role="status"
+            aria-live="polite"
+            class="w-full text-xs leading-relaxed"
+            :class="aiPlanMessage?.tone === 'error' ? 'text-rose-500 font-semibold' : 'text-[#0066FF] font-semibold'"
+          >
+            {{ aiPlanMessage.text }}
+          </p>
         </div>
 
         <!-- Hábitos Diários Interativos: Água e Creatina -->
@@ -1695,6 +1707,9 @@
       @close="showCelebrationModal = false"
     />
 
+    <!-- Modal de Loading do Agente de IA -->
+    <AiPlanLoadingModal :is-open="isAiPlanLoading" />
+
   </div>
 </template>
 
@@ -1724,6 +1739,7 @@ import GamificationIronStatus from './components/GamificationIronStatus.vue';
 import WorkoutTonnageLiveWidget from './components/WorkoutTonnageLiveWidget.vue';
 import WorkoutCelebrationModal from './components/WorkoutCelebrationModal.vue';
 import WorkoutDayCompletionModal from './components/WorkoutDayCompletionModal.vue';
+import AiPlanLoadingModal from './components/AiPlanLoadingModal.vue';
 import { calculateSessionGamification, checkBadges } from './engine/gamification.js';
 import { loadGamificationState, recordSessionCompletion, recordRestDay, recordWeeklyDayCompletion, WEEKLY_DAY_COMPLETION_XP } from './db/gamification.js';
 import { playPlateClick, playPrFanfare, triggerHaptic } from './engine/audioHaptics.js';
@@ -2089,7 +2105,12 @@ const effectiveMacros = computed(() => {
       fatGrams: activePlan.value.customNutrition.fatGrams
     };
   }
-  return activePlan.value?.physiology?.macros || { proteinGrams: 0, carbsGrams: 0, fatGrams: 0 };
+  const m = activePlan.value?.physiology?.macros;
+  return {
+    proteinGrams: m?.proteinGrams ?? m?.protein ?? 0,
+    carbsGrams: m?.carbsGrams ?? m?.carbs ?? 0,
+    fatGrams: m?.fatGrams ?? m?.fat ?? 0
+  };
 });
 
 function initCustomNutritionForm() {
@@ -2545,6 +2566,15 @@ async function generatePlanWithAi() {
 
     const rawPlan = JSON.parse(JSON.stringify(aiPlan));
 
+    // Preserva os hábitos diários (água e creatina de hoje)
+    if (activePlan.value?.dailyHabits) {
+      rawPlan.dailyHabits = JSON.parse(JSON.stringify(activePlan.value.dailyHabits));
+    }
+    // Remove eventual sobreposição de nutrição customizada manual para exibir imediatamente os valores gerados pela IA
+    if (rawPlan.customNutrition) {
+      delete rawPlan.customNutrition;
+    }
+
     const ok = await persistOrReport(
       'Não foi possível salvar a ficha gerada por IA.',
       () => db.active_plan.put(rawPlan)
@@ -2555,14 +2585,24 @@ async function generatePlanWithAi() {
     }
 
     activePlan.value = rawPlan;
-    currentSplitTab.value = rawPlan.workoutSplits?.[0]?.id ?? currentSplitTab.value;
+    initCustomNutritionForm();
+    activeMuscleFilter.value = {};
+    if (!rawPlan.workoutSplits?.some(s => s.id === currentSplitTab.value)) {
+      currentSplitTab.value = rawPlan.workoutSplits?.[0]?.id ?? 'treino-a';
+    }
     await loadLastSets();
+
+    confetti({
+      particleCount: 75,
+      spread: 65,
+      origin: { y: 0.6 }
+    });
 
     const count = rawPlan.workoutSplits.reduce((total, s) => total + s.exercises.length, 0);
     const mealsCount = rawPlan.meals?.length || 0;
     aiPlanMessage.value = {
       tone: 'info',
-      text: `Plano gerado por IA: ${rawPlan.workoutSplits.length} fichas (${count} exercícios), ${mealsCount} refeições personalizadas e ${rawPlan.physiology.targetCalories} kcal.${rawPlan.aiRationale ? ` ${rawPlan.aiRationale}` : ''}`
+      text: `Plano gerado por IA com sucesso! ${rawPlan.workoutSplits.length} fichas (${count} exercícios), ${mealsCount} refeições personalizadas e ${rawPlan.physiology.targetCalories} kcal.${rawPlan.aiRationale ? ` ${rawPlan.aiRationale}` : ''}`
     };
   } catch (error) {
     const reason = error instanceof AiPlanError ? error.reason : 'unknown';

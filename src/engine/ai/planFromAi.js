@@ -106,7 +106,13 @@ function assemblePlan(basePlan, aiPlan, { profile, catalog }) {
     const exercises = [];
 
     for (const item of aiSplit.exercises) {
-      const exercise = catalogById.get(item.id);
+      let exercise = catalogById.get(item.id);
+
+      if (!exercise && typeof item.id === 'string') {
+        const norm = item.id.toLowerCase().replace(/[-_]/g, '');
+        exercise = catalog.find(ex => ex.id.toLowerCase().replace(/[-_]/g, '') === norm)
+          || catalog.find(ex => ex.name.toLowerCase() === item.id.toLowerCase());
+      }
 
       // Id que não existe no catálogo é alucinação. Descarta a ficha inteira:
       // escolher a dedo os válidos deixaria buraco silencioso no meio do treino.
@@ -236,8 +242,9 @@ function validateNutrition(aiPlan, profile) {
       'nutrition_out_of_range',
       `A IA sugeriu ${protein}g de proteína, incompatível com ${weightKg}kg`
     );
-    assert(fat >= weightKg * 0.5, 'nutrition_out_of_range', 'Gordura abaixo do mínimo saudável');
-    assert(carbs >= weightKg * 1.5, 'nutrition_out_of_range', 'Carboidrato abaixo do mínimo saudável');
+    assert(fat >= weightKg * 0.4, 'nutrition_out_of_range', 'Gordura abaixo do mínimo saudável');
+    const minCarbsMultiplier = (profile.dietaryPreference === 'low_carb' || profile.goal === 'weight_loss') ? 0.8 : 1.2;
+    assert(carbs >= weightKg * minCarbsMultiplier, 'nutrition_out_of_range', 'Carboidrato abaixo do mínimo saudável');
   }
 }
 

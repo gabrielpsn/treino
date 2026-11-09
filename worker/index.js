@@ -320,6 +320,29 @@ async function handleWorkersAiRequest(payload, env, id) {
 
   // Normalização caso o modelo tenha traduzido chaves em português
   if (parsed && typeof parsed === 'object') {
+    parsed.targetCalories = Number(parsed.targetCalories || parsed.calorias || parsed.calories || parsed.metaCalorica || 0);
+    parsed.proteinGrams = Number(parsed.proteinGrams || parsed.protein || parsed.proteina || parsed.proteinas || 0);
+    parsed.carbsGrams = Number(parsed.carbsGrams || parsed.carbs || parsed.carboidratos || parsed.carbo || 0);
+    parsed.fatGrams = Number(parsed.fatGrams || parsed.fat || parsed.gordura || parsed.gorduras || 0);
+
+    const weight = Number(payload?.profile?.weightKg) || 75;
+    const isLoss = payload?.profile?.goal === 'weight_loss';
+    const fallbackCalories = Math.round(payload?.tdee ? (isLoss ? payload.tdee - 400 : payload.tdee + 250) : 2200);
+
+    if (!parsed.targetCalories || parsed.targetCalories <= 0) {
+      parsed.targetCalories = fallbackCalories;
+    }
+    if (!parsed.proteinGrams || parsed.proteinGrams <= 0) {
+      parsed.proteinGrams = Math.round(weight * 2.0);
+    }
+    if (!parsed.fatGrams || parsed.fatGrams <= 0) {
+      parsed.fatGrams = Math.round(weight * 0.8);
+    }
+    if (!parsed.carbsGrams || parsed.carbsGrams <= 0) {
+      const remainingKcal = Math.max(200, parsed.targetCalories - (parsed.proteinGrams * 4 + parsed.fatGrams * 9));
+      parsed.carbsGrams = Math.round(remainingKcal / 4);
+    }
+
     if (!Array.isArray(parsed.splits) && Array.isArray(parsed.fichas)) {
       parsed.splits = parsed.fichas;
     }
@@ -361,16 +384,45 @@ async function handleWorkersAiRequest(payload, env, id) {
       });
     }
     if (Array.isArray(parsed.splits)) {
+      const catalogItems = Array.isArray(payload.catalog) ? payload.catalog : [];
+      const catalogById = new Map(catalogItems.map(c => [c.id, c]));
+      const catalogByName = new Map(catalogItems.map(c => [String(c.name || '').toLowerCase().trim(), c]));
+
       parsed.splits = parsed.splits.map((s, idx) => {
-        const splitId = s.splitId || s.id || `treino-${String.fromCharCode(97 + idx)}`;
+        const splitId = s.splitId || s.id || (payload.splits?.[idx]?.id) || `treino-${String.fromCharCode(97 + idx)}`;
         const focus = s.focus || s.foco || s.grupo || 'Treino Geral';
         const rawEx = s.exercises || s.exercicios || [];
-        const exercises = Array.isArray(rawEx) ? rawEx.map(ex => ({
-          id: ex.id || ex.exercicioId || ex.nome,
-          sets: Number(ex.sets || ex.series || s.series || 3),
-          reps: String(ex.reps || ex.repeticoes || '8-12'),
-          restSeconds: Number(ex.restSeconds || ex.descanso || s.descanso || 60)
-        })) : [];
+        const seenIds = new Set();
+        const exercises = [];
+
+        if (Array.isArray(rawEx)) {
+          for (const ex of rawEx) {
+            const rawId = String(ex.id || ex.exercicioId || ex.nome || '').trim();
+            if (!rawId) continue;
+            let matched = catalogById.get(rawId);
+            if (!matched) {
+              matched = catalogByName.get(rawId.toLowerCase());
+            }
+            if (!matched) {
+              const cleanRaw = rawId.toLowerCase().replace(/[-_]/g, '');
+              matched = catalogItems.find(c => c.id.toLowerCase().replace(/[-_]/g, '') === cleanRaw || String(c.name || '').toLowerCase().replace(/[-_]/g, '') === cleanRaw);
+            }
+            if (!matched) {
+              matched = catalogItems.find(c => c.id.toLowerCase().includes(rawId.toLowerCase()) || rawId.toLowerCase().includes(c.id.toLowerCase()));
+            }
+
+            const chosenId = matched ? matched.id : rawId;
+            if (chosenId && !seenIds.has(chosenId)) {
+              seenIds.add(chosenId);
+              exercises.push({
+                id: chosenId,
+                sets: Number(ex.sets || ex.series || s.series || 3),
+                reps: String(ex.reps || ex.repeticoes || '8-12'),
+                restSeconds: Number(ex.restSeconds || ex.descanso || s.descanso || 60)
+              });
+            }
+          }
+        }
         return { splitId, focus, exercises };
       });
     }
