@@ -68,6 +68,9 @@
                 {{ userProfile?.userName || 'Atleta' }}
               </h4>
               <p class="text-xs text-white/80 font-medium">
+                <span v-if="equippedTitleName" class="font-bold text-amber-300 mr-1">
+                  {{ equippedTitleIcon }} {{ equippedTitleName }} •
+                </span>
                 {{ userProfile?.weightKg ? `${userProfile.weightKg} kg` : 'Perfil Ativo' }} • 
                 <span class="capitalize">{{ userProfile?.experienceLevel === 'beginner' ? 'Iniciante' : userProfile?.experienceLevel === 'advanced' ? 'Avançado' : 'Intermediário' }}</span>
               </p>
@@ -145,6 +148,43 @@
           >
             <span class="text-base">📊</span>
             <span>Histórico & Métricas</span>
+          </button>
+        </div>
+
+        <!-- RPG Fit & Economia -->
+        <div class="space-y-1">
+          <p class="text-[10px] font-black uppercase tracking-widest text-[#64748B] px-2">
+            RPG Fit & Economia
+          </p>
+
+          <button
+            type="button"
+            id="btn-drawer-skill-tree"
+            @click="handleAction('open-skill-tree')"
+            class="tap-btn w-full p-2.5 rounded-xl font-bold text-xs flex items-center justify-between text-[#0F172A] bg-[#F8FAFC] hover:bg-[#F1F5F9] transition-colors text-left border border-[#E2E8F0]"
+          >
+            <div class="flex items-center gap-3">
+              <span class="text-base">⚔️</span>
+              <span>Árvore de Habilidades</span>
+            </div>
+            <span class="text-[10px] font-black px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-700">
+              4 Ramos
+            </span>
+          </button>
+
+          <button
+            type="button"
+            id="btn-drawer-shop"
+            @click="handleAction('open-shop')"
+            class="tap-btn w-full p-2.5 rounded-xl font-bold text-xs flex items-center justify-between text-[#0F172A] bg-[#F8FAFC] hover:bg-[#F1F5F9] transition-colors text-left border border-[#E2E8F0]"
+          >
+            <div class="flex items-center gap-3">
+              <span class="text-base">🪙</span>
+              <span>Iron Store (Temas & Títulos)</span>
+            </div>
+            <span class="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-800">
+              {{ ironCoins }} 🪙
+            </span>
           </button>
         </div>
 
@@ -292,6 +332,18 @@ const props = defineProps({
     type: Number,
     default: 0
   },
+  ironCoins: {
+    type: Number,
+    default: 0
+  },
+  equippedTitleName: {
+    type: String,
+    default: ''
+  },
+  equippedTitleIcon: {
+    type: String,
+    default: ''
+  },
   isAppInstalled: Boolean
 });
 
@@ -311,7 +363,9 @@ const emit = defineEmits([
   'export-backup',
   'import-backup',
   'install-app',
-  'set-theme'
+  'set-theme',
+  'open-skill-tree',
+  'open-shop'
 ]);
 
 function handleNavigate(tab) {

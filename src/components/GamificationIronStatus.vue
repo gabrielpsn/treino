@@ -21,6 +21,9 @@
           <span class="text-[10px] font-black px-2 py-0.5 rounded-full bg-[#F59E0B] text-[#0F172A] shadow-xs">
             Nv. {{ levelData.level }}
           </span>
+          <span v-if="equippedTitleName" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-[#0F172A] border border-[#E2E8F0]">
+            {{ equippedTitleIcon }} {{ equippedTitleName }}
+          </span>
         </div>
 
         <!-- Barra de Progresso de XP -->
@@ -43,7 +46,7 @@
       </div>
     </div>
 
-    <!-- Lado Direito: Ofensiva Semanal (Streak), Chama Diária e Escudos -->
+    <!-- Lado Direito: Ofensiva Semanal (Streak), Chama Diária, Escudos, Habilidades e Loja -->
     <div class="flex items-center gap-2 border-t sm:border-t-0 sm:border-l border-[#E2E8F0] pt-2 sm:pt-0 sm:pl-3 flex-shrink-0 flex-wrap">
       <!-- Chama de Streak Diário -->
       <div
@@ -83,6 +86,30 @@
           <span class="text-xs font-black text-[#0F172A] leading-none">{{ shields }}/2</span>
         </div>
       </div>
+
+      <!-- Botão Árvore de Habilidades RPG -->
+      <button
+        type="button"
+        id="btn-open-skill-tree"
+        @click="emit('open-skill-tree')"
+        class="tap-btn flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-400/30 text-indigo-700 font-bold text-xs shadow-xs transition-all"
+        title="Abrir Árvore de Habilidades por Grupo Muscular"
+      >
+        <span class="text-sm">⚔️</span>
+        <span class="text-[11px] font-black">RPG Fit</span>
+      </button>
+
+      <!-- Saldo de Moedas / Botão Loja -->
+      <button
+        type="button"
+        id="btn-open-shop"
+        @click="emit('open-shop')"
+        class="tap-btn flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-400/30 text-amber-800 font-bold text-xs shadow-xs transition-all"
+        title="Abrir Loja de Cosméticos e Temas"
+      >
+        <span class="text-sm">🪙</span>
+        <span class="text-[11px] font-black">{{ ironCoins }}</span>
+      </button>
     </div>
   </div>
 </template>
@@ -107,8 +134,22 @@ const props = defineProps({
   shields: {
     type: Number,
     default: 1
+  },
+  ironCoins: {
+    type: Number,
+    default: 0
+  },
+  equippedTitleName: {
+    type: String,
+    default: ''
+  },
+  equippedTitleIcon: {
+    type: String,
+    default: ''
   }
 });
+
+const emit = defineEmits(['open-skill-tree', 'open-shop']);
 
 const levelData = computed(() => calculateLevelFromXp(props.totalXp));
 const flameInfo = computed(() => getFlameInfo(props.dailyStreak));

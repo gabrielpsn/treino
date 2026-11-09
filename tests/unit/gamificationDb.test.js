@@ -6,7 +6,13 @@ import {
   saveGamificationState,
   recordSessionCompletion,
   recordWeeklyDayCompletion,
-  recordRestDay
+  recordRestDay,
+  awardCoins,
+  spendCoins,
+  unlockAndEquipTheme,
+  equipTheme,
+  unlockAndEquipTitle,
+  equipTitle
 } from '../../src/db/gamification.js';
 
 describe('Gamification DB State', () => {
@@ -88,5 +94,64 @@ describe('Gamification DB State', () => {
     expect(resNextWeek.alreadyClaimed).toBe(false);
     expect(resNextWeek.xpGained).toBe(50);
     expect(resNextWeek.updated.totalXp).toBe(150);
+  });
+
+  it('gerencia saldo de moedas de ferro, concede e gasta com validação de saldo', () => {
+    const s1 = awardCoins(50);
+    expect(s1.ironCoins).toBe(150); // 100 inicial + 50
+
+    const spendRes = spendCoins(120);
+    expect(spendRes.success).toBe(true);
+    expect(spendRes.updated.ironCoins).toBe(30);
+
+    const failSpend = spendCoins(100);
+    expect(failSpend.success).toBe(false);
+    expect(failSpend.updated.ironCoins).toBe(30);
+  });
+
+  it('permite desbloquear e equipar temas cosméticos', () => {
+    // Tenta desbloquear tema caro sem saldo
+    saveGamificationState({ ironCoins: 200, unlockedThemes: ['blue', 'orange'], equippedTheme: 'blue' });
+    const failRes = unlockAndEquipTheme('cyberpunk', 500);
+    expect(failRes.success).toBe(false);
+
+    // Concede moedas e desbloqueia com sucesso
+    awardCoins(600); // 200 + 600 = 800
+    const successRes = unlockAndEquipTheme('cyberpunk', 500);
+    expect(successRes.success).toBe(true);
+    expect(successRes.updated.ironCoins).toBe(300);
+    expect(successRes.updated.unlockedThemes).toContain('cyberpunk');
+    expect(successRes.updated.equippedTheme).toBe('cyberpunk');
+
+    // Troca de volta para tema já desbloqueado
+    const equipRes = equipTheme('orange');
+    expect(equipRes.success).toBe(true);
+    expect(equipRes.updated.equippedTheme).toBe('orange');
+  });
+
+  it('permite desbloquear e equipar títulos de status do atleta', () => {
+    awardCoins(500);
+    const res = unlockAndEquipTitle('tita_supino', 300);
+    expect(res.success).toBe(true);
+    expect(res.updated.unlockedTitles).toContain('tita_supino');
+    expect(res.updated.equippedTitle).toBe('tita_supino');
+
+    const equipRes = equipTitle('iniciante_ferro');
+    expect(equipRes.success).toBe(true);
+    expect(equipRes.updated.equippedTitle).toBe('iniciante_ferro');
+  });
+
+  it('atualiza moedas e ramos de habilidade (RPG Branches) ao registrar sessão', () => {
+    const updated = recordSessionCompletion({
+      earnedXp: 300,
+      tonnageKg: 5000,
+      earnedCoins: 90,
+      branchXp: { push: 180, core: 120 }
+    });
+
+    expect(updated.ironCoins).toBe(190); // 100 inicial + 90
+    expect(updated.rpgBranches.push).toBe(180);
+    expect(updated.rpgBranches.core).toBe(120);
+    expect(updated.rpgBranches.pull).toBe(0);
   });
 });

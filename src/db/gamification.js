@@ -20,7 +20,13 @@ const DEFAULT_STATE = {
   shieldsCount: 1, // Começa com 1 escudo de deload de boas-vindas
   lastActiveWeekKey: null,
   lastRestDayDate: null,
-  claimedWeeklyDays: []
+  claimedWeeklyDays: [],
+  ironCoins: 100, // 100 moedas de ferro de boas-vindas
+  rpgBranches: { push: 0, pull: 0, legs: 0, core: 0 },
+  unlockedThemes: ['blue', 'orange'],
+  equippedTheme: 'blue',
+  unlockedTitles: ['iniciante_ferro'],
+  equippedTitle: 'iniciante_ferro'
 };
 
 export function loadGamificationState() {
@@ -42,7 +48,18 @@ export function loadGamificationState() {
       shieldsCount: Math.min(2, Math.max(0, Number(parsed.shieldsCount) || 0)),
       lastActiveWeekKey: parsed.lastActiveWeekKey || null,
       lastRestDayDate: parsed.lastRestDayDate || null,
-      claimedWeeklyDays: Array.isArray(parsed.claimedWeeklyDays) ? parsed.claimedWeeklyDays : []
+      claimedWeeklyDays: Array.isArray(parsed.claimedWeeklyDays) ? parsed.claimedWeeklyDays : [],
+      ironCoins: typeof parsed.ironCoins === 'number' ? Math.max(0, parsed.ironCoins) : 100,
+      rpgBranches: {
+        push: Math.max(0, Number(parsed.rpgBranches?.push) || 0),
+        pull: Math.max(0, Number(parsed.rpgBranches?.pull) || 0),
+        legs: Math.max(0, Number(parsed.rpgBranches?.legs) || 0),
+        core: Math.max(0, Number(parsed.rpgBranches?.core) || 0)
+      },
+      unlockedThemes: Array.isArray(parsed.unlockedThemes) && parsed.unlockedThemes.length > 0 ? parsed.unlockedThemes : ['blue', 'orange'],
+      equippedTheme: parsed.equippedTheme || 'blue',
+      unlockedTitles: Array.isArray(parsed.unlockedTitles) && parsed.unlockedTitles.length > 0 ? parsed.unlockedTitles : ['iniciante_ferro'],
+      equippedTitle: parsed.equippedTitle || 'iniciante_ferro'
     };
   } catch {
     return { ...DEFAULT_STATE };
@@ -62,7 +79,18 @@ export function saveGamificationState(state) {
       shieldsCount: Math.min(2, Math.max(0, Number(state?.shieldsCount) || 0)),
       lastActiveWeekKey: state?.lastActiveWeekKey || null,
       lastRestDayDate: state?.lastRestDayDate || null,
-      claimedWeeklyDays: Array.isArray(state?.claimedWeeklyDays) ? state.claimedWeeklyDays : []
+      claimedWeeklyDays: Array.isArray(state?.claimedWeeklyDays) ? state.claimedWeeklyDays : [],
+      ironCoins: Math.max(0, Number(state?.ironCoins) || 0),
+      rpgBranches: {
+        push: Math.max(0, Number(state?.rpgBranches?.push) || 0),
+        pull: Math.max(0, Number(state?.rpgBranches?.pull) || 0),
+        legs: Math.max(0, Number(state?.rpgBranches?.legs) || 0),
+        core: Math.max(0, Number(state?.rpgBranches?.core) || 0)
+      },
+      unlockedThemes: Array.isArray(state?.unlockedThemes) ? state.unlockedThemes : ['blue', 'orange'],
+      equippedTheme: state?.equippedTheme || 'blue',
+      unlockedTitles: Array.isArray(state?.unlockedTitles) ? state.unlockedTitles : ['iniciante_ferro'],
+      equippedTitle: state?.equippedTitle || 'iniciante_ferro'
     };
     window.localStorage.setItem(GAMIFICATION_STORAGE_KEY, JSON.stringify(safeState));
   } catch {
@@ -77,6 +105,8 @@ export function recordSessionCompletion({
   earnedXp = 0,
   tonnageKg = 0,
   newBadgeIds = [],
+  earnedCoins = 0,
+  branchXp = {},
   currentWeekKey = null,
   todayDateStr = new Date().toISOString().slice(0, 10)
 }) {
@@ -84,6 +114,14 @@ export function recordSessionCompletion({
 
   const nextXp = current.totalXp + Math.max(0, Number(earnedXp) || 0);
   const nextTonnage = current.lifetimeTonnageKg + Math.max(0, Number(tonnageKg) || 0);
+  const nextCoins = current.ironCoins + Math.max(0, Number(earnedCoins) || 0);
+
+  const nextBranches = {
+    push: (current.rpgBranches?.push || 0) + (Number(branchXp?.push) || 0),
+    pull: (current.rpgBranches?.pull || 0) + (Number(branchXp?.pull) || 0),
+    legs: (current.rpgBranches?.legs || 0) + (Number(branchXp?.legs) || 0),
+    core: (current.rpgBranches?.core || 0) + (Number(branchXp?.core) || 0)
+  };
 
   const badgeSet = new Set(current.unlockedBadgeIds);
   (newBadgeIds || []).forEach(id => badgeSet.add(id));
@@ -107,6 +145,8 @@ export function recordSessionCompletion({
     ...current,
     totalXp: nextXp,
     lifetimeTonnageKg: nextTonnage,
+    ironCoins: nextCoins,
+    rpgBranches: nextBranches,
     unlockedBadgeIds: Array.from(badgeSet),
     weeklyStreak: nextStreak,
     dailyStreak: streakCalc.streak,
@@ -117,6 +157,117 @@ export function recordSessionCompletion({
 
   saveGamificationState(updated);
   return updated;
+}
+
+/**
+ * Concede Moedas de Ferro (ex: bater meta de água/creatina, bônus de streak).
+ */
+export function awardCoins(amount = 0) {
+  const current = loadGamificationState();
+  const nextCoins = current.ironCoins + Math.max(0, Number(amount) || 0);
+  const updated = { ...current, ironCoins: nextCoins };
+  saveGamificationState(updated);
+  return updated;
+}
+
+/**
+ * Gasta moedas de ferro se houver saldo suficiente.
+ */
+export function spendCoins(amount = 0) {
+  const current = loadGamificationState();
+  const cost = Math.max(0, Number(amount) || 0);
+  if (current.ironCoins < cost) {
+    return { success: false, updated: current, error: 'Saldo insuficiente de moedas' };
+  }
+  const updated = { ...current, ironCoins: current.ironCoins - cost };
+  saveGamificationState(updated);
+  return { success: true, updated };
+}
+
+/**
+ * Desbloqueia e equipa um tema cosmético na Iron Store.
+ */
+export function unlockAndEquipTheme(themeId, price = 0) {
+  const current = loadGamificationState();
+  const unlocked = new Set(current.unlockedThemes || ['blue', 'orange']);
+
+  if (unlocked.has(themeId)) {
+    const updated = { ...current, equippedTheme: themeId };
+    saveGamificationState(updated);
+    return { success: true, updated, alreadyUnlocked: true };
+  }
+
+  const cost = Math.max(0, Number(price) || 0);
+  if (current.ironCoins < cost) {
+    return { success: false, updated: current, error: 'Moedas insuficientes' };
+  }
+
+  unlocked.add(themeId);
+  const updated = {
+    ...current,
+    ironCoins: current.ironCoins - cost,
+    unlockedThemes: Array.from(unlocked),
+    equippedTheme: themeId
+  };
+  saveGamificationState(updated);
+  return { success: true, updated, alreadyUnlocked: false };
+}
+
+/**
+ * Equipa um tema já desbloqueado.
+ */
+export function equipTheme(themeId) {
+  const current = loadGamificationState();
+  const unlocked = new Set(current.unlockedThemes || ['blue', 'orange']);
+  if (!unlocked.has(themeId)) {
+    return { success: false, updated: current, error: 'Tema ainda não desbloqueado' };
+  }
+  const updated = { ...current, equippedTheme: themeId };
+  saveGamificationState(updated);
+  return { success: true, updated };
+}
+
+/**
+ * Desbloqueia e equipa um título na Iron Store.
+ */
+export function unlockAndEquipTitle(titleId, price = 0) {
+  const current = loadGamificationState();
+  const unlocked = new Set(current.unlockedTitles || ['iniciante_ferro']);
+
+  if (unlocked.has(titleId)) {
+    const updated = { ...current, equippedTitle: titleId };
+    saveGamificationState(updated);
+    return { success: true, updated, alreadyUnlocked: true };
+  }
+
+  const cost = Math.max(0, Number(price) || 0);
+  if (current.ironCoins < cost) {
+    return { success: false, updated: current, error: 'Moedas insuficientes' };
+  }
+
+  unlocked.add(titleId);
+  const updated = {
+    ...current,
+    ironCoins: current.ironCoins - cost,
+    unlockedTitles: Array.from(unlocked),
+    equippedTitle: titleId
+  };
+  saveGamificationState(updated);
+  return { success: true, updated, alreadyUnlocked: false };
+}
+
+/**
+ * Equipa um título já desbloqueado.
+ */
+export function equipTitle(titleId) {
+  const current = loadGamificationState();
+  const unlocked = new Set(current.unlockedTitles || ['iniciante_ferro']);
+  if (!unlocked.has(titleId)) {
+    return { success: false, updated: current, error: 'Título ainda não desbloqueado' };
+  }
+  const updated = { ...current, equippedTitle: titleId };
+  saveGamificationState(updated);
+  return { success: true, updated };
 }
 
 /**

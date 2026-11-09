@@ -69,6 +69,218 @@ export const BADGES_CATALOG = {
 };
 
 /**
+ * 4 Ramos da Árvore de Habilidades por Grupo Muscular (RPG Fit).
+ */
+export const RPG_BRANCHES = {
+  push: {
+    id: 'push',
+    name: 'Tronco Superior',
+    subtitle: 'Push & Desenvolvimento',
+    icon: '🛡️',
+    color: '#0066FF',
+    muscles: ['peito', 'ombro', 'triceps'],
+    description: 'Peitoral, Ombros e Tríceps. Potência de empurrar e densidade anterior.'
+  },
+  pull: {
+    id: 'pull',
+    name: 'Dorsal & Puxada',
+    subtitle: 'Pull & Asas de Titã',
+    icon: '🦅',
+    color: '#8B5CF6',
+    muscles: ['costas', 'trapezio', 'biceps'],
+    description: 'Costas completas, Trapézio e Bíceps. Largura dorsal e pegada de aço.'
+  },
+  legs: {
+    id: 'legs',
+    name: 'Membros Inferiores',
+    subtitle: 'Legs & Pilar de Sustentação',
+    icon: '⚡',
+    color: '#F59E0B',
+    muscles: ['quadriceps', 'posterior', 'gluteos', 'panturrilha'],
+    description: 'Quadríceps, Isquiotibiais, Glúteos e Panturrilhas. Base inabalável.'
+  },
+  core: {
+    id: 'core',
+    name: 'Blindagem & Centro',
+    subtitle: 'Core & Estabilidade',
+    icon: '🧱',
+    color: '#10B981',
+    muscles: ['core', 'cardio'],
+    description: 'Reto Abdominal, Oblíquos, Lombar e Condicionamento. Cinturão natural.'
+  }
+};
+
+/**
+ * Mapeia um músculo anatômico para um dos 4 ramos RPG.
+ */
+export function getBranchForMuscle(muscle = '') {
+  const m = String(muscle).toLowerCase();
+  if (['peito', 'ombro', 'triceps'].includes(m)) return 'push';
+  if (['costas', 'trapezio', 'biceps'].includes(m)) return 'pull';
+  if (['quadriceps', 'posterior', 'gluteos', 'panturrilha'].includes(m)) return 'legs';
+  return 'core';
+}
+
+/**
+ * Calcula o nível (1 a 99) para uma árvore de habilidade específica (Branch).
+ */
+export function calculateBranchLevel(branchXp = 0) {
+  const xp = Math.max(0, Number(branchXp) || 0);
+  let level = 1;
+  let accumulated = 0;
+
+  while (true) {
+    const costForNext = level * 150;
+    if (xp < accumulated + costForNext) {
+      const currentLevelXp = xp - accumulated;
+      const progressPercent = Math.min(100, Math.round((currentLevelXp / costForNext) * 100));
+      return {
+        level,
+        progressPercent,
+        currentLevelXp,
+        costForNextLevel: costForNext,
+        totalXp: xp
+      };
+    }
+    accumulated += costForNext;
+    level++;
+    if (level >= 99) {
+      return {
+        level: 99,
+        progressPercent: 100,
+        currentLevelXp: 0,
+        costForNextLevel: 0,
+        totalXp: xp
+      };
+    }
+  }
+}
+
+/**
+ * Catálogo de Temas Cosméticos desbloqueáveis na Iron Store.
+ */
+export const COSMETIC_THEMES = [
+  {
+    id: 'blue',
+    name: 'Azul Cobalto Pro',
+    subtitle: 'Padrão Athletic Clean',
+    price: 0,
+    icon: '🔵',
+    primaryColor: '#0066FF',
+    accentColor: '#F59E0B',
+    bgColor: '#F8FAFC',
+    description: 'Design de precisão esportiva com alto contraste.'
+  },
+  {
+    id: 'orange',
+    name: 'Laranja Força',
+    subtitle: 'Energia Intensa',
+    price: 0,
+    icon: '🟠',
+    primaryColor: '#EA580C',
+    accentColor: '#F59E0B',
+    bgColor: '#FFF7ED',
+    description: 'Paleta hardcore quente inspirada no fisiculturismo clássico.'
+  },
+  {
+    id: 'cyberpunk',
+    name: 'Cyberpunk Neon',
+    subtitle: 'Futurismo Noturno',
+    price: 500,
+    icon: '🟣',
+    primaryColor: '#00F0FF',
+    accentColor: '#FF007F',
+    bgColor: '#08070F',
+    description: 'Interface noturna com bordas neon ciano e detalhes magenta.'
+  },
+  {
+    id: 'gold',
+    name: 'Dark Gold Titã',
+    subtitle: 'Luxo e Ouro Olímpico',
+    price: 1000,
+    icon: '🟡',
+    primaryColor: '#D4AF37',
+    accentColor: '#F59E0B',
+    bgColor: '#0A0A0C',
+    description: 'Preto obsidiana com dourado reluzente dos campeões da sobrecarga.'
+  },
+  {
+    id: 'matrix',
+    name: 'Matrix Terminal',
+    subtitle: 'Hacker Performance',
+    price: 750,
+    icon: '🟢',
+    primaryColor: '#00FF66',
+    accentColor: '#10B981',
+    bgColor: '#030804',
+    description: 'Tema escuro terminal com verde esmeralda bio-mecânico.'
+  }
+];
+
+/**
+ * Catálogo de Títulos de Status equipáveis no perfil do atleta.
+ */
+export const TITLES_CATALOG = [
+  {
+    id: 'iniciante_ferro',
+    title: 'Iniciante do Ferro',
+    description: 'Dado a todo atleta que dá o primeiro passo na sala de pesos.',
+    price: 0,
+    icon: '🥉'
+  },
+  {
+    id: 'tita_supino',
+    title: 'Titã do Supino',
+    description: 'Dominador do supino e do peitoral de aço.',
+    price: 300,
+    icon: '🛡️'
+  },
+  {
+    id: 'asas_de_tita',
+    title: 'Asas de Titã',
+    description: 'Dorsal larga e pegada inabalável nas puxadas e remadas.',
+    price: 300,
+    icon: '🦅'
+  },
+  {
+    id: 'guardiao_leg_day',
+    title: 'Guardião do Leg Day',
+    description: 'Nunca pula pernas e agacha com carga pesada e amplitude total.',
+    price: 350,
+    icon: '⚡'
+  },
+  {
+    id: 'blindagem_core',
+    title: 'Blindagem de Aço',
+    description: 'Estabilidade máxima de core e proteção rígida da coluna.',
+    price: 250,
+    icon: '🧱'
+  },
+  {
+    id: 'consistencia_ferro',
+    title: 'Consistência de Ferro',
+    description: 'Mais de 7 dias consecutivos cumprindo o plano sem desculpas.',
+    price: 400,
+    icon: '🔥'
+  },
+  {
+    id: 'senhor_sobrecarga',
+    title: 'Senhor da Sobrecarga',
+    description: 'Mestre da progressão constante e tonelagem mecânica massiva.',
+    price: 600,
+    icon: '👑'
+  }
+];
+
+export function getThemeById(id = 'blue') {
+  return COSMETIC_THEMES.find(t => t.id === id) || COSMETIC_THEMES[0];
+}
+
+export function getTitleById(id = 'iniciante_ferro') {
+  return TITLES_CATALOG.find(t => t.id === id) || TITLES_CATALOG[0];
+}
+
+/**
  * Retorna o XP necessário para passar do nível (n-1) para o nível n.
  * Nível 1 começa com 0 XP.
  */
@@ -239,6 +451,7 @@ export function checkBadges({
 export function calculateSessionGamification({
   workoutLogs = {},
   existingPrs = {},
+  exerciseMuscleMap = {},
   isFinished = false
 }) {
   let tonnageKg = 0;
@@ -246,6 +459,7 @@ export function calculateSessionGamification({
   let totalSetsCount = 0;
   let prsCount = 0;
   let earnedXp = isFinished ? 100 : 0; // 100 XP bônus por finalizar treino
+  const branchXp = { push: 0, pull: 0, legs: 0, core: 0 };
 
   for (const [exId, log] of Object.entries(workoutLogs || {})) {
     if (!log) continue;
@@ -253,6 +467,9 @@ export function calculateSessionGamification({
     const sets = Array.isArray(log.sets) && log.sets.length > 0
       ? log.sets
       : [{ weight: log.weight, reps: log.reps, rir: log.rir, isDone: !!log.isDone }];
+
+    const muscle = exerciseMuscleMap[exId] || '';
+    const branch = getBranchForMuscle(muscle);
 
     for (const s of sets) {
       totalSetsCount++;
@@ -267,15 +484,21 @@ export function calculateSessionGamification({
         const isPr = pr && w > (pr.maxWeightKg || 0) && volume > 0;
         if (isPr) prsCount++;
 
-        earnedXp += calculateSetXp({
+        const setXp = calculateSetXp({
           weight: w,
           reps: r,
           rir: s.rir,
           isPr
         });
+
+        earnedXp += setXp;
+        branchXp[branch] = (branchXp[branch] || 0) + setXp;
       }
     }
   }
+
+  // Moedas de Ferro ganhas na sessão: 10 por série + 50 por PR + 50 por concluir treino
+  const earnedCoins = (isFinished ? 50 : 0) + (doneSetsCount * 10) + (prsCount * 50);
 
   return {
     tonnageKg: Math.round(tonnageKg * 10) / 10,
@@ -283,6 +506,8 @@ export function calculateSessionGamification({
     totalSetsCount,
     prsCount,
     earnedXp,
+    earnedCoins,
+    branchXp,
     realWorldEquivalence: getRealWorldEquivalence(tonnageKg)
   };
 }

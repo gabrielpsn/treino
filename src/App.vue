@@ -1,8 +1,8 @@
 <template>
-  <div class="min-h-screen bg-[#F8FAFC] text-[#0F172A] flex flex-col font-sans selection:bg-[#F59E0B] selection:text-[#0F172A]">
+  <div :class="appRootThemeClasses" class="min-h-screen flex flex-col font-sans selection:bg-[#F59E0B] selection:text-[#0F172A]">
     
     <!--
-      Paleta Athletic Clean Pro (Opção 1):
+      Paleta Athletic Clean Pro (Opção 1) com suporte a temas desbloqueáveis (Cyberpunk, Dark Gold, Matrix, Orange):
       Cor Primária: #0066FF (Azul Royal Cobalto)
       Destaques e CTAs: #F59E0B (Âmbar Ouro Energético)
       Fundos de cards e containers: #FFFFFF (Bordas #E2E8F0, Sub-cards #F8FAFC)
@@ -10,7 +10,7 @@
       Texto Principal: #0F172A
       Texto Secundário / Labels: #64748B
     -->
-    <header class="border-b border-[#0052cc] bg-[#0066FF] text-white sticky top-0 z-20 shadow-md">
+    <header :class="headerThemeClasses" class="sticky top-0 z-20 shadow-md">
       <div class="max-w-5xl mx-auto px-4 py-2.5 flex items-center justify-between gap-3">
         
         <!-- Lado Esquerdo: Hambúrguer + Logo/Avatar + Título -->
@@ -54,8 +54,21 @@
           </div>
         </div>
 
-        <!-- Lado Direito do Cabeçalho: Chama de Streak Diário -->
+        <!-- Lado Direito do Cabeçalho: Moedas de Ferro e Chama de Streak -->
         <div class="flex items-center gap-2 flex-shrink-0">
+          <!-- Botão / Chip de Moedas de Ferro -->
+          <button
+            type="button"
+            id="header-iron-coins"
+            @click="isShopOpen = true"
+            class="tap-btn flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/15 hover:bg-white/20 border border-white/25 text-white font-black text-xs shadow-xs transition-all"
+            title="Abrir Loja de Cosméticos e Temas (Iron Store)"
+          >
+            <span class="text-sm">🪙</span>
+            <span class="text-amber-300 font-black text-xs sm:text-sm">{{ gamificationState.ironCoins || 0 }}</span>
+          </button>
+
+          <!-- Chama de Streak Diário -->
           <div
             v-if="dailyStreak > 0"
             id="header-daily-streak"
@@ -157,12 +170,17 @@
     <!-- Conteúdo Principal -->
     <main class="max-w-5xl mx-auto px-4 py-6 pb-28 md:pb-20 flex-1 w-full space-y-6">
 
-      <!-- WIDGET DE STATUS DE GAMIFICAÇÃO (Patente, Nível, XP, Ofensiva e Escudos) -->
+      <!-- WIDGET DE STATUS DE GAMIFICAÇÃO (Patente, Nível, XP, Ofensiva, Escudos, RPG Fit e Loja) -->
       <GamificationIronStatus
         :total-xp="gamificationState.totalXp"
         :streak="gamificationState.weeklyStreak"
         :daily-streak="gamificationState.dailyStreak || 0"
         :shields="gamificationState.shieldsCount"
+        :iron-coins="gamificationState.ironCoins || 0"
+        :equipped-title-name="equippedTitleObj.title"
+        :equipped-title-icon="equippedTitleObj.icon"
+        @open-skill-tree="isSkillTreeOpen = true"
+        @open-shop="isShopOpen = true"
       />
 
       <!-- ANÉIS DE ATIVIDADE DIÁRIA (Treino, Água, Hábitos) -->
@@ -1698,6 +1716,9 @@
       :active-tab="currentMainTab"
       :current-theme="currentTheme"
       :daily-streak="dailyStreak"
+      :iron-coins="gamificationState.ironCoins || 0"
+      :equipped-title-name="equippedTitleObj.title"
+      :equipped-title-icon="equippedTitleObj.icon"
       :is-app-installed="isAppInstalled"
       @close="isDrawerOpen = false"
       @navigate="tab => currentMainTab = tab"
@@ -1708,7 +1729,9 @@
       @export-backup="handleExportJSON"
       @import-backup="openBackupFilePicker"
       @install-app="handleInstallPWA"
-      @set-theme="theme => currentTheme = theme"
+      @set-theme="handleEquipTheme"
+      @open-skill-tree="isSkillTreeOpen = true"
+      @open-shop="isShopOpen = true"
     />
 
     <!-- Modal de Demonstração e Detalhes do Exercício -->
@@ -1739,12 +1762,34 @@
       :new-badges="lastSessionCelebration.newBadges"
       :daily-streak="gamificationState.dailyStreak || 1"
       :athlete-name="userProfile?.userName || 'Atleta'"
-      :patent-title="currentPatentTitle"
+      :patent-title="equippedTitleObj?.title || currentPatentTitle"
       @close="showCelebrationModal = false"
     />
 
     <!-- Modal de Loading do Agente de IA -->
     <AiPlanLoadingModal :is-open="isAiPlanLoading" />
+
+    <!-- Modal da Árvore de Habilidades por Grupo Muscular (RPG Fit) -->
+    <RpgSkillTreeModal
+      :is-open="isSkillTreeOpen"
+      :rpg-branches="gamificationState.rpgBranches || {}"
+      @close="isSkillTreeOpen = false"
+    />
+
+    <!-- Modal da Loja de Cosméticos e Temas (Iron Store) -->
+    <CosmeticsShopModal
+      :is-open="isShopOpen"
+      :iron-coins="gamificationState.ironCoins || 0"
+      :unlocked-themes="gamificationState.unlockedThemes || ['blue', 'orange']"
+      :equipped-theme="currentTheme"
+      :unlocked-titles="gamificationState.unlockedTitles || ['iniciante_ferro']"
+      :equipped-title="gamificationState.equippedTitle || 'iniciante_ferro'"
+      @equip-theme="handleEquipTheme"
+      @unlock-theme="handleUnlockTheme"
+      @equip-title="handleEquipTitle"
+      @unlock-title="handleUnlockTitle"
+      @close="isShopOpen = false"
+    />
 
   </div>
 </template>
@@ -1777,8 +1822,29 @@ import WorkoutTonnageLiveWidget from './components/WorkoutTonnageLiveWidget.vue'
 import WorkoutCelebrationModal from './components/WorkoutCelebrationModal.vue';
 import WorkoutDayCompletionModal from './components/WorkoutDayCompletionModal.vue';
 import AiPlanLoadingModal from './components/AiPlanLoadingModal.vue';
-import { calculateSessionGamification, checkBadges, calculateLevelFromXp, getFlameInfo } from './engine/gamification.js';
-import { loadGamificationState, recordSessionCompletion, recordRestDay, recordWeeklyDayCompletion, WEEKLY_DAY_COMPLETION_XP } from './db/gamification.js';
+import RpgSkillTreeModal from './components/RpgSkillTreeModal.vue';
+import CosmeticsShopModal from './components/CosmeticsShopModal.vue';
+import {
+  calculateSessionGamification,
+  checkBadges,
+  calculateLevelFromXp,
+  getFlameInfo,
+  getTitleById,
+  getThemeById
+} from './engine/gamification.js';
+import {
+  loadGamificationState,
+  recordSessionCompletion,
+  recordRestDay,
+  recordWeeklyDayCompletion,
+  WEEKLY_DAY_COMPLETION_XP,
+  awardCoins,
+  spendCoins,
+  unlockAndEquipTheme,
+  equipTheme,
+  unlockAndEquipTitle,
+  equipTitle
+} from './db/gamification.js';
 import { playPlateClick, playPrFanfare, triggerHaptic } from './engine/audioHaptics.js';
 import { usePwaUpdate } from './composables/usePwaUpdate';
 import {
@@ -1882,11 +1948,65 @@ function reportStorageError(message, err) {
   storageError.value = message;
 }
 
-// Menu Lateral (Drawer), Detalhes de Exercício e Tema Visual
+// Menu Lateral (Drawer), Detalhes de Exercício, Habilidades, Loja e Tema Visual
 const isDrawerOpen = ref(false);
 const isExerciseDetailsOpen = ref(false);
 const selectedExerciseForDetails = ref(null);
-const currentTheme = ref('blue'); // 'blue' (Image 2 Tecnofit) | 'orange' (Image 1 Gym)
+const isSkillTreeOpen = ref(false);
+const isShopOpen = ref(false);
+const currentTheme = ref(gamificationState.value?.equippedTheme || 'blue');
+
+const appRootThemeClasses = computed(() => {
+  if (currentTheme.value === 'cyberpunk') return 'bg-[#08070F] text-[#F8FAFC]';
+  if (currentTheme.value === 'gold') return 'bg-[#0A0A0C] text-[#FAFAF9]';
+  if (currentTheme.value === 'matrix') return 'bg-[#030804] text-[#E2F8E8]';
+  if (currentTheme.value === 'orange') return 'bg-[#FFF7ED] text-[#0F172A]';
+  return 'bg-[#F8FAFC] text-[#0F172A]';
+});
+
+const headerThemeClasses = computed(() => {
+  if (currentTheme.value === 'cyberpunk') return 'border-b border-[#00F0FF]/40 bg-[#0D0B1E] text-white';
+  if (currentTheme.value === 'gold') return 'border-b border-[#D4AF37]/50 bg-[#141416] text-[#FAFAF9]';
+  if (currentTheme.value === 'matrix') return 'border-b border-[#00FF66]/40 bg-[#07130A] text-[#E2F8E8]';
+  if (currentTheme.value === 'orange') return 'border-b border-[#C2410C] bg-[#EA580C] text-white';
+  return 'border-b border-[#0052cc] bg-[#0066FF] text-white';
+});
+
+const equippedTitleObj = computed(() => {
+  return getTitleById(gamificationState.value?.equippedTitle || 'iniciante_ferro');
+});
+
+function handleEquipTheme(themeId) {
+  const res = equipTheme(themeId);
+  if (res.success) {
+    gamificationState.value = res.updated;
+    currentTheme.value = themeId;
+  }
+}
+
+function handleUnlockTheme({ themeId, price }) {
+  const res = unlockAndEquipTheme(themeId, price);
+  if (res.success) {
+    gamificationState.value = res.updated;
+    currentTheme.value = themeId;
+    confetti({ particleCount: 40, spread: 60 });
+  }
+}
+
+function handleEquipTitle(titleId) {
+  const res = equipTitle(titleId);
+  if (res.success) {
+    gamificationState.value = res.updated;
+  }
+}
+
+function handleUnlockTitle({ titleId, price }) {
+  const res = unlockAndEquipTitle(titleId, price);
+  if (res.success) {
+    gamificationState.value = res.updated;
+    confetti({ particleCount: 40, spread: 60 });
+  }
+}
 const showSplitBodyMap = ref(false);
 
 function openExerciseDetails(exercise) {
@@ -2260,6 +2380,8 @@ async function toggleCreatineToday() {
       spread: 60,
       origin: { y: 0.7 }
     });
+    // Concede +15 moedas de ferro por bater o hábito diário de suplementação
+    gamificationState.value = awardCoins(15);
   }
 }
 
@@ -3060,9 +3182,16 @@ const personalRecords = computed(() => {
 
 // Gamificação ao vivo da sessão atual (tonelagem em tempo real, PRs e XP)
 const liveSessionGamification = computed(() => {
+  const exerciseMuscleMap = {};
+  for (const split of activePlan.value?.workoutSplits || []) {
+    for (const ex of split.exercises || []) {
+      if (ex.id && ex.muscle) exerciseMuscleMap[ex.id] = ex.muscle;
+    }
+  }
   return calculateSessionGamification({
     workoutLogs: workoutLogs.value,
     existingPrs: personalRecords.value,
+    exerciseMuscleMap,
     isFinished: false
   });
 });
@@ -3140,10 +3269,18 @@ async function finishCurrentSession() {
 
   if (!ok) return;
 
-  // Gamificação: consolida impacto, tonelagem, XP e badges
+  // Gamificação: consolida impacto, tonelagem, XP, moedas e branches RPG
+  const exerciseMuscleMap = {};
+  for (const split of activePlan.value?.workoutSplits || []) {
+    for (const ex of split.exercises || []) {
+      if (ex.id && ex.muscle) exerciseMuscleMap[ex.id] = ex.muscle;
+    }
+  }
+
   const stats = calculateSessionGamification({
     workoutLogs: workoutLogs.value,
     existingPrs: personalRecords.value,
+    exerciseMuscleMap,
     isFinished: true
   });
 
@@ -3168,6 +3305,8 @@ async function finishCurrentSession() {
     earnedXp: stats.earnedXp,
     tonnageKg: stats.tonnageKg,
     newBadgeIds: newBadges.map(b => b.id),
+    earnedCoins: stats.earnedCoins,
+    branchXp: stats.branchXp,
     currentWeekKey: currentWeekKey.value
   });
 

@@ -10,7 +10,14 @@ import {
   checkBadges,
   calculateSessionGamification,
   calculateDailyStreak,
-  getFlameInfo
+  getFlameInfo,
+  getBranchForMuscle,
+  calculateBranchLevel,
+  getThemeById,
+  getTitleById,
+  RPG_BRANCHES,
+  COSMETIC_THEMES,
+  TITLES_CATALOG
 } from '../../src/engine/gamification.js';
 
 describe('Gamification Engine', () => {
@@ -192,6 +199,86 @@ describe('Gamification Engine', () => {
       expect(getFlameInfo(4).flameEmoji).toBe('⚡🔥');
       expect(getFlameInfo(8).flameEmoji).toBe('💎🔥');
       expect(getFlameInfo(8).flameLevel).toBe(3);
+    });
+  });
+
+  describe('RPG Branches & Skill Tree', () => {
+    it('mapeia corretamente músculos anatômicos para os 4 ramos RPG', () => {
+      expect(getBranchForMuscle('peito')).toBe('push');
+      expect(getBranchForMuscle('ombro')).toBe('push');
+      expect(getBranchForMuscle('triceps')).toBe('push');
+
+      expect(getBranchForMuscle('costas')).toBe('pull');
+      expect(getBranchForMuscle('biceps')).toBe('pull');
+      expect(getBranchForMuscle('trapezio')).toBe('pull');
+
+      expect(getBranchForMuscle('quadriceps')).toBe('legs');
+      expect(getBranchForMuscle('posterior')).toBe('legs');
+      expect(getBranchForMuscle('gluteos')).toBe('legs');
+      expect(getBranchForMuscle('panturrilha')).toBe('legs');
+
+      expect(getBranchForMuscle('core')).toBe('core');
+      expect(getBranchForMuscle('cardio')).toBe('core');
+      expect(getBranchForMuscle('outro')).toBe('core');
+    });
+
+    it('calcula níveis de branch e progresso percentual corretamente', () => {
+      const b0 = calculateBranchLevel(0);
+      expect(b0.level).toBe(1);
+      expect(b0.progressPercent).toBe(0);
+
+      // Nível 1 precisa de 150 XP. Com 75 XP está em 50%.
+      const b1 = calculateBranchLevel(75);
+      expect(b1.level).toBe(1);
+      expect(b1.progressPercent).toBe(50);
+
+      // Com 150 XP passa para o nível 2
+      const b2 = calculateBranchLevel(150);
+      expect(b2.level).toBe(2);
+      expect(b2.progressPercent).toBe(0);
+    });
+
+    it('distribui XP por ramo e calcula moedas ganhas na sessão', () => {
+      const logs = {
+        ex_push: {
+          sets: [{ weight: 100, reps: 10, isDone: true }]
+        },
+        ex_legs: {
+          sets: [{ weight: 120, reps: 8, isDone: true }]
+        }
+      };
+
+      const muscleMap = {
+        ex_push: 'peito',
+        ex_legs: 'quadriceps'
+      };
+
+      const res = calculateSessionGamification({
+        workoutLogs: logs,
+        existingPrs: {},
+        exerciseMuscleMap: muscleMap,
+        isFinished: true
+      });
+
+      expect(res.branchXp.push).toBeGreaterThan(0);
+      expect(res.branchXp.legs).toBeGreaterThan(0);
+      expect(res.branchXp.pull).toBe(0);
+      expect(res.branchXp.core).toBe(0);
+      expect(res.earnedCoins).toBeGreaterThanOrEqual(70); // 50 finish + 20 séries
+    });
+  });
+
+  describe('Cosmetics & Titles Catalog', () => {
+    it('retorna temas válidos por ID', () => {
+      expect(getThemeById('blue').name).toBe('Azul Cobalto Pro');
+      expect(getThemeById('cyberpunk').primaryColor).toBe('#00F0FF');
+      expect(getThemeById('inexistente').id).toBe('blue');
+    });
+
+    it('retorna títulos válidos por ID', () => {
+      expect(getTitleById('iniciante_ferro').title).toBe('Iniciante do Ferro');
+      expect(getTitleById('tita_supino').icon).toBe('🛡️');
+      expect(getTitleById('inexistente').id).toBe('iniciante_ferro');
     });
   });
 });
