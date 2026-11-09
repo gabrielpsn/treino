@@ -5,34 +5,34 @@
     role="timer"
     aria-live="off"
     :aria-label="`Descanso entre séries: ${timeLeft} segundos restantes`"
-    class="fixed bottom-20 right-4 sm:bottom-6 sm:right-6 z-40 bg-slate-900 border border-amber-500/40 rounded-2xl p-4 shadow-2xl flex items-center gap-4 max-w-xs"
+    class="fixed bottom-20 right-4 sm:bottom-6 sm:right-6 z-40 bg-white border border-[#E2E8F0] rounded-2xl p-4 shadow-xl flex items-center gap-4 max-w-xs text-[#0F172A]"
   >
-    <div class="relative w-12 h-12 flex items-center justify-center">
+    <div class="relative w-12 h-12 flex items-center justify-center flex-shrink-0">
       <svg class="w-12 h-12 transform -rotate-90" aria-hidden="true">
-        <circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="4" class="text-slate-800" fill="transparent" />
+        <circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="4" class="text-[#F1F5F9]" fill="transparent" />
         <circle 
           cx="24" 
           cy="24" 
           r="20" 
           stroke="currentColor" 
           stroke-width="4" 
-          class="text-amber-500 transition-all duration-1000 ease-linear" 
+          class="text-[#F59E0B] transition-all duration-1000 ease-linear" 
           fill="transparent" 
           :stroke-dasharray="circumference" 
           :stroke-dashoffset="strokeDashoffset" 
         />
       </svg>
-      <span class="absolute text-xs font-black text-amber-400 font-mono">{{ timeLeft }}s</span>
+      <span class="absolute text-xs font-black text-[#0F172A] font-mono">{{ timeLeft }}s</span>
     </div>
 
     <div>
-      <h5 class="text-xs font-bold text-white uppercase tracking-wider">Descanso Entre Séries</h5>
-      <p class="text-xs text-slate-400">Recupere o ATP-CP para a próxima carga</p>
+      <h5 class="text-xs font-black text-[#0F172A] uppercase tracking-wider">Descanso Entre Séries</h5>
+      <p class="text-xs text-[#64748B]">Recupere o ATP-CP para a próxima carga</p>
       <div class="flex items-center gap-1.5 mt-1">
         <button
           type="button"
           id="btn-rest-timer-minus-15"
-          class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
+          class="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-[#F8FAFC] border border-[#CBD5E1] hover:bg-[#F1F5F9] text-[#0F172A] transition-colors"
           @click="adjustTime(-15)"
           title="Reduzir 15 segundos"
         >
@@ -41,7 +41,7 @@
         <button
           type="button"
           id="btn-rest-timer-plus-15"
-          class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
+          class="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-[#F8FAFC] border border-[#CBD5E1] hover:bg-[#F1F5F9] text-[#0F172A] transition-colors"
           @click="adjustTime(15)"
           title="Adicionar 15 segundos"
         >
@@ -55,7 +55,7 @@
       id="btn-rest-timer-stop"
       aria-label="Encerrar o cronômetro de descanso"
       @click="stopTimer"
-      class="text-slate-400 hover:text-white p-1 rounded-lg"
+      class="text-[#64748B] hover:text-[#0F172A] p-1.5 rounded-lg hover:bg-[#F1F5F9] transition-colors"
     >
       <span aria-hidden="true">✕</span>
     </button>

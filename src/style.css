@@ -1,27 +1,29 @@
 @import "tailwindcss";
 
 @theme {
-  --color-sport-blue: #007bff;
-  --color-sport-blue-dark: #0062cc;
-  --color-sport-gold: #fbbf04;
-  --color-sport-gold-hover: #f5a623;
-  --color-sport-lavender: #eceefe;
-  --color-sport-lavender-subtle: #eef2ff;
-  --color-sport-border: #dce2fe;
-  --color-sport-dark: #1e293b;
+  --color-sport-blue: #0066ff;
+  --color-sport-blue-dark: #0052cc;
+  --color-sport-gold: #f59e0b;
+  --color-sport-gold-hover: #d97706;
+  --color-sport-bg: #f8fafc;
+  --color-sport-card: #ffffff;
+  --color-sport-card-alt: #f1f5f9;
+  --color-sport-border: #e2e8f0;
+  --color-sport-dark: #0f172a;
   --color-sport-slate: #64748b;
+  --color-sport-emerald: #10b981;
 }
 
 :root {
-  --color-primary: #007bff;
-  --color-primary-dark: #0062cc;
-  --color-accent: #fbbf04;
-  --color-accent-hover: #f5a623;
-  --color-card-bg: #eceefe;
-  --color-card-alt: #eef2ff;
-  --color-card-border: #dce2fe;
-  --color-bg-main: #ffffff;
-  --color-text-main: #1e293b;
+  --color-primary: #0066ff;
+  --color-primary-dark: #0052cc;
+  --color-accent: #f59e0b;
+  --color-accent-hover: #d97706;
+  --color-card-bg: #ffffff;
+  --color-card-alt: #f1f5f9;
+  --color-card-border: #e2e8f0;
+  --color-bg-main: #f8fafc;
+  --color-text-main: #0f172a;
   --color-text-secondary: #64748b;
 }
 
@@ -29,15 +31,15 @@
   body {
     font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     -webkit-tap-highlight-color: transparent;
-    background-color: #ffffff;
-    color: #1e293b;
+    background-color: #f8fafc;
+    color: #0f172a;
   }
 
   /*
    * foco visível e consistente para navegação por teclado.
    */
   :focus-visible {
-    outline: 2px solid #007bff;
+    outline: 2px solid #0066ff;
     outline-offset: 2px;
   }
 }
@@ -71,11 +73,6 @@ input[type="number"] {
 @layer components {
   /*
    * Alvo de toque das ações da ficha.
-   *
-   * Antes eram `p-1` com fonte de 11px: 28px de área clicável, bem abaixo dos
-   * 44px que as diretrizes de toque pedem (e abaixo do que o dedo acerta em pé
-   * de ônibus). No celular o botão cresce para 44px e volta ao tamanho
-   * compacto a partir de md, onde há mouse e precisão.
    */
   .action-btn {
     display: inline-flex;
@@ -92,7 +89,7 @@ input[type="number"] {
   }
 
   .action-btn:active {
-    background-color: rgb(220 226 254);
+    background-color: rgb(241 245 249);
   }
 
   @media (min-width: 768px) {
@@ -105,13 +102,12 @@ input[type="number"] {
   }
 
   /*
-   * Remover é a única ação que apaga histórico, então não pode ter a mesma
-   * cara neutra dos outros ícones: vermelho, com borda, e crescendo de verdade.
+   * Remover série/exercício: estilo limpo e seguro em light mode.
    */
   .action-btn-danger {
-    color: rgb(253 164 175);
-    border-color: rgb(159 18 57 / 0.45);
-    background-color: rgb(159 18 57 / 0.15);
+    color: rgb(225 29 72);
+    border-color: rgb(254 205 211);
+    background-color: rgb(255 241 242);
   }
 
   .action-btn-danger:hover {
@@ -132,11 +128,6 @@ input[type="number"] {
     }
   }
 
-  /*
-   * No celular remover chega a 48px contra 44px dos outros: a diferença é
-   * pequena no papel, mas é o que separa "ajustei uma série" de "apaguei meu
-   * histórico" quando o dedo erra o alvo por alguns pixels.
-   */
   @media (max-width: 767px) {
     .action-btn-danger {
       width: 3rem;
@@ -146,8 +137,7 @@ input[type="number"] {
   }
 
   /*
-   * Botão de concluir série: mesmo problema do action-btn, e é o botão mais
-   * usado do app inteiro — o que menos podia exigir mira fina.
+   * Botão de concluir série
    */
   .check-btn {
     display: inline-flex;
@@ -157,7 +147,7 @@ input[type="number"] {
     height: 2.75rem;
     flex-shrink: 0;
     border-radius: 0.75rem;
-    border: 1px solid rgb(51 65 85);
+    border: 1.5px solid #cbd5e1;
     transition: background-color 0.15s, border-color 0.15s;
     touch-action: manipulation;
   }
@@ -172,12 +162,6 @@ input[type="number"] {
 
   /*
    * Ações do cabeçalho.
-   *
-   * Eram quatro botões de ~33px disputando largura com um título que não cabe
-   * em 390px: ou os alvos encolhem, ou o título é cortado. No celular eles
-   * ganham sua própria fileira — quatro quadrados de 44px, fáceis de acertar —
-   * e o título fica com a linha dele. A partir de sm o rótulo cabe ao lado e
-   * tudo volta a ser uma linha só.
    */
   .header-btn {
     display: inline-flex;
@@ -185,8 +169,6 @@ input[type="number"] {
     justify-content: center;
     min-width: 2.75rem;
     min-height: 2.75rem;
-    /* O tamanho vive aqui: utilitário de padding na classe do componente
-       venceria este camada e empurraria o total para fora nos 320px. */
     padding: 0;
     touch-action: manipulation;
   }
@@ -199,13 +181,9 @@ input[type="number"] {
   }
 
   .header-actions > .header-btn {
-    /* basis igual ao alvo mínimo: os quatro crescem na mesma proporção em vez
-       de um espremer e o outro sobrar espaço. */
     flex: 1 1 2.75rem;
   }
 
-  /* Uma linha só a partir de md: entre 640 e 768 o título e os quatro botões
-     rotulados ainda não cabem juntos, e aí eles ficariam com 30px de altura. */
   @media (min-width: 768px) {
     .header-btn {
       min-width: 0;
@@ -225,17 +203,14 @@ input[type="number"] {
   }
 
   /*
-   * Campos de carga e reps.
-   *
-   * O input ficava com 20px de altura dentro de um cartão — o alvo de toque
-   * era uma faixa fina entre dois rótulos. Agora o campo preenche a caixa toda.
+   * Campos de carga e reps: texto grafite escuro com alto contraste
    */
   .log-input {
     min-height: 2.75rem;
     background-color: transparent;
     padding-top: 0.25rem;
     padding-bottom: 0.25rem;
-    color: #1e293b;
+    color: #0f172a;
     font-weight: 800;
   }
 
@@ -246,16 +221,6 @@ input[type="number"] {
 }
 
 @layer components {
-  /*
-   * Segundo nível de botões: abas principais, abas de ficha, "+ Meus
-   * exercícios", "Zerar Histórico". Todos eram 26-34px de altura, ou seja,
-   * menores que o botão de concluir série — e o "Zerar Histórico" é o botão
-   * mais perigoso da tela num alvo de 26px.
-   *
-   * Aqui só a altura é controlada pelo componente: o padding continua nas
-   * classes utilitárias, senão a camada de utilities vencia e o mínimo não
-   * valeria nada.
-   */
   .tap-btn {
     display: inline-flex;
     align-items: center;

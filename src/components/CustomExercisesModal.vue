@@ -2,7 +2,7 @@
   <div
     v-if="isOpen"
     id="custom-exercises-overlay"
-    class="fixed inset-0 z-50 flex justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto"
+    class="fixed inset-0 z-50 flex justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto"
     role="dialog"
     aria-modal="true"
     aria-labelledby="custom-exercises-title"
@@ -10,14 +10,14 @@
   >
     <div
       id="custom-exercises-modal"
-      class="relative w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl my-auto"
+      class="relative w-full max-w-2xl bg-white border border-[#E2E8F0] rounded-3xl p-6 sm:p-8 shadow-2xl my-auto text-[#0F172A]"
       tabindex="-1"
       @keydown.esc="emit('close')"
     >
       <div class="flex items-start justify-between gap-4 mb-6">
         <div>
-          <h2 id="custom-exercises-title" class="text-xl font-black text-white">Meus exercícios</h2>
-          <p class="text-xs text-slate-400 mt-1">
+          <h2 id="custom-exercises-title" class="text-xl font-black text-[#0F172A]">Meus exercícios</h2>
+          <p class="text-xs text-[#64748B] mt-1">
             Exercícios criados por você entram no plano e na troca de exercícios.
             Marque as articulações sobrecarregadas para respeitar suas restrições.
           </p>
@@ -25,7 +25,7 @@
         <button
           type="button"
           id="btn-close-custom-exercises"
-          class="text-slate-500 hover:text-white text-2xl leading-none p-1"
+          class="text-[#64748B] hover:text-[#0F172A] text-2xl leading-none p-1 transition-colors"
           aria-label="Fechar meus exercícios"
           @click="emit('close')"
         >
@@ -38,15 +38,15 @@
         id="custom-exercises-error-summary"
         role="alert"
         aria-live="assertive"
-        class="mb-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center gap-2"
+        class="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 flex items-center gap-2"
       >
         <span aria-hidden="true">⚠️</span>
-        <span class="text-xs font-semibold text-rose-300">{{ errorSummary }}</span>
+        <span class="text-xs font-semibold text-rose-700">{{ errorSummary }}</span>
       </div>
 
       <!-- Lista dos exercícios do usuário -->
       <div class="space-y-2 mb-6">
-        <p v-if="exercises.length === 0" id="custom-exercises-empty" class="text-sm text-slate-500 text-center py-8">
+        <p v-if="exercises.length === 0" id="custom-exercises-empty" class="text-sm text-[#94A3B8] text-center py-8">
           Você ainda não criou nenhum exercício.
         </p>
 
@@ -54,28 +54,28 @@
           v-for="ex in exercises"
           :key="ex.id"
           :id="`custom-exercise-${ex.id}`"
-          class="p-3 rounded-xl bg-slate-950 border border-slate-800 flex items-start justify-between gap-3"
+          class="p-3 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] flex items-start justify-between gap-3"
         >
           <div class="min-w-0">
             <div class="flex items-center gap-2 flex-wrap">
-              <span class="text-sm font-bold text-white truncate">{{ ex.name }}</span>
-              <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400">
+              <span class="text-sm font-bold text-[#0F172A] truncate">{{ ex.name }}</span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-[#0066FF] border border-blue-200 font-semibold">
                 {{ muscleLabels[ex.muscle] || ex.muscle }}
               </span>
               <span
                 v-if="ex.jointStress.length"
-                class="text-[10px] px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-300 border border-rose-500/20"
+                class="text-[10px] px-1.5 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200 font-medium"
               >
                 sobrecarrega {{ ex.jointStress.map(j => jointLabels[j] || j).join(', ') }}
               </span>
             </div>
-            <p class="text-[11px] text-slate-500 mt-0.5">{{ ex.defaultSeries }} • {{ ex.rest }}</p>
+            <p class="text-[11px] text-[#64748B] mt-0.5">{{ ex.defaultSeries }} • {{ ex.rest }}</p>
           </div>
           <div class="flex items-center gap-1 flex-shrink-0">
             <button
               type="button"
               :id="`btn-edit-custom-${ex.id}`"
-              class="text-[11px] text-slate-500 hover:text-amber-400 px-2 py-1"
+              class="text-[11px] text-[#64748B] hover:text-[#0066FF] font-semibold px-2 py-1 transition-colors"
               :aria-label="`Editar ${ex.name}`"
               @click="startEdit(ex)"
             >
@@ -84,7 +84,7 @@
             <button
               type="button"
               :id="`btn-delete-custom-${ex.id}`"
-              class="text-[11px] text-slate-500 hover:text-rose-400 px-2 py-1"
+              class="text-[11px] text-[#64748B] hover:text-rose-600 font-semibold px-2 py-1 transition-colors"
               :aria-label="`Excluir ${ex.name}`"
               @click="confirmDelete(ex)"
             >
@@ -94,14 +94,13 @@
         </div>
       </div>
 
-      <!-- Confirmação de exclusão: excluir some o exercício do plano, então o
-           usuário precisa ver qual está apagando antes. -->
+      <!-- Confirmação de exclusão -->
       <div
         v-if="pendingDelete"
         id="custom-exercise-delete-confirm"
-        class="mb-6 p-3 rounded-xl bg-rose-500/5 border border-rose-500/30"
+        class="mb-6 p-3 rounded-xl bg-rose-50 border border-rose-200"
       >
-        <p class="text-xs text-rose-200 mb-3">
+        <p class="text-xs text-rose-800 mb-3">
           Excluir <strong>{{ pendingDelete.name }}</strong>? Ele também sai do plano atual
           quando o plano for regerado.
         </p>
@@ -109,7 +108,7 @@
           <button
             type="button"
             id="btn-confirm-delete-custom"
-            class="px-3 py-1.5 rounded-lg bg-rose-500 text-white text-xs font-bold"
+            class="px-3 py-1.5 rounded-lg bg-rose-600 text-white text-xs font-bold hover:bg-rose-700 transition-colors"
             @click="doDelete"
           >
             Excluir
@@ -117,7 +116,7 @@
           <button
             type="button"
             id="btn-cancel-delete-custom"
-            class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 text-xs font-bold"
+            class="px-3 py-1.5 rounded-lg bg-white border border-[#CBD5E1] text-[#0F172A] text-xs font-bold hover:bg-[#F8FAFC] transition-colors"
             @click="pendingDelete = null"
           >
             Cancelar
@@ -127,12 +126,12 @@
 
       <!-- Formulário -->
       <form id="custom-exercise-form" class="space-y-4" @submit.prevent="submit">
-        <h3 class="text-sm font-bold text-slate-200">
+        <h3 class="text-sm font-bold text-[#0F172A]">
           {{ editingId ? 'Editar exercício' : 'Novo exercício' }}
         </h3>
 
         <div>
-          <label for="input-custom-name" class="block text-xs font-bold text-slate-200 mb-1">Nome</label>
+          <label for="input-custom-name" class="block text-xs font-bold text-[#0F172A] mb-1">Nome</label>
           <input
             id="input-custom-name"
             v-model="form.name"
@@ -140,44 +139,44 @@
             :aria-invalid="!!errors.name"
             :aria-describedby="errors.name ? 'error-custom-name' : undefined"
             placeholder="Ex.: Supino na Arquinha"
-            class="w-full bg-slate-950 border-2 rounded-xl px-3.5 py-2.5 text-sm text-white font-bold placeholder:text-slate-400 focus:outline-none transition-colors"
-            :class="errors.name ? 'border-rose-500 focus:border-rose-400' : 'border-slate-600 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20'"
+            class="w-full bg-[#F8FAFC] border-2 rounded-xl px-3.5 py-2.5 text-sm text-[#0F172A] font-bold placeholder:text-[#94A3B8] focus:outline-none transition-colors"
+            :class="errors.name ? 'border-rose-500 bg-rose-50/20 focus:border-rose-500' : 'border-[#CBD5E1] focus:border-[#0066FF] focus:bg-white focus:ring-2 focus:ring-[#0066FF]/20'"
           />
-          <p v-if="errors.name" id="error-custom-name" class="text-[11px] font-bold text-rose-400 mt-1">{{ errors.name }}</p>
+          <p v-if="errors.name" id="error-custom-name" class="text-[11px] font-bold text-rose-600 mt-1">{{ errors.name }}</p>
         </div>
 
         <div class="grid gap-4 sm:grid-cols-2">
           <div>
-            <label for="select-custom-muscle" class="block text-xs font-bold text-slate-200 mb-1">Grupo muscular</label>
+            <label for="select-custom-muscle" class="block text-xs font-bold text-[#0F172A] mb-1">Grupo muscular</label>
             <select
               id="select-custom-muscle"
               v-model="form.muscle"
-              class="w-full bg-slate-950 border-2 rounded-xl px-3.5 py-2.5 text-sm text-white font-bold focus:outline-none"
-              :class="errors.muscle ? 'border-rose-500' : 'border-slate-600 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20'"
+              class="w-full bg-[#F8FAFC] border-2 rounded-xl px-3.5 py-2.5 text-sm text-[#0F172A] font-bold focus:outline-none transition-colors"
+              :class="errors.muscle ? 'border-rose-500 bg-rose-50/20' : 'border-[#CBD5E1] focus:border-[#0066FF] focus:bg-white focus:ring-2 focus:ring-[#0066FF]/20'"
             >
               <option value="" disabled>Selecione</option>
               <option v-for="m in muscleOptions" :key="m" :value="m">{{ muscleLabels[m] }}</option>
             </select>
-            <p v-if="errors.muscle" class="text-[11px] font-bold text-rose-400 mt-1">{{ errors.muscle }}</p>
+            <p v-if="errors.muscle" class="text-[11px] font-bold text-rose-600 mt-1">{{ errors.muscle }}</p>
           </div>
 
           <div>
-            <label for="select-custom-pattern" class="block text-xs font-bold text-slate-200 mb-1">Padrão de movimento</label>
+            <label for="select-custom-pattern" class="block text-xs font-bold text-[#0F172A] mb-1">Padrão de movimento</label>
             <select
               id="select-custom-pattern"
               v-model="form.pattern"
-              class="w-full bg-slate-950 border-2 rounded-xl px-3.5 py-2.5 text-sm text-white font-bold focus:outline-none"
-              :class="errors.pattern ? 'border-rose-500' : 'border-slate-600 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20'"
+              class="w-full bg-[#F8FAFC] border-2 rounded-xl px-3.5 py-2.5 text-sm text-[#0F172A] font-bold focus:outline-none transition-colors"
+              :class="errors.pattern ? 'border-rose-500 bg-rose-50/20' : 'border-[#CBD5E1] focus:border-[#0066FF] focus:bg-white focus:ring-2 focus:ring-[#0066FF]/20'"
             >
               <option value="" disabled>Selecione</option>
               <option v-for="p in availablePatterns" :key="p" :value="p">{{ patternLabels[p] || p }}</option>
             </select>
-            <p v-if="errors.pattern" class="text-[11px] font-bold text-rose-400 mt-1">{{ errors.pattern }}</p>
+            <p v-if="errors.pattern" class="text-[11px] font-bold text-rose-600 mt-1">{{ errors.pattern }}</p>
           </div>
         </div>
 
         <div>
-          <span class="block text-xs font-semibold text-slate-300 mb-1">Equipamento necessário</span>
+          <span class="block text-xs font-semibold text-[#64748B] mb-1">Equipamento necessário</span>
           <div class="flex flex-wrap gap-2">
             <button
               v-for="eq in equipmentOptions"
@@ -187,8 +186,8 @@
               :aria-pressed="form.equipment === eq"
               class="px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors"
               :class="form.equipment === eq
-                ? 'bg-amber-500 border-amber-400 text-slate-950'
-                : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'"
+                ? 'bg-[#0066FF] border-[#0066FF] text-white shadow-sm'
+                : 'bg-[#F8FAFC] border-[#E2E8F0] text-[#64748B] hover:text-[#0F172A] hover:border-[#CBD5E1]'"
               @click="form.equipment = eq"
             >
               {{ equipmentLabels[eq] }}
@@ -197,7 +196,7 @@
         </div>
 
         <div>
-          <span class="block text-xs font-semibold text-slate-300 mb-1">Articulações sobrecarregadas</span>
+          <span class="block text-xs font-semibold text-[#64748B] mb-1">Articulações sobrecarregadas</span>
           <div class="flex flex-wrap gap-2">
             <button
               v-for="j in jointOptions"
@@ -207,68 +206,68 @@
               :aria-pressed="form.jointStress.includes(j)"
               class="px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors"
               :class="form.jointStress.includes(j)
-                ? 'bg-rose-500/20 border-rose-500/50 text-rose-200'
-                : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'"
+                ? 'bg-rose-100 border-rose-300 text-rose-800 font-bold'
+                : 'bg-[#F8FAFC] border-[#E2E8F0] text-[#64748B] hover:text-[#0F172A] hover:border-[#CBD5E1]'"
               @click="toggleJoint(j)"
             >
               {{ jointLabels[j] }}
             </button>
           </div>
-          <p class="text-[11px] text-slate-500 mt-1.5">
+          <p class="text-[11px] text-[#64748B] mt-1.5">
             Só marque as que o exercício realmente sobrecarrega. Marcar uma a mais
             apenas esconde o exercício para quem tem essa dor.
           </p>
-          <p v-if="errors.jointStress" class="text-[11px] text-rose-400 mt-1">{{ errors.jointStress }}</p>
+          <p v-if="errors.jointStress" class="text-[11px] text-rose-600 mt-1">{{ errors.jointStress }}</p>
         </div>
 
         <div class="grid gap-4 sm:grid-cols-2">
           <div>
-            <label for="input-custom-series" class="block text-xs font-bold text-slate-200 mb-1">Séries</label>
+            <label for="input-custom-series" class="block text-xs font-bold text-[#0F172A] mb-1">Séries</label>
             <input
               id="input-custom-series"
               v-model="form.defaultSeries"
               type="text"
               :aria-invalid="!!errors.defaultSeries"
               placeholder="3x 10-12 reps"
-              class="w-full bg-slate-950 border-2 rounded-xl px-3.5 py-2.5 text-sm text-white font-bold placeholder:text-slate-400 focus:outline-none"
-              :class="errors.defaultSeries ? 'border-rose-500' : 'border-slate-600 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20'"
+              class="w-full bg-[#F8FAFC] border-2 rounded-xl px-3.5 py-2.5 text-sm text-[#0F172A] font-bold placeholder:text-[#94A3B8] focus:outline-none transition-colors"
+              :class="errors.defaultSeries ? 'border-rose-500 bg-rose-50/20' : 'border-[#CBD5E1] focus:border-[#0066FF] focus:bg-white focus:ring-2 focus:ring-[#0066FF]/20'"
             />
-            <p v-if="errors.defaultSeries" class="text-[11px] font-bold text-rose-400 mt-1">{{ errors.defaultSeries }}</p>
+            <p v-if="errors.defaultSeries" class="text-[11px] font-bold text-rose-600 mt-1">{{ errors.defaultSeries }}</p>
           </div>
 
           <div>
-            <label for="input-custom-rest" class="block text-xs font-bold text-slate-200 mb-1">Descanso</label>
+            <label for="input-custom-rest" class="block text-xs font-bold text-[#0F172A] mb-1">Descanso</label>
             <input
               id="input-custom-rest"
               v-model="form.rest"
               type="text"
               :aria-invalid="!!errors.rest"
               placeholder="60s"
-              class="w-full bg-slate-950 border-2 rounded-xl px-3.5 py-2.5 text-sm text-white font-bold placeholder:text-slate-400 focus:outline-none"
-              :class="errors.rest ? 'border-rose-500' : 'border-slate-600 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20'"
+              class="w-full bg-[#F8FAFC] border-2 rounded-xl px-3.5 py-2.5 text-sm text-[#0F172A] font-bold placeholder:text-[#94A3B8] focus:outline-none transition-colors"
+              :class="errors.rest ? 'border-rose-500 bg-rose-50/20' : 'border-[#CBD5E1] focus:border-[#0066FF] focus:bg-white focus:ring-2 focus:ring-[#0066FF]/20'"
             />
-            <p v-if="errors.rest" class="text-[11px] font-bold text-rose-400 mt-1">{{ errors.rest }}</p>
+            <p v-if="errors.rest" class="text-[11px] font-bold text-rose-600 mt-1">{{ errors.rest }}</p>
           </div>
         </div>
 
         <div>
-          <label for="input-custom-tips" class="block text-xs font-bold text-slate-200 mb-1">Dica de execução</label>
+          <label for="input-custom-tips" class="block text-xs font-bold text-[#0F172A] mb-1">Dica de execução</label>
           <textarea
             id="input-custom-tips"
             v-model="form.tips"
             rows="2"
             maxlength="240"
             placeholder="Apoio, amplitude, erro comum..."
-            class="w-full bg-slate-950 border-2 border-slate-600 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 rounded-xl px-3.5 py-2.5 text-sm text-white font-semibold placeholder:text-slate-400 focus:outline-none resize-y"
+            class="w-full bg-[#F8FAFC] border-2 border-[#CBD5E1] focus:border-[#0066FF] focus:bg-white focus:ring-2 focus:ring-[#0066FF]/20 rounded-xl px-3.5 py-2.5 text-sm text-[#0F172A] font-semibold placeholder:text-[#94A3B8] focus:outline-none resize-y transition-colors"
           ></textarea>
-          <p v-if="errors.tips" class="text-[11px] font-bold text-rose-400 mt-1">{{ errors.tips }}</p>
+          <p v-if="errors.tips" class="text-[11px] font-bold text-rose-600 mt-1">{{ errors.tips }}</p>
         </div>
 
         <div class="flex items-center gap-2 pt-2">
           <button
             type="submit"
             id="btn-save-custom-exercise"
-            class="px-4 py-2 rounded-xl bg-amber-500 text-slate-950 text-sm font-bold hover:bg-amber-400 transition-colors"
+            class="px-4 py-2 rounded-xl bg-[#F59E0B] text-[#0F172A] text-sm font-bold hover:bg-[#D97706] shadow-sm transition-colors"
           >
             {{ editingId ? 'Salvar alterações' : 'Criar exercício' }}
           </button>
@@ -276,7 +275,7 @@
             v-if="editingId"
             type="button"
             id="btn-cancel-edit-custom"
-            class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-sm font-bold hover:bg-slate-700 transition-colors"
+            class="px-4 py-2 rounded-xl bg-white border border-[#CBD5E1] text-[#0F172A] text-sm font-bold hover:bg-[#F8FAFC] transition-colors"
             @click="resetForm"
           >
             Cancelar

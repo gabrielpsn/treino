@@ -5,23 +5,23 @@
     role="dialog"
     aria-modal="true"
     aria-label="Modo Treino"
-    class="fixed inset-0 z-30 bg-slate-950 flex flex-col"
+    class="fixed inset-0 z-30 bg-[#F8FAFC] flex flex-col text-[#0F172A]"
   >
     <!-- Topo: saída, identificação da ficha, cronômetro da sessão e progresso -->
-    <header class="flex items-center justify-between gap-3 px-4 py-3 border-b border-slate-800 bg-slate-900 flex-shrink-0">
+    <header class="flex items-center justify-between gap-3 px-4 py-3 border-b border-[#E2E8F0] bg-white flex-shrink-0 shadow-xs">
       <button
         type="button"
         id="btn-exit-training-mode"
         aria-label="Sair do modo treino"
-        class="tap-btn w-11 h-11 rounded-xl border border-slate-700 text-slate-300 hover:text-white hover:border-slate-500 text-sm font-bold"
+        class="tap-btn w-11 h-11 rounded-xl border border-[#CBD5E1] bg-white text-[#0F172A] hover:bg-[#F8FAFC] text-sm font-bold flex items-center justify-center transition-colors"
         @click="$emit('close')"
       >
         ✕
       </button>
 
       <div class="text-center min-w-0">
-        <p class="text-[10px] uppercase tracking-widest text-amber-400 font-bold">Modo Treino</p>
-        <p class="text-xs font-bold text-white truncate max-w-[40vw]">{{ split.title }}</p>
+        <p class="text-[10px] uppercase tracking-widest text-[#0066FF] font-black">Modo Treino</p>
+        <p class="text-xs font-black text-[#0F172A] truncate max-w-[40vw]">{{ split.title }}</p>
       </div>
 
       <div class="text-right">
@@ -29,11 +29,11 @@
           id="training-timer"
           role="timer"
           aria-label="Tempo de treino decorrido"
-          class="font-mono text-lg font-black text-amber-400 leading-none"
+          class="font-mono text-lg font-black text-[#0066FF] leading-none"
         >
           {{ formattedElapsed }}
         </p>
-        <p id="training-progress" class="text-[11px] text-slate-400 mt-1">{{ queue.doneCount }}/{{ queue.totalCount }} concluídos</p>
+        <p id="training-progress" class="text-[11px] text-[#64748B] mt-1">{{ queue.doneCount }}/{{ queue.totalCount }} concluídos</p>
       </div>
     </header>
 
@@ -41,11 +41,11 @@
       <!-- Foco atual: o app conduz a pessoa de um exercício pendente ao próximo -->
       <section
         v-if="focusExercise"
-        class="p-4 rounded-2xl border border-amber-500/30 bg-slate-900 space-y-3"
+        class="p-4 sm:p-5 rounded-2xl border border-[#0066FF]/30 bg-white shadow-sm space-y-3"
       >
         <div>
           <div class="flex items-center justify-between gap-2">
-            <p class="text-[10px] uppercase tracking-widest text-amber-400 font-bold">Exercício atual</p>
+            <p class="text-[10px] uppercase tracking-widest text-[#0066FF] font-black">Exercício atual</p>
             <span
               v-if="focusExercise.muscle"
               :class="getMuscleBadgeClass(focusExercise.muscle)"
@@ -55,13 +55,13 @@
               {{ MUSCLE_LABELS[focusExercise.muscle] || focusExercise.muscle }}
             </span>
           </div>
-          <h2 class="text-lg font-extrabold text-white leading-tight">{{ focusExercise.name }}</h2>
-          <p class="text-xs text-slate-400 mt-0.5">
+          <h2 class="text-lg font-black text-[#0F172A] leading-tight">{{ focusExercise.name }}</h2>
+          <p class="text-xs text-[#64748B] mt-0.5">
             {{ focusExercise.defaultSeries }}
             <template v-if="focusExercise.aiReps"> • {{ focusExercise.aiReps }} reps</template>
             • Descanso: {{ focusExercise.rest }}
           </p>
-          <p v-if="focusExercise.tips" class="text-[11px] text-slate-500 italic mt-1">💡 {{ focusExercise.tips }}</p>
+          <p v-if="focusExercise.tips" class="text-[11px] text-[#64748B] italic mt-1">💡 {{ focusExercise.tips }}</p>
         </div>
 
         <div v-if="focusExercise.muscle !== 'cardio'" class="space-y-3">
@@ -73,17 +73,19 @@
               type="button"
               :id="`btn-training-set-${s.setNumber}`"
               @click="activeSetNumber = s.setNumber"
-              :class="activeSetNumber === s.setNumber ? 'bg-amber-500 text-slate-950 font-black' : (s.isDone ? 'bg-slate-800 text-slate-300 border border-slate-700' : 'bg-slate-950 text-slate-400 border border-slate-800')"
+              :class="activeSetNumber === s.setNumber
+                ? 'bg-[#0066FF] text-white font-black shadow-xs'
+                : (s.isDone ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-[#F8FAFC] text-[#64748B] border border-[#E2E8F0] hover:text-[#0F172A]')"
               class="px-2.5 py-1 rounded-lg text-xs transition-colors flex items-center gap-1 flex-shrink-0"
             >
               <span>Série {{ s.setNumber }}</span>
-              <span v-if="s.isDone" class="text-[10px]" :class="activeSetNumber === s.setNumber ? 'text-slate-950 font-bold' : 'text-amber-400'">✓</span>
+              <span v-if="s.isDone" class="text-[10px]" :class="activeSetNumber === s.setNumber ? 'text-white font-bold' : 'text-emerald-600 font-bold'">✓</span>
             </button>
             <button
               type="button"
               id="btn-training-add-set"
               @click="$emit('add-set', focusExercise.id)"
-              class="px-2 py-1 rounded-lg text-xs font-bold border border-slate-800 bg-slate-950 text-slate-400 hover:text-white transition-colors flex-shrink-0"
+              class="px-2 py-1 rounded-lg text-xs font-bold border border-[#CBD5E1] bg-white text-[#64748B] hover:text-[#0F172A] hover:bg-[#F8FAFC] transition-colors flex-shrink-0"
               title="Adicionar mais uma série"
             >
               + Série
@@ -91,8 +93,8 @@
           </div>
 
           <div class="flex gap-3">
-            <div class="flex items-center gap-2 bg-slate-950 px-3 py-2.5 rounded-xl border-2 border-slate-600 focus-within:border-amber-400 focus-within:ring-2 focus-within:ring-amber-500/30 flex-1">
-              <label for="training-input-weight" class="text-xs text-slate-200 font-bold uppercase tracking-wider">Carga:</label>
+            <div class="flex items-center gap-2 bg-[#F8FAFC] px-3 py-2.5 rounded-xl border-2 border-[#CBD5E1] focus-within:border-[#0066FF] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#0066FF]/20 flex-1 transition-all">
+              <label for="training-input-weight" class="text-xs text-[#64748B] font-bold uppercase tracking-wider">Carga:</label>
               <input
                 id="training-input-weight"
                 type="number"
@@ -103,13 +105,13 @@
                 aria-label="Carga em kg do exercício atual"
                 :value="activeSetWeight"
                 @input="onWeightInput"
-                class="w-full min-w-0 bg-transparent text-amber-300 text-base font-extrabold text-right focus:outline-none"
+                class="w-full min-w-0 bg-transparent text-[#0F172A] text-base font-black text-right focus:outline-none"
               />
-              <span class="text-xs text-slate-300 font-bold">kg</span>
+              <span class="text-xs text-[#64748B] font-bold">kg</span>
             </div>
 
-            <div class="flex items-center gap-2 bg-slate-950 px-3 py-2.5 rounded-xl border-2 border-slate-600 focus-within:border-amber-400 focus-within:ring-2 focus-within:ring-amber-500/30 flex-1">
-              <label for="training-input-reps" class="text-xs text-slate-200 font-bold uppercase tracking-wider">Reps:</label>
+            <div class="flex items-center gap-2 bg-[#F8FAFC] px-3 py-2.5 rounded-xl border-2 border-[#CBD5E1] focus-within:border-[#0066FF] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#0066FF]/20 flex-1 transition-all">
+              <label for="training-input-reps" class="text-xs text-[#64748B] font-bold uppercase tracking-wider">Reps:</label>
               <input
                 id="training-input-reps"
                 type="number"
@@ -120,12 +122,12 @@
                 aria-label="Repetições do exercício atual"
                 :value="activeSetReps"
                 @input="onRepsInput"
-                class="w-full min-w-0 bg-transparent text-amber-300 text-base font-extrabold text-right focus:outline-none"
+                class="w-full min-w-0 bg-transparent text-[#0F172A] text-base font-black text-right focus:outline-none"
               />
             </div>
 
-            <div class="flex items-center gap-2 bg-slate-950 px-3 py-2.5 rounded-xl border-2 border-slate-600 focus-within:border-amber-400 focus-within:ring-2 focus-within:ring-amber-500/30 w-24">
-              <label for="training-input-rir" class="text-xs text-slate-200 font-bold uppercase tracking-wider">RIR:</label>
+            <div class="flex items-center gap-2 bg-[#F8FAFC] px-3 py-2.5 rounded-xl border-2 border-[#CBD5E1] focus-within:border-[#0066FF] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#0066FF]/20 w-24 transition-all">
+              <label for="training-input-rir" class="text-xs text-[#64748B] font-bold uppercase tracking-wider">RIR:</label>
               <input
                 id="training-input-rir"
                 type="number"
@@ -136,7 +138,7 @@
                 aria-label="RIR (reps em reserva) do exercício atual"
                 :value="activeSetRir"
                 @input="onRirInput"
-                class="w-full min-w-0 bg-transparent text-amber-300 text-base font-extrabold text-right focus:outline-none"
+                class="w-full min-w-0 bg-transparent text-[#0F172A] text-base font-black text-right focus:outline-none"
               />
             </div>
           </div>
@@ -148,8 +150,8 @@
             id="btn-training-check"
             class="tap-btn flex-1 px-4 py-3 rounded-xl text-sm font-black transition-colors"
             :class="focusIsDone
-              ? 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-              : 'bg-amber-500 text-slate-950 hover:bg-amber-400'"
+              ? 'bg-[#F1F5F9] border border-[#CBD5E1] text-[#64748B] hover:bg-[#E2E8F0]'
+              : 'bg-[#F59E0B] text-[#0F172A] hover:bg-[#D97706] shadow-sm'"
             @click="$emit('toggle', focusExercise.id)"
           >
             {{ focusIsDone ? '↺ Marcar como pendente' : '✓ Concluir exercício' }}
@@ -157,7 +159,7 @@
           <button
             type="button"
             id="btn-training-rest"
-            class="tap-btn px-4 py-3 rounded-xl text-sm font-bold border border-slate-700 text-slate-300 hover:text-white hover:border-amber-500/60"
+            class="tap-btn px-4 py-3 rounded-xl text-sm font-bold border border-[#CBD5E1] bg-white text-[#0F172A] hover:bg-[#F8FAFC] hover:border-[#0066FF]/50 transition-colors"
             :aria-label="`Iniciar descanso de ${focusExercise.rest}`"
             @click="$emit('rest', focusExercise.rest)"
           >
@@ -166,7 +168,7 @@
           <button
             type="button"
             id="btn-training-swap"
-            class="tap-btn px-3 py-3 rounded-xl text-xs font-bold border border-slate-800 text-slate-400 hover:text-amber-400 hover:border-slate-700 transition-colors flex items-center gap-1"
+            class="tap-btn px-3 py-3 rounded-xl text-xs font-bold border border-[#CBD5E1] bg-white text-[#64748B] hover:text-[#0066FF] hover:border-[#0066FF]/40 transition-colors flex items-center gap-1"
             title="Aparelho ocupado? Trocar por variação equivalente"
             @click="$emit('swap', focusExercise)"
           >
@@ -182,15 +184,15 @@
           <button
             type="button"
             :id="`training-item-${item.exerciseId}`"
-            class="tap-btn w-full flex items-center justify-between gap-3 px-3.5 py-3 rounded-xl border text-left"
+            class="tap-btn w-full flex items-center justify-between gap-3 px-3.5 py-3 rounded-xl border text-left transition-all"
             :class="item.isDone
-              ? 'bg-slate-900/40 border-slate-800 opacity-70'
-              : (item.exerciseId === effectiveFocusId ? 'bg-slate-900 border-amber-500/50' : 'bg-slate-900 border-slate-800 hover:border-slate-700')"
+              ? 'bg-[#F8FAFC]/60 border-[#E2E8F0] opacity-75'
+              : (item.exerciseId === effectiveFocusId ? 'bg-white border-[#0066FF] ring-2 ring-[#0066FF]/10 shadow-xs' : 'bg-white border-[#E2E8F0] hover:border-[#CBD5E1] shadow-xs')"
             @click="manualFocusId = item.exerciseId"
           >
             <span
               class="text-sm font-bold min-w-0 truncate"
-              :class="item.isDone ? 'line-through text-slate-500' : 'text-white'"
+              :class="item.isDone ? 'line-through text-[#94A3B8]' : 'text-[#0F172A]'"
             >
               {{ item.name }}
             </span>
@@ -202,8 +204,8 @@
               >
                 {{ MUSCLE_LABELS[item.muscle] || item.muscle }}
               </span>
-              <span v-if="item.isDone" class="text-amber-400 font-black flex-shrink-0" aria-hidden="true">✓</span>
-              <span v-else class="text-[11px] text-slate-500 flex-shrink-0" aria-hidden="true">○</span>
+              <span v-if="item.isDone" class="text-[#10B981] font-black flex-shrink-0" aria-hidden="true">✓</span>
+              <span v-else class="text-[11px] text-[#94A3B8] flex-shrink-0" aria-hidden="true">○</span>
             </div>
           </button>
         </li>
@@ -213,17 +215,17 @@
         v-if="queue.allDone"
         id="training-all-done"
         role="status"
-        class="text-center text-sm font-black text-emerald-400 py-2"
+        class="text-center text-sm font-black text-emerald-600 py-2"
       >
         Todos os exercícios concluídos! 🎉
       </p>
     </main>
 
-    <footer class="px-4 py-3 border-t border-slate-800 bg-slate-900 flex-shrink-0">
+    <footer class="px-4 py-3 border-t border-[#E2E8F0] bg-white flex-shrink-0 shadow-xs">
       <button
         type="button"
         id="btn-training-finish"
-        class="tap-btn w-full px-4 py-3.5 rounded-xl text-sm font-black bg-slate-800 text-white hover:bg-slate-700 transition-colors"
+        class="tap-btn w-full px-4 py-3.5 rounded-xl text-sm font-black bg-[#0066FF] text-white hover:bg-[#0052CC] shadow-md transition-all active:scale-[0.99]"
         @click="$emit('finish')"
       >
         🏁 Concluir treino e salvar no histórico

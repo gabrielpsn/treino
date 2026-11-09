@@ -5,11 +5,11 @@
       <div
         v-for="stat in headlineStats"
         :key="stat.label"
-        class="p-4 rounded-2xl bg-slate-900 border border-slate-800"
+        class="p-4 rounded-2xl bg-white border border-[#E2E8F0] shadow-xs"
       >
-        <span class="text-[11px] uppercase font-semibold text-slate-500 block">{{ stat.label }}</span>
-        <span class="text-xl font-black text-white mt-1 block">{{ stat.value }}</span>
-        <span v-if="stat.hint" class="text-[11px] text-slate-500 mt-0.5 block">{{ stat.hint }}</span>
+        <span class="text-[11px] uppercase font-bold text-[#64748B] block">{{ stat.label }}</span>
+        <span class="text-xl font-black text-[#0F172A] mt-1 block">{{ stat.value }}</span>
+        <span v-if="stat.hint" class="text-[11px] text-[#94A3B8] mt-0.5 block">{{ stat.hint }}</span>
       </div>
     </div>
 
@@ -17,13 +17,13 @@
     <div
       v-if="sessions.length === 0"
       id="history-empty-state"
-      class="text-center py-14 px-6 border border-dashed border-slate-800 rounded-3xl"
+      class="text-center py-14 px-6 border border-dashed border-[#CBD5E1] bg-white rounded-3xl shadow-xs"
     >
       <p class="text-3xl mb-2" aria-hidden="true">📈</p>
-      <h3 class="text-base font-bold text-white">Nenhum treino registrado ainda</h3>
-      <p class="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+      <h3 class="text-base font-black text-[#0F172A]">Nenhum treino registrado ainda</h3>
+      <p class="text-xs text-[#64748B] mt-1 max-w-sm mx-auto">
         Registre a carga e marque um exercício como concluído na aba
-        <strong>Fichas de Treino</strong>. A partir daí cada sessão aparece aqui com
+        <strong class="text-[#0F172A]">Fichas de Treino</strong>. A partir daí cada sessão aparece aqui com
         volume, duração e evolução.
       </p>
     </div>
@@ -33,10 +33,10 @@
       <section
         v-if="weeks.length > 0"
         id="history-weekly-chart"
-        class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5"
+        class="bg-white border border-[#E2E8F0] rounded-2xl p-4 sm:p-5 shadow-xs"
       >
-        <h3 class="text-sm font-bold text-white mb-1">Volume por semana</h3>
-        <p class="text-[11px] text-slate-500 mb-4">
+        <h3 class="text-sm font-black text-[#0F172A] mb-1">Volume por semana</h3>
+        <p class="text-[11px] text-[#64748B] mb-4">
           Soma de carga × repetições das séries concluídas.
         </p>
 
@@ -46,17 +46,17 @@
             :key="week.weekKey"
             class="flex-1 flex flex-col items-center gap-1.5 min-w-0"
           >
-            <span class="text-[10px] text-slate-400 font-semibold truncate w-full text-center">
+            <span class="text-[10px] text-[#64748B] font-semibold truncate w-full text-center">
               {{ formatVolume(week.volume) }}
             </span>
             <div
               class="w-full rounded-t-md transition-all"
-              :class="isWeightLoss ? 'bg-rose-500/70' : 'bg-amber-500/70'"
+              :class="isWeightLoss ? 'bg-rose-500' : 'bg-[#0066FF]'"
               :style="{ height: barHeight(week.volume) }"
               role="img"
               :aria-label="`${week.sessions} ${week.sessions === 1 ? 'treino' : 'treinos'}, ${formatVolume(week.volume)} em ${week.days} ${week.days === 1 ? 'dia' : 'dias'}`"
             ></div>
-            <span class="text-[10px] text-slate-500 truncate w-full text-center">
+            <span class="text-[10px] text-[#64748B] truncate w-full text-center font-medium">
               {{ shortWeekLabel(week.weekKey) }}
             </span>
           </li>
@@ -67,14 +67,14 @@
       <section
         v-if="chart"
         id="history-exercise-chart"
-        class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5"
+        class="bg-white border border-[#E2E8F0] rounded-2xl p-4 sm:p-5 shadow-xs"
       >
         <div class="flex items-center justify-between gap-3 mb-1">
-          <h3 class="text-sm font-bold text-white">Carga por exercício</h3>
+          <h3 class="text-sm font-black text-[#0F172A]">Carga por exercício</h3>
           <label class="sr-only" for="history-exercise-select">Exercício do gráfico</label>
           <select
             id="history-exercise-select"
-            class="bg-slate-950 border border-slate-700 rounded-xl text-xs text-white px-2.5 py-1.5 max-w-[55%] focus:outline-none focus:border-amber-500/60"
+            class="bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-xs text-[#0F172A] font-semibold px-2.5 py-1.5 max-w-[55%] focus:outline-none focus:border-[#0066FF] focus:bg-white focus:ring-2 focus:ring-[#0066FF]/20 transition-colors"
             :value="selectedProgression?.id"
             @change="selectedExerciseId = $event.target.value"
           >
@@ -83,7 +83,7 @@
             </option>
           </select>
         </div>
-        <p class="text-[11px] text-slate-500 mb-3">
+        <p class="text-[11px] text-[#64748B] mb-3">
           Maior carga registrada em cada treino concluído.
         </p>
 
@@ -97,16 +97,16 @@
           <line
             :x1="CHART_PAD_L" :y1="CHART_H - CHART_PAD_B"
             :x2="CHART_W - CHART_PAD_R" :y2="CHART_H - CHART_PAD_B"
-            class="stroke-slate-800" stroke-width="1"
+            class="stroke-[#E2E8F0]" stroke-width="1"
           />
-          <text :x="4" :y="chart.maxY + 3" class="fill-slate-500" font-size="9">{{ chart.maxLabel }}</text>
-          <text :x="4" :y="chart.minY + 3" class="fill-slate-500" font-size="9">{{ chart.minLabel }}</text>
+          <text :x="4" :y="chart.maxY + 3" class="fill-[#64748B]" font-size="9" font-weight="600">{{ chart.maxLabel }}</text>
+          <text :x="4" :y="chart.minY + 3" class="fill-[#64748B]" font-size="9" font-weight="600">{{ chart.minLabel }}</text>
 
           <polyline
             :points="chart.line"
             fill="none"
-            :class="isWeightLoss ? 'stroke-rose-500' : 'stroke-amber-500'"
-            stroke-width="2"
+            :class="isWeightLoss ? 'stroke-rose-500' : 'stroke-[#0066FF]'"
+            stroke-width="2.5"
             stroke-linejoin="round"
             stroke-linecap="round"
           />
@@ -115,26 +115,26 @@
             :key="point.sessionId"
             :cx="point.x"
             :cy="point.y"
-            r="3.5"
-            :class="isWeightLoss ? 'fill-rose-400' : 'fill-amber-400'"
+            r="4"
+            :class="isWeightLoss ? 'fill-rose-500' : 'fill-[#F59E0B] stroke-white stroke-2'"
           />
           <text
             v-if="chart.coords.length > 0"
             :x="chart.coords[0].x" :y="CHART_H - 6"
-            class="fill-slate-500" font-size="9" text-anchor="middle"
+            class="fill-[#64748B]" font-size="9" text-anchor="middle" font-weight="500"
           >{{ chart.coords[0].dayLabel }}</text>
           <text
             v-if="chart.coords.length > 1"
             :x="chart.coords[chart.coords.length - 1].x" :y="CHART_H - 6"
-            class="fill-slate-500" font-size="9" text-anchor="middle"
+            class="fill-[#64748B]" font-size="9" text-anchor="middle" font-weight="500"
           >{{ chart.coords[chart.coords.length - 1].dayLabel }}</text>
         </svg>
 
         <p
           v-if="progressionDelta"
           id="history-exercise-delta"
-          class="text-[11px] font-semibold mt-2"
-          :class="progressionDelta.diff > 0 ? 'text-emerald-400' : (progressionDelta.diff < 0 ? 'text-rose-400' : 'text-slate-400')"
+          class="text-[11px] font-bold mt-2"
+          :class="progressionDelta.diff > 0 ? 'text-emerald-600' : (progressionDelta.diff < 0 ? 'text-rose-600' : 'text-[#64748B]')"
         >
           {{ progressionDelta.text }}
         </p>
@@ -142,36 +142,36 @@
 
       <!-- Lista de sessões -->
       <section class="space-y-3">
-        <h3 class="text-sm font-bold text-white">Treinos</h3>
+        <h3 class="text-sm font-black text-[#0F172A]">Treinos</h3>
 
         <article
           v-for="session in sessions"
           :key="session.id"
           :id="`history-session-${session.id}`"
-          class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden"
+          class="bg-white border border-[#E2E8F0] rounded-2xl overflow-hidden shadow-xs"
         >
           <button
             type="button"
             :id="`btn-history-session-${session.id}`"
-            class="w-full p-4 flex items-center justify-between gap-3 text-left hover:bg-slate-800/40 transition-colors"
+            class="w-full p-4 flex items-center justify-between gap-3 text-left hover:bg-[#F8FAFC] transition-colors"
             :aria-expanded="isExpanded(session.id) ? 'true' : 'false'"
             :aria-controls="`history-session-body-${session.id}`"
             @click="toggleExpanded(session.id)"
           >
             <div class="min-w-0">
-              <p class="text-sm font-bold text-white truncate">
+              <p class="text-sm font-bold text-[#0F172A] truncate">
                 {{ formatDayKey(session.dayKey) }}
-                <span class="text-slate-500 font-medium">· {{ splitTitle(session.splitId) }}</span>
+                <span class="text-[#64748B] font-medium">· {{ splitTitle(session.splitId) }}</span>
               </p>
-              <p class="text-[11px] text-slate-400 mt-0.5">
+              <p class="text-[11px] text-[#64748B] mt-0.5">
                 {{ statsFor(session).doneSets }} séries · {{ formatVolume(statsFor(session).volume) }} ·
                 {{ formatDuration(durationFor(session)) }}
-                <span v-if="session.source === 'legacy-workout-logs'" class="text-slate-500">
+                <span v-if="session.source === 'legacy-workout-logs'" class="text-[#94A3B8]">
                   (carga anterior)
                 </span>
               </p>
             </div>
-            <span class="text-slate-500 text-xs shrink-0" aria-hidden="true">
+            <span class="text-[#94A3B8] text-xs shrink-0" aria-hidden="true">
               {{ isExpanded(session.id) ? '▲' : '▼' }}
             </span>
           </button>
@@ -179,18 +179,18 @@
           <div
             v-show="isExpanded(session.id)"
             :id="`history-session-body-${session.id}`"
-            class="border-t border-slate-800 px-4 py-3 space-y-2"
+            class="border-t border-[#E2E8F0] bg-[#F8FAFC] px-4 py-3 space-y-2"
           >
             <div
               v-for="set in setsOf(session)"
               :key="set.id || `${set.exerciseId}-${set.setNumber || 1}`"
               class="flex items-center justify-between gap-3 text-xs"
             >
-              <span class="text-slate-300 truncate">
+              <span class="text-[#0F172A] font-medium truncate">
                 {{ exerciseName(set.exerciseId) }}
-                <span v-if="set.setNumber && set.setNumber > 1" class="text-slate-500 text-[10px] ml-1">(série {{ set.setNumber }})</span>
+                <span v-if="set.setNumber && set.setNumber > 1" class="text-[#64748B] text-[10px] ml-1">(série {{ set.setNumber }})</span>
               </span>
-              <span class="text-slate-400 shrink-0 tabular-nums">
+              <span class="text-[#64748B] font-semibold shrink-0 tabular-nums">
                 <template v-if="hasLoad(set)">
                   {{ formatWeight(set.weight) }} kg × {{ set.reps }} reps
                   <template v-if="set.rir !== '' && set.rir !== undefined && set.rir !== null"> · RIR {{ set.rir }}</template>

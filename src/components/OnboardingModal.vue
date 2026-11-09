@@ -2,7 +2,7 @@
   <div
     v-if="isOpen"
     id="onboarding-modal-overlay"
-    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto"
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto"
     role="dialog"
     aria-modal="true"
     aria-labelledby="onboarding-title"
@@ -11,7 +11,7 @@
     <div
       ref="panelRef"
       id="onboarding-modal"
-      class="relative w-full max-w-xl bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl overflow-hidden my-8"
+      class="relative w-full max-w-xl bg-white border border-[#E2E8F0] rounded-3xl p-6 sm:p-8 shadow-2xl overflow-hidden my-8 text-[#0F172A]"
       tabindex="-1"
       @keydown.esc="emit('close')"
     >
@@ -23,16 +23,16 @@
         id="onboarding-error-summary"
         role="alert"
         aria-live="assertive"
-        class="mb-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center gap-2"
+        class="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 flex items-center gap-2"
       >
         <span aria-hidden="true">⚠️</span>
-        <span class="text-xs font-semibold text-rose-300">{{ errorSummary }}</span>
+        <span class="text-xs font-semibold text-rose-700">{{ errorSummary }}</span>
       </div>
 
       <!-- Linha de Progresso do Wizard & Fechar -->
       <div class="mb-6">
-        <div class="flex items-center justify-between text-xs font-semibold text-slate-400 mb-2">
-          <span :class="form.goal === 'weight_loss' ? 'text-rose-400' : 'text-amber-400'" class="font-bold uppercase tracking-wider">Passo {{ step }} de {{ TOTAL_STEPS }}</span>
+        <div class="flex items-center justify-between text-xs font-semibold text-[#64748B] mb-2">
+          <span :class="form.goal === 'weight_loss' ? 'text-rose-600' : 'text-[#0066FF]'" class="font-bold uppercase tracking-wider">Passo {{ step }} de {{ TOTAL_STEPS }}</span>
           <div class="flex items-center gap-3">
             <span>{{ stepTitle }}</span>
             <button 
@@ -40,7 +40,7 @@
               id="btn-close-onboarding"
               aria-label="Fechar configurações"
               @click="emit('close')"
-              class="text-slate-400 hover:text-white p-1 rounded-lg bg-slate-800/80 hover:bg-slate-700 transition-colors leading-none"
+              class="text-[#64748B] hover:text-[#0F172A] p-1.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] hover:bg-[#F1F5F9] transition-colors leading-none"
               title="Fechar"
             >
               ✕
@@ -48,7 +48,7 @@
           </div>
         </div>
         <div
-          class="w-full bg-slate-800 h-2 rounded-full overflow-hidden"
+          class="w-full bg-[#F1F5F9] h-2 rounded-full overflow-hidden"
           role="progressbar"
           :aria-valuenow="step"
           aria-valuemin="1"
@@ -56,7 +56,7 @@
           aria-label="Progresso do cadastro"
         >
           <div 
-            :class="form.goal === 'weight_loss' ? 'bg-gradient-to-r from-rose-500 to-rose-400' : 'bg-gradient-to-r from-amber-500 to-amber-400'"
+            :class="form.goal === 'weight_loss' ? 'bg-gradient-to-r from-rose-500 to-rose-400' : 'bg-gradient-to-r from-[#0066FF] to-blue-500'"
             class="h-full transition-all duration-300 rounded-full"
             :style="{ width: `${(step / TOTAL_STEPS) * 100}%` }"
           ></div>
@@ -66,13 +66,13 @@
       <!-- Passo 1: Nome, Objetivo & Biometria -->
       <div v-if="step === 1" class="space-y-4">
         <div>
-          <h2 id="onboarding-title" class="text-2xl font-black text-white tracking-tight">Bem-vindo(a) ao seu Plano</h2>
-          <p class="text-sm text-slate-400 mt-1">Informe seu nome, objetivo e biometria para calibrarmos as taxas metabólicas e fichas ideais.</p>
+          <h2 id="onboarding-title" class="text-2xl font-black text-[#0F172A] tracking-tight">Bem-vindo(a) ao seu Plano</h2>
+          <p class="text-sm text-[#64748B] mt-1">Informe seu nome, objetivo e biometria para calibrarmos as taxas metabólicas e fichas ideais.</p>
         </div>
 
         <!-- Solicitação do Nome do Usuário -->
         <div>
-          <label for="input-user-name" class="block text-xs font-bold text-slate-200 mb-1">Como devemos te chamar? (Seu Nome)</label>
+          <label for="input-user-name" class="block text-xs font-bold text-[#0F172A] mb-1">Como devemos te chamar? (Seu Nome)</label>
           <input 
             id="input-user-name"
             v-model="form.userName" 
@@ -81,30 +81,30 @@
             placeholder="Ex: Gabriel, Mariana, Patricia..." 
             :aria-invalid="!!errors.userName"
             :aria-describedby="errors.userName ? 'error-user-name' : undefined"
-            class="w-full bg-slate-950 border-2 rounded-xl px-4 py-2.5 text-white font-bold placeholder:text-slate-400 focus:outline-none transition-colors"
-            :class="errors.userName ? 'border-rose-500 focus:border-rose-400' : 'border-slate-600 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20'"
+            class="w-full bg-[#F8FAFC] border-2 rounded-xl px-4 py-2.5 text-[#0F172A] font-bold placeholder:text-[#94A3B8] focus:outline-none transition-colors"
+            :class="errors.userName ? 'border-rose-500 bg-rose-50/20 focus:border-rose-500' : 'border-[#CBD5E1] focus:border-[#0066FF] focus:bg-white focus:ring-2 focus:ring-[#0066FF]/20'"
           />
-          <p v-if="errors.userName" id="error-user-name" class="text-[11px] font-bold text-rose-400 mt-1">{{ errors.userName }}</p>
+          <p v-if="errors.userName" id="error-user-name" class="text-[11px] font-bold text-rose-600 mt-1">{{ errors.userName }}</p>
         </div>
 
         <!-- Escolha do Objetivo Principal -->
         <div>
-          <label class="block text-xs font-semibold text-slate-400 mb-1">Qual é o seu objetivo principal agora?</label>
+          <label class="block text-xs font-semibold text-[#64748B] mb-1">Qual é o seu objetivo principal agora?</label>
           <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-1">
             <button 
               type="button"
               id="btn-goal-hypertrophy"
               @click="setGoal('hypertrophy')"
-              :class="form.goal === 'hypertrophy' ? 'border-amber-500 bg-amber-500/10 text-white font-bold ring-1 ring-amber-500/50' : 'border-slate-800 bg-slate-950/60 text-slate-400 hover:border-slate-700'"
+              :class="form.goal === 'hypertrophy' ? 'border-[#0066FF] bg-blue-50/60 text-[#0F172A] font-bold ring-2 ring-[#0066FF]/20 shadow-xs' : 'border-[#E2E8F0] bg-[#F8FAFC] text-[#64748B] hover:border-[#CBD5E1]'"
               class="p-3 rounded-2xl border text-left transition-all flex flex-col justify-between gap-1"
             >
               <div class="flex items-center justify-between">
                 <span class="text-xl">⚡</span>
-                <span v-if="form.goal === 'hypertrophy'" class="text-amber-400 text-xs font-bold">✓ Ativo</span>
+                <span v-if="form.goal === 'hypertrophy'" class="text-[#0066FF] text-xs font-bold">✓ Ativo</span>
               </div>
               <div>
-                <strong class="text-xs sm:text-sm text-white block">Hipertrofia</strong>
-                <span class="text-[10px] text-slate-400 leading-tight block mt-0.5">Superávit limpo e massa muscular</span>
+                <strong class="text-xs sm:text-sm text-[#0F172A] block">Hipertrofia</strong>
+                <span class="text-[10px] text-[#64748B] leading-tight block mt-0.5">Superávit limpo e massa muscular</span>
               </div>
             </button>
 
@@ -112,16 +112,16 @@
               type="button"
               id="btn-goal-weight-loss"
               @click="setGoal('weight_loss')"
-              :class="form.goal === 'weight_loss' ? 'border-rose-500 bg-rose-500/10 text-white font-bold ring-1 ring-rose-500/50' : 'border-slate-800 bg-slate-950/60 text-slate-400 hover:border-slate-700'"
+              :class="form.goal === 'weight_loss' ? 'border-rose-500 bg-rose-50/60 text-[#0F172A] font-bold ring-2 ring-rose-500/20 shadow-xs' : 'border-[#E2E8F0] bg-[#F8FAFC] text-[#64748B] hover:border-[#CBD5E1]'"
               class="p-3 rounded-2xl border text-left transition-all flex flex-col justify-between gap-1"
             >
               <div class="flex items-center justify-between">
                 <span class="text-xl">🔥</span>
-                <span v-if="form.goal === 'weight_loss'" class="text-rose-400 text-xs font-bold">✓ Ativo</span>
+                <span v-if="form.goal === 'weight_loss'" class="text-rose-600 text-xs font-bold">✓ Ativo</span>
               </div>
               <div>
-                <strong class="text-xs sm:text-sm text-white block">Emagrecimento</strong>
-                <span class="text-[10px] text-slate-400 leading-tight block mt-0.5">Déficit calórico e queima de gordura</span>
+                <strong class="text-xs sm:text-sm text-[#0F172A] block">Emagrecimento</strong>
+                <span class="text-[10px] text-[#64748B] leading-tight block mt-0.5">Déficit calórico e queima de gordura</span>
               </div>
             </button>
 
@@ -129,16 +129,16 @@
               type="button"
               id="btn-goal-strength"
               @click="setGoal('strength')"
-              :class="form.goal === 'strength' ? 'border-amber-500 bg-amber-500/10 text-white font-bold ring-1 ring-amber-500/50' : 'border-slate-800 bg-slate-950/60 text-slate-400 hover:border-slate-700'"
+              :class="form.goal === 'strength' ? 'border-[#0066FF] bg-blue-50/60 text-[#0F172A] font-bold ring-2 ring-[#0066FF]/20 shadow-xs' : 'border-[#E2E8F0] bg-[#F8FAFC] text-[#64748B] hover:border-[#CBD5E1]'"
               class="p-3 rounded-2xl border text-left transition-all flex flex-col justify-between gap-1"
             >
               <div class="flex items-center justify-between">
                 <span class="text-xl">🏋️</span>
-                <span v-if="form.goal === 'strength'" class="text-amber-400 text-xs font-bold">✓ Ativo</span>
+                <span v-if="form.goal === 'strength'" class="text-[#0066FF] text-xs font-bold">✓ Ativo</span>
               </div>
               <div>
-                <strong class="text-xs sm:text-sm text-white block">Força Pura</strong>
-                <span class="text-[10px] text-slate-400 leading-tight block mt-0.5">Compostos pesados e 4-6 reps</span>
+                <strong class="text-xs sm:text-sm text-[#0F172A] block">Força Pura</strong>
+                <span class="text-[10px] text-[#64748B] leading-tight block mt-0.5">Compostos pesados e 4-6 reps</span>
               </div>
             </button>
 
@@ -146,16 +146,16 @@
               type="button"
               id="btn-goal-recomposition"
               @click="setGoal('recomposition')"
-              :class="form.goal === 'recomposition' ? 'border-cyan-500 bg-cyan-500/10 text-white font-bold ring-1 ring-cyan-500/50' : 'border-slate-800 bg-slate-950/60 text-slate-400 hover:border-slate-700'"
+              :class="form.goal === 'recomposition' ? 'border-cyan-600 bg-cyan-50/60 text-[#0F172A] font-bold ring-2 ring-cyan-500/20 shadow-xs' : 'border-[#E2E8F0] bg-[#F8FAFC] text-[#64748B] hover:border-[#CBD5E1]'"
               class="p-3 rounded-2xl border text-left transition-all flex flex-col justify-between gap-1"
             >
               <div class="flex items-center justify-between">
                 <span class="text-xl">⚖️</span>
-                <span v-if="form.goal === 'recomposition'" class="text-cyan-400 text-xs font-bold">✓ Ativo</span>
+                <span v-if="form.goal === 'recomposition'" class="text-cyan-700 text-xs font-bold">✓ Ativo</span>
               </div>
               <div>
-                <strong class="text-xs sm:text-sm text-white block">Recomposição</strong>
-                <span class="text-[10px] text-slate-400 leading-tight block mt-0.5">Massa magra + queima simultânea</span>
+                <strong class="text-xs sm:text-sm text-[#0F172A] block">Recomposição</strong>
+                <span class="text-[10px] text-[#64748B] leading-tight block mt-0.5">Massa magra + queima simultânea</span>
               </div>
             </button>
 
@@ -163,16 +163,16 @@
               type="button"
               id="btn-goal-maintenance"
               @click="setGoal('maintenance')"
-              :class="form.goal === 'maintenance' ? 'border-emerald-500 bg-emerald-500/10 text-white font-bold ring-1 ring-emerald-500/50' : 'border-slate-800 bg-slate-950/60 text-slate-400 hover:border-slate-700'"
+              :class="form.goal === 'maintenance' ? 'border-emerald-600 bg-emerald-50/60 text-[#0F172A] font-bold ring-2 ring-emerald-500/20 shadow-xs' : 'border-[#E2E8F0] bg-[#F8FAFC] text-[#64748B] hover:border-[#CBD5E1]'"
               class="p-3 rounded-2xl border text-left transition-all flex flex-col justify-between gap-1 col-span-2 sm:col-span-1"
             >
               <div class="flex items-center justify-between">
                 <span class="text-xl">🌱</span>
-                <span v-if="form.goal === 'maintenance'" class="text-emerald-400 text-xs font-bold">✓ Ativo</span>
+                <span v-if="form.goal === 'maintenance'" class="text-emerald-700 text-xs font-bold">✓ Ativo</span>
               </div>
               <div>
-                <strong class="text-xs sm:text-sm text-white block">Manutenção</strong>
-                <span class="text-[10px] text-slate-400 leading-tight block mt-0.5">Equilíbrio, tônus e longevidade</span>
+                <strong class="text-xs sm:text-sm text-[#0F172A] block">Manutenção</strong>
+                <span class="text-[10px] text-[#64748B] leading-tight block mt-0.5">Equilíbrio, tônus e longevidade</span>
               </div>
             </button>
           </div>
@@ -184,7 +184,7 @@
             type="button"
             id="btn-gender-male"
             @click="setGender('male')"
-            :class="form.gender === 'male' ? 'border-amber-500 bg-amber-500/10 text-white font-semibold' : 'border-slate-800 bg-slate-950/60 text-slate-400 hover:border-slate-700'"
+            :class="form.gender === 'male' ? 'border-[#0066FF] bg-blue-50/60 text-[#0066FF] font-bold ring-1 ring-[#0066FF]/20' : 'border-[#E2E8F0] bg-[#F8FAFC] text-[#64748B] hover:border-[#CBD5E1]'"
             class="p-3 rounded-2xl border text-center transition-all flex items-center justify-center gap-2"
           >
             <span class="text-xl">♂</span>
@@ -194,7 +194,7 @@
             type="button"
             id="btn-gender-female"
             @click="setGender('female')"
-            :class="form.gender === 'female' ? 'border-rose-500 bg-rose-500/10 text-white font-semibold' : 'border-slate-800 bg-slate-950/60 text-slate-400 hover:border-slate-700'"
+            :class="form.gender === 'female' ? 'border-rose-500 bg-rose-50/60 text-rose-600 font-bold ring-1 ring-rose-500/20' : 'border-[#E2E8F0] bg-[#F8FAFC] text-[#64748B] hover:border-[#CBD5E1]'"
             class="p-3 rounded-2xl border text-center transition-all flex items-center justify-center gap-2"
           >
             <span class="text-xl">♀</span>
@@ -204,7 +204,7 @@
 
         <div class="grid grid-cols-3 gap-3">
           <div>
-            <label for="input-age" class="block text-xs font-bold text-slate-200 mb-1">Idade (anos)</label>
+            <label for="input-age" class="block text-xs font-bold text-[#0F172A] mb-1">Idade (anos)</label>
             <input 
               id="input-age"
               v-model.number="form.ageYears" 
@@ -213,13 +213,13 @@
               max="100" 
               :aria-invalid="!!errors.ageYears"
               :aria-describedby="errors.ageYears ? 'error-age' : undefined"
-              class="w-full bg-slate-950 border-2 rounded-xl px-3 py-2.5 text-white font-bold focus:outline-none"
-              :class="errors.ageYears ? 'border-rose-500 focus:border-rose-400' : 'border-slate-600 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20'"
+              class="w-full bg-[#F8FAFC] border-2 rounded-xl px-3 py-2.5 text-[#0F172A] font-bold focus:outline-none transition-colors"
+              :class="errors.ageYears ? 'border-rose-500 bg-rose-50/20 focus:border-rose-500' : 'border-[#CBD5E1] focus:border-[#0066FF] focus:bg-white focus:ring-2 focus:ring-[#0066FF]/20'"
             />
-            <p v-if="errors.ageYears" id="error-age" class="text-[11px] font-bold text-rose-400 mt-1">{{ errors.ageYears }}</p>
+            <p v-if="errors.ageYears" id="error-age" class="text-[11px] font-bold text-rose-600 mt-1">{{ errors.ageYears }}</p>
           </div>
           <div>
-            <label for="input-weight" class="block text-xs font-bold text-slate-200 mb-1">Peso (kg)</label>
+            <label for="input-weight" class="block text-xs font-bold text-[#0F172A] mb-1">Peso (kg)</label>
             <input 
               id="input-weight"
               v-model.number="form.weightKg" 
@@ -229,13 +229,13 @@
               max="300" 
               :aria-invalid="!!errors.weightKg"
               :aria-describedby="errors.weightKg ? 'error-weight' : undefined"
-              class="w-full bg-slate-950 border-2 rounded-xl px-3 py-2.5 text-white font-bold focus:outline-none"
-              :class="errors.weightKg ? 'border-rose-500 focus:border-rose-400' : 'border-slate-600 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20'"
+              class="w-full bg-[#F8FAFC] border-2 rounded-xl px-3 py-2.5 text-[#0F172A] font-bold focus:outline-none transition-colors"
+              :class="errors.weightKg ? 'border-rose-500 bg-rose-50/20 focus:border-rose-500' : 'border-[#CBD5E1] focus:border-[#0066FF] focus:bg-white focus:ring-2 focus:ring-[#0066FF]/20'"
             />
-            <p v-if="errors.weightKg" id="error-weight" class="text-[11px] font-bold text-rose-400 mt-1">{{ errors.weightKg }}</p>
+            <p v-if="errors.weightKg" id="error-weight" class="text-[11px] font-bold text-rose-600 mt-1">{{ errors.weightKg }}</p>
           </div>
           <div>
-            <label for="input-height" class="block text-xs font-bold text-slate-200 mb-1">Altura (cm)</label>
+            <label for="input-height" class="block text-xs font-bold text-[#0F172A] mb-1">Altura (cm)</label>
             <input 
               id="input-height"
               v-model.number="form.heightCm" 
@@ -244,10 +244,10 @@
               max="230" 
               :aria-invalid="!!errors.heightCm"
               :aria-describedby="errors.heightCm ? 'error-height' : undefined"
-              class="w-full bg-slate-950 border-2 rounded-xl px-3 py-2.5 text-white font-bold focus:outline-none"
-              :class="errors.heightCm ? 'border-rose-500 focus:border-rose-400' : 'border-slate-600 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20'"
+              class="w-full bg-[#F8FAFC] border-2 rounded-xl px-3 py-2.5 text-[#0F172A] font-bold focus:outline-none transition-colors"
+              :class="errors.heightCm ? 'border-rose-500 bg-rose-50/20 focus:border-rose-500' : 'border-[#CBD5E1] focus:border-[#0066FF] focus:bg-white focus:ring-2 focus:ring-[#0066FF]/20'"
             />
-            <p v-if="errors.heightCm" id="error-height" class="text-[11px] font-bold text-rose-400 mt-1">{{ errors.heightCm }}</p>
+            <p v-if="errors.heightCm" id="error-height" class="text-[11px] font-bold text-rose-600 mt-1">{{ errors.heightCm }}</p>
           </div>
         </div>
       </div>
@@ -255,12 +255,12 @@
       <!-- Passo 2: Experiência & Rotina -->
       <div v-else-if="step === 2" class="space-y-4">
         <div>
-          <h2 class="text-2xl font-black text-white tracking-tight">Rotina & Frequência</h2>
-          <p class="text-sm text-slate-400 mt-1">Definiremos o melhor split de treino para sua semana.</p>
+          <h2 class="text-2xl font-black text-[#0F172A] tracking-tight">Rotina & Frequência</h2>
+          <p class="text-sm text-[#64748B] mt-1">Definiremos o melhor split de treino para sua semana.</p>
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-slate-400 mb-2">Quantos dias você pode treinar por semana?</label>
+          <label class="block text-xs font-semibold text-[#64748B] mb-2">Quantos dias você pode treinar por semana?</label>
           <div class="grid grid-cols-4 gap-2" role="group" aria-label="Dias por semana">
             <button 
               v-for="d in [3, 4, 5, 6]" 
@@ -268,7 +268,7 @@
               :id="`btn-days-${d}`"
               type="button"
               @click="form.daysPerWeek = d"
-              :class="form.daysPerWeek === d ? (form.goal === 'weight_loss' ? 'bg-rose-500 text-white font-bold border-rose-400' : 'bg-amber-500 text-slate-950 font-bold border-amber-400') : 'bg-slate-950 text-slate-300 border-slate-800 hover:border-slate-700'"
+              :class="form.daysPerWeek === d ? (form.goal === 'weight_loss' ? 'bg-rose-500 text-white font-bold border-rose-500' : 'bg-[#0066FF] text-white font-bold border-[#0066FF]') : 'bg-[#F8FAFC] text-[#64748B] border-[#E2E8F0] hover:border-[#CBD5E1]'"
               class="p-3 rounded-xl border text-center text-sm transition-all"
             >
               {{ d }} dias
@@ -277,7 +277,7 @@
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-slate-400 mb-2">Nível de Experiência na Musculação</label>
+          <label class="block text-xs font-semibold text-[#64748B] mb-2">Nível de Experiência na Musculação</label>
           <div class="space-y-2">
             <button
               v-for="lvl in levels" 
@@ -286,14 +286,14 @@
               :id="`btn-exp-${lvl.id}`"
               @click="form.experienceLevel = lvl.id"
               :aria-pressed="form.experienceLevel === lvl.id"
-              :class="form.experienceLevel === lvl.id ? (form.goal === 'weight_loss' ? 'border-rose-500 bg-rose-500/10 text-white' : 'border-amber-500 bg-amber-500/10 text-white') : 'border-slate-800 bg-slate-950/60 text-slate-400'"
+              :class="form.experienceLevel === lvl.id ? (form.goal === 'weight_loss' ? 'border-rose-500 bg-rose-50/50 text-[#0F172A] ring-1 ring-rose-500/30' : 'border-[#0066FF] bg-blue-50/50 text-[#0F172A] ring-1 ring-[#0066FF]/30') : 'border-[#E2E8F0] bg-[#F8FAFC] text-[#64748B] hover:border-[#CBD5E1]'"
               class="w-full text-left p-3 rounded-xl border cursor-pointer transition-all flex items-center justify-between"
             >
               <div>
-                <h4 class="font-bold text-sm text-white">{{ lvl.title }}</h4>
-                <p class="text-xs text-slate-400">{{ lvl.desc }}</p>
+                <h4 class="font-bold text-sm text-[#0F172A]">{{ lvl.title }}</h4>
+                <p class="text-xs text-[#64748B]">{{ lvl.desc }}</p>
               </div>
-              <span v-if="form.experienceLevel === lvl.id" :class="form.goal === 'weight_loss' ? 'text-rose-400' : 'text-amber-400'" class="font-bold text-sm" aria-hidden="true">✓</span>
+              <span v-if="form.experienceLevel === lvl.id" :class="form.goal === 'weight_loss' ? 'text-rose-600' : 'text-[#0066FF]'" class="font-bold text-sm" aria-hidden="true">✓</span>
             </button>
           </div>
         </div>
@@ -302,18 +302,18 @@
       <!-- Passo 3: Equipamento, Foco & Restrições -->
       <div v-else-if="step === TOTAL_STEPS" class="space-y-4">
         <div>
-          <h2 class="text-2xl font-black text-white tracking-tight">Ambiente & Segurança Articular</h2>
-          <p class="text-sm text-slate-400 mt-1">O algoritmo ajustará exercícios para proteger suas articulações.</p>
+          <h2 class="text-2xl font-black text-[#0F172A] tracking-tight">Ambiente & Segurança Articular</h2>
+          <p class="text-sm text-[#64748B] mt-1">O algoritmo ajustará exercícios para proteger suas articulações.</p>
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-slate-400 mb-2">Onde você vai treinar?</label>
+          <label class="block text-xs font-semibold text-[#64748B] mb-2">Onde você vai treinar?</label>
           <div class="grid grid-cols-2 gap-3" role="group" aria-label="Ambiente de treino">
             <button 
               type="button"
               id="btn-equip-gym"
               @click="form.equipment = 'gym'"
-              :class="form.equipment === 'gym' ? (form.goal === 'weight_loss' ? 'border-rose-500 bg-rose-500/10 text-white font-semibold' : 'border-amber-500 bg-amber-500/10 text-white font-semibold') : 'border-slate-800 bg-slate-950/60 text-slate-400'"
+              :class="form.equipment === 'gym' ? (form.goal === 'weight_loss' ? 'border-rose-500 bg-rose-50/60 text-rose-700 font-bold ring-1 ring-rose-500/30' : 'border-[#0066FF] bg-blue-50/60 text-[#0066FF] font-bold ring-1 ring-[#0066FF]/30') : 'border-[#E2E8F0] bg-[#F8FAFC] text-[#64748B] hover:border-[#CBD5E1]'"
               class="p-3 rounded-xl border text-center transition-all text-sm"
             >
               🏋️ Academia Completa
@@ -322,7 +322,7 @@
               type="button"
               id="btn-equip-home"
               @click="form.equipment = 'home'"
-              :class="form.equipment === 'home' ? (form.goal === 'weight_loss' ? 'border-rose-500 bg-rose-500/10 text-white font-semibold' : 'border-amber-500 bg-amber-500/10 text-white font-semibold') : 'border-slate-800 bg-slate-950/60 text-slate-400'"
+              :class="form.equipment === 'home' ? (form.goal === 'weight_loss' ? 'border-rose-500 bg-rose-50/60 text-rose-700 font-bold ring-1 ring-rose-500/30' : 'border-[#0066FF] bg-blue-50/60 text-[#0066FF] font-bold ring-1 ring-[#0066FF]/30') : 'border-[#E2E8F0] bg-[#F8FAFC] text-[#64748B] hover:border-[#CBD5E1]'"
               class="p-3 rounded-xl border text-center transition-all text-sm"
             >
               🏠 Em Casa / Halteres
@@ -331,7 +331,7 @@
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-slate-400 mb-2">Preferência Alimentar</label>
+          <label class="block text-xs font-semibold text-[#64748B] mb-2">Preferência Alimentar</label>
           <div class="grid grid-cols-2 sm:grid-cols-3 gap-2" role="group" aria-label="Preferência alimentar">
             <button
               v-for="diet in dietaryList"
@@ -339,20 +339,20 @@
               :id="`btn-dietary-${diet.id}`"
               type="button"
               @click="form.dietaryPreference = diet.id"
-              :class="form.dietaryPreference === diet.id ? (form.goal === 'weight_loss' ? 'border-rose-500 bg-rose-500/10 text-white font-semibold ring-1 ring-rose-500/40' : 'border-amber-500 bg-amber-500/10 text-white font-semibold ring-1 ring-amber-500/40') : 'border-slate-800 bg-slate-950/60 text-slate-400 hover:border-slate-700'"
+              :class="form.dietaryPreference === diet.id ? (form.goal === 'weight_loss' ? 'border-rose-500 bg-rose-50/60 text-[#0F172A] font-bold ring-1 ring-rose-500/40' : 'border-[#0066FF] bg-blue-50/60 text-[#0F172A] font-bold ring-1 ring-[#0066FF]/40') : 'border-[#E2E8F0] bg-[#F8FAFC] text-[#64748B] hover:border-[#CBD5E1]'"
               class="p-2.5 rounded-xl border text-left text-xs transition-all flex flex-col justify-between"
             >
               <div class="flex items-center justify-between">
-                <span>{{ diet.icon }} <strong class="text-white">{{ diet.label }}</strong></span>
-                <span v-if="form.dietaryPreference === diet.id" :class="form.goal === 'weight_loss' ? 'text-rose-400' : 'text-amber-400'" class="font-bold">✓</span>
+                <span>{{ diet.icon }} <strong class="text-[#0F172A]">{{ diet.label }}</strong></span>
+                <span v-if="form.dietaryPreference === diet.id" :class="form.goal === 'weight_loss' ? 'text-rose-600' : 'text-[#0066FF]'" class="font-bold">✓</span>
               </div>
-              <span class="text-[10px] text-slate-500 mt-1 line-clamp-1">{{ diet.desc }}</span>
+              <span class="text-[10px] text-[#64748B] mt-1 line-clamp-1">{{ diet.desc }}</span>
             </button>
           </div>
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-slate-400 mb-2">Tem dores ou restrições articulares? (Opcional)</label>
+          <label class="block text-xs font-semibold text-[#64748B] mb-2">Tem dores ou restrições articulares? (Opcional)</label>
           <div class="grid grid-cols-3 gap-2" role="group" aria-label="Restrições articulares">
             <button 
               v-for="res in jointOptions" 
@@ -360,57 +360,57 @@
               :id="`btn-joint-${res.id}`"
               type="button"
               @click="toggleRestriction(res.id)"
-              :class="form.restrictions.includes(res.id) ? 'bg-red-500/20 text-red-300 border-red-500/40 font-semibold' : 'bg-slate-950 text-slate-400 border-slate-800 hover:border-slate-700'"
+              :class="form.restrictions.includes(res.id) ? 'bg-rose-100 text-rose-800 border-rose-300 font-bold' : 'bg-[#F8FAFC] text-[#64748B] border-[#E2E8F0] hover:border-[#CBD5E1]'"
               class="p-2.5 rounded-xl border text-xs text-center transition-all"
             >
               {{ res.label }}
             </button>
           </div>
-          <p class="text-[11px] text-slate-500 mt-1">Se marcado, o sistema substitui exercícios de alta compressão por variantes guiadas e seguras.</p>
+          <p class="text-[11px] text-[#64748B] mt-1">Se marcado, o sistema substitui exercícios de alta compressão por variantes guiadas e seguras.</p>
         </div>
 
         <!-- Opção de preservação de fichas ao editar perfil existente -->
-        <div v-if="isEditing" class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2 mt-3">
-          <label class="block text-xs font-semibold text-slate-300">Como aplicar as mudanças nas suas fichas?</label>
+        <div v-if="isEditing" class="p-3.5 rounded-2xl bg-[#F8FAFC] border border-[#E2E8F0] space-y-2 mt-3">
+          <label class="block text-xs font-bold text-[#0F172A]">Como aplicar as mudanças nas suas fichas?</label>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <button
               type="button"
               id="btn-preserve-workouts-yes"
               @click="preserveWorkouts = true"
-              :class="preserveWorkouts ? 'border-amber-500 bg-amber-500/10 text-white font-semibold ring-1 ring-amber-500/40' : 'border-slate-800 bg-slate-900 text-slate-400 hover:border-slate-700'"
+              :class="preserveWorkouts ? 'border-[#0066FF] bg-blue-50/60 text-[#0F172A] font-bold ring-1 ring-[#0066FF]/40 shadow-xs' : 'border-[#E2E8F0] bg-white text-[#64748B] hover:border-[#CBD5E1]'"
               class="p-2.5 rounded-xl border text-left text-xs transition-all flex flex-col justify-between"
             >
               <div class="flex items-center justify-between">
-                <span class="font-bold text-slate-200">Manter fichas atuais</span>
-                <span v-if="preserveWorkouts" class="text-amber-400 font-bold">✓</span>
+                <span class="font-bold text-[#0F172A]">Manter fichas atuais</span>
+                <span v-if="preserveWorkouts" class="text-[#0066FF] font-bold">✓</span>
               </div>
-              <span class="text-[11px] text-slate-500 mt-0.5">Atualiza apenas calorias, água e taxas corporais</span>
+              <span class="text-[11px] text-[#64748B] mt-0.5">Atualiza apenas calorias, água e taxas corporais</span>
             </button>
             <button
               type="button"
               id="btn-preserve-workouts-no"
               @click="preserveWorkouts = false"
-              :class="!preserveWorkouts ? 'border-amber-500 bg-amber-500/10 text-white font-semibold ring-1 ring-amber-500/40' : 'border-slate-800 bg-slate-900 text-slate-400 hover:border-slate-700'"
+              :class="!preserveWorkouts ? 'border-[#0066FF] bg-blue-50/60 text-[#0F172A] font-bold ring-1 ring-[#0066FF]/40 shadow-xs' : 'border-[#E2E8F0] bg-white text-[#64748B] hover:border-[#CBD5E1]'"
               class="p-2.5 rounded-xl border text-left text-xs transition-all flex flex-col justify-between"
             >
               <div class="flex items-center justify-between">
-                <span class="font-bold text-slate-200">Regerar fichas do zero</span>
-                <span v-if="!preserveWorkouts" class="text-amber-400 font-bold">✓</span>
+                <span class="font-bold text-[#0F172A]">Regerar fichas do zero</span>
+                <span v-if="!preserveWorkouts" class="text-[#0066FF] font-bold">✓</span>
               </div>
-              <span class="text-[11px] text-slate-500 mt-0.5">Cria novos treinos recomendados para seu perfil</span>
+              <span class="text-[11px] text-[#64748B] mt-0.5">Cria novos treinos recomendados para seu perfil</span>
             </button>
           </div>
         </div>
       </div>
 
       <!-- Botões de Ação do Modal -->
-      <div class="flex items-center justify-between gap-3 mt-8 pt-4 border-t border-slate-800">
+      <div class="flex items-center justify-between gap-3 mt-8 pt-4 border-t border-[#E2E8F0]">
         <button 
           v-if="step > 1" 
           type="button"
           id="btn-onboarding-back"
           @click="goToStep(step - 1)"
-          class="px-4 py-2.5 rounded-xl border border-slate-700 text-slate-300 hover:text-white text-sm font-semibold transition-colors"
+          class="px-4 py-2.5 rounded-xl border border-[#CBD5E1] bg-white text-[#0F172A] hover:bg-[#F8FAFC] text-sm font-semibold transition-colors"
         >
           Voltar
         </button>
@@ -421,8 +421,8 @@
           type="button"
           id="btn-onboarding-next"
           @click="goToStep(step + 1)"
-          :class="form.goal === 'weight_loss' ? 'bg-rose-500 hover:bg-rose-400 text-white shadow-rose-500/20' : 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-amber-500/20'"
-          class="px-6 py-2.5 rounded-xl font-bold text-sm shadow-lg transition-all"
+          :class="form.goal === 'weight_loss' ? 'bg-rose-500 hover:bg-rose-600 text-white' : 'bg-[#F59E0B] hover:bg-[#D97706] text-[#0F172A]'"
+          class="px-6 py-2.5 rounded-xl font-bold text-sm shadow-sm transition-all"
         >
           Próximo
         </button>
@@ -432,8 +432,8 @@
           type="button"
           id="btn-onboarding-submit"
           @click="submitProfile"
-          :class="form.goal === 'weight_loss' ? 'bg-rose-500 hover:bg-rose-400 text-white shadow-rose-500/20' : 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-amber-500/20'"
-          class="px-6 py-2.5 rounded-xl font-black text-sm shadow-lg transition-all flex items-center gap-2"
+          :class="form.goal === 'weight_loss' ? 'bg-rose-500 hover:bg-rose-600 text-white' : 'bg-[#F59E0B] hover:bg-[#D97706] text-[#0F172A]'"
+          class="px-6 py-2.5 rounded-xl font-black text-sm shadow-sm transition-all flex items-center gap-2"
         >
           <span>{{ isEditing ? (preserveWorkouts ? 'Salvar e Atualizar Metas' : 'Regerar Meu Plano') : 'Gerar Meu Plano Inteligente' }}</span>
           <span>{{ form.goal === 'weight_loss' ? '🔥' : '⚡' }}</span>

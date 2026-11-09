@@ -2,7 +2,7 @@
   <div
     v-if="isOpen"
     id="backup-import-overlay"
-    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto"
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto"
     role="dialog"
     aria-modal="true"
     aria-labelledby="backup-import-title"
@@ -10,19 +10,19 @@
   >
     <div
       id="backup-import-modal"
-      class="relative w-full max-w-lg bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl my-8"
+      class="relative w-full max-w-lg bg-white border border-[#E2E8F0] rounded-3xl p-6 sm:p-8 shadow-2xl my-8 text-[#0F172A]"
       tabindex="-1"
       @keydown.esc="emit('close')"
     >
       <div class="flex items-start justify-between gap-4 mb-6">
         <div>
-          <h2 id="backup-import-title" class="text-xl font-black text-white">Restaurar backup</h2>
-          <p class="text-xs text-slate-400 mt-1">{{ fileName }}</p>
+          <h2 id="backup-import-title" class="text-xl font-black text-[#0F172A]">Restaurar backup</h2>
+          <p class="text-xs text-[#64748B] mt-1">{{ fileName }}</p>
         </div>
         <button
           type="button"
           id="btn-close-backup-import"
-          class="text-slate-500 hover:text-white text-2xl leading-none p-1"
+          class="text-[#64748B] hover:text-[#0F172A] text-2xl leading-none p-1 transition-colors"
           aria-label="Fechar restauração de backup"
           @click="emit('close')"
         >
@@ -30,9 +30,9 @@
         </button>
       </div>
 
-      <p class="text-sm text-slate-300 mb-4">
+      <p class="text-sm text-[#64748B] mb-4">
         Confira o conteúdo antes de restaurar. A restauração
-        <strong class="text-amber-400">substitui</strong> todos os dados atuais
+        <strong class="text-rose-600 font-bold">substitui</strong> todos os dados atuais
         deste aparelho.
       </p>
 
@@ -40,10 +40,10 @@
         <div
           v-for="row in rows"
           :key="row.label"
-          class="flex items-baseline justify-between gap-3 px-3 py-2 rounded-xl bg-slate-950 border border-slate-800"
+          class="flex items-baseline justify-between gap-3 px-3 py-2 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0]"
         >
-          <dt class="text-xs text-slate-400">{{ row.label }}</dt>
-          <dd :id="`backup-stat-${row.id}`" class="font-bold text-white tabular-nums">{{ row.value }}</dd>
+          <dt class="text-xs text-[#64748B]">{{ row.label }}</dt>
+          <dd :id="`backup-stat-${row.id}`" class="font-bold text-[#0F172A] tabular-nums">{{ row.value }}</dd>
         </div>
       </dl>
 
@@ -51,10 +51,10 @@
         v-if="warnings.length > 0"
         id="backup-import-warnings"
         role="status"
-        class="mb-5 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30"
+        class="mb-5 p-3 rounded-xl bg-amber-50 border border-amber-200"
       >
-        <p class="text-xs font-semibold text-amber-300 mb-1">O que será ajustado ao restaurar:</p>
-        <ul class="text-xs text-amber-200/90 space-y-1 list-disc list-inside">
+        <p class="text-xs font-bold text-amber-800 mb-1">O que será ajustado ao restaurar:</p>
+        <ul class="text-xs text-amber-700 space-y-1 list-disc list-inside font-medium">
           <li v-for="warning in warnings" :key="warning">{{ warning }}</li>
         </ul>
       </div>
@@ -63,7 +63,7 @@
         <button
           type="button"
           id="btn-cancel-backup-import"
-          class="px-4 py-2 rounded-xl text-sm font-bold text-slate-300 border border-slate-700 hover:bg-slate-800 transition-colors"
+          class="px-4 py-2 rounded-xl text-sm font-bold text-[#0F172A] border border-[#CBD5E1] bg-white hover:bg-[#F8FAFC] transition-colors"
           @click="emit('close')"
         >
           Cancelar
@@ -71,7 +71,7 @@
         <button
           type="button"
           id="btn-confirm-backup-import"
-          class="px-4 py-2 rounded-xl text-sm font-bold bg-amber-500 text-slate-950 hover:bg-amber-400 transition-colors"
+          class="px-4 py-2 rounded-xl text-sm font-bold bg-[#F59E0B] text-[#0F172A] hover:bg-[#D97706] shadow-sm transition-colors"
           @click="emit('confirm')"
         >
           Substituir dados

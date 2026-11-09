@@ -1,13 +1,13 @@
 <template>
   <div class="muscle-body-map flex flex-col items-center select-none">
     <!-- Seletor de Visão (Frente / Costas / Ambos) -->
-    <div v-if="showControls" class="flex items-center gap-1.5 p-1 bg-slate-900 border border-slate-800 rounded-xl mb-3 text-xs">
+    <div v-if="showControls" class="flex items-center gap-1.5 p-1 bg-[#F1F5F9] border border-[#E2E8F0] rounded-xl mb-3 text-xs">
       <button
         type="button"
         :id="`${idPrefix}btn-view-both`"
         @click="activeView = 'both'"
         class="tap-btn px-2.5 py-1 rounded-lg font-bold transition-all"
-        :class="activeView === 'both' ? 'bg-orange-500 text-slate-950 shadow' : 'text-slate-400 hover:text-white'"
+        :class="activeView === 'both' ? 'bg-[#F59E0B] text-[#0F172A] shadow-xs' : 'text-[#64748B] hover:text-[#0F172A]'"
       >
         Frente & Costas
       </button>
@@ -16,7 +16,7 @@
         :id="`${idPrefix}btn-view-front`"
         @click="activeView = 'front'"
         class="tap-btn px-2.5 py-1 rounded-lg font-bold transition-all"
-        :class="activeView === 'front' ? 'bg-orange-500 text-slate-950 shadow' : 'text-slate-400 hover:text-white'"
+        :class="activeView === 'front' ? 'bg-[#F59E0B] text-[#0F172A] shadow-xs' : 'text-[#64748B] hover:text-[#0F172A]'"
       >
         Frente
       </button>
@@ -25,7 +25,7 @@
         :id="`${idPrefix}btn-view-back`"
         @click="activeView = 'back'"
         class="tap-btn px-2.5 py-1 rounded-lg font-bold transition-all"
-        :class="activeView === 'back' ? 'bg-orange-500 text-slate-950 shadow' : 'text-slate-400 hover:text-white'"
+        :class="activeView === 'back' ? 'bg-[#F59E0B] text-[#0F172A] shadow-xs' : 'text-[#64748B] hover:text-[#0F172A]'"
       >
         Costas
       </button>
@@ -36,15 +36,15 @@
       
       <!-- FRENTE (Anterior) -->
       <div v-if="activeView === 'both' || activeView === 'front'" class="flex flex-col items-center">
-        <span class="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 mb-1">Frente</span>
+        <span class="text-[10px] font-extrabold uppercase tracking-widest text-[#64748B] mb-1">Frente</span>
         <svg
           :id="`${idPrefix}body-front`"
           viewBox="0 0 160 300"
-          class="w-32 sm:w-36 h-60 drop-shadow-md transition-all"
+          class="w-32 sm:w-36 h-60 drop-shadow-sm transition-all"
           xmlns="http://www.w3.org/2000/svg"
         >
           <!-- Silhueta Base / Fundo Neutro -->
-          <g class="fill-slate-800/80 stroke-slate-700/60" stroke-width="1.2" stroke-linejoin="round">
+          <g class="fill-[#E2E8F0] stroke-[#CBD5E1]" stroke-width="1.2" stroke-linejoin="round">
             <!-- Cabeça e Pescoço -->
             <ellipse cx="80" cy="22" rx="14" ry="17" />
             <path d="M72 38 L88 38 L92 48 L68 48 Z" />
@@ -167,15 +167,15 @@
 
       <!-- COSTAS (Posterior) -->
       <div v-if="activeView === 'both' || activeView === 'back'" class="flex flex-col items-center">
-        <span class="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 mb-1">Costas</span>
+        <span class="text-[10px] font-extrabold uppercase tracking-widest text-[#64748B] mb-1">Costas</span>
         <svg
           :id="`${idPrefix}body-back`"
           viewBox="0 0 160 300"
-          class="w-32 sm:w-36 h-60 drop-shadow-md transition-all"
+          class="w-32 sm:w-36 h-60 drop-shadow-sm transition-all"
           xmlns="http://www.w3.org/2000/svg"
         >
           <!-- Silhueta Base / Fundo Neutro -->
-          <g class="fill-slate-800/80 stroke-slate-700/60" stroke-width="1.2" stroke-linejoin="round">
+          <g class="fill-[#E2E8F0] stroke-[#CBD5E1]" stroke-width="1.2" stroke-linejoin="round">
             <!-- Cabeça e Pescoço -->
             <ellipse cx="80" cy="22" rx="14" ry="17" />
             <path d="M72 38 L88 38 L94 48 L66 48 Z" />
@@ -305,12 +305,12 @@
       <span
         v-for="m in activeMusclesList"
         :key="m"
-        class="text-[10px] font-bold px-2 py-0.5 rounded-full inline-flex items-center gap-1 shadow-sm transition-transform hover:scale-105"
+        class="text-[10px] font-bold px-2.5 py-0.5 rounded-full inline-flex items-center gap-1 shadow-xs transition-transform hover:scale-105"
         :class="isSecondaryMuscle(m)
-          ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-          : 'bg-orange-500/25 text-orange-300 border border-orange-500/50 font-black'"
+          ? 'bg-amber-50 text-amber-800 border border-amber-200'
+          : 'bg-orange-50 text-orange-700 border border-orange-200 font-bold'"
       >
-        <span class="w-1.5 h-1.5 rounded-full" :class="isSecondaryMuscle(m) ? 'bg-amber-400' : 'bg-orange-500 animate-pulse'"></span>
+        <span class="w-1.5 h-1.5 rounded-full" :class="isSecondaryMuscle(m) ? 'bg-amber-500' : 'bg-orange-500'"></span>
         {{ muscleLabels[m] || m }}
       </span>
     </div>
