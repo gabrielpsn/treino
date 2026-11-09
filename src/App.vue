@@ -1321,6 +1321,19 @@
                 <span class="text-xs font-semibold block mt-1 line-clamp-2" :class="weeklyChecks[day.id] ? 'text-[#0F172A]' : 'text-[#64748B]'">
                   {{ day.workout }}
                 </span>
+
+                <!-- Data de conclusão e XP quando marcado -->
+                <div v-if="weeklyChecks[day.id]" class="mt-2 space-y-1">
+                  <span
+                    :id="`day-completed-date-${day.id}`"
+                    class="text-[10px] font-black block py-0.5 px-1.5 rounded-md bg-black/10 text-[#0F172A] tabular-nums truncate"
+                  >
+                    📅 {{ weeklyChecksData[day.id]?.completedDate || 'Hoje' }}
+                  </span>
+                  <span class="text-[9px] font-black uppercase text-[#0F172A] bg-white/80 border border-amber-300 px-1.5 py-0.5 rounded-md inline-block">
+                    +50 XP
+                  </span>
+                </div>
               </div>
 
               <div class="mt-3 flex items-center justify-center">
@@ -1648,6 +1661,17 @@
       @close="isExerciseDetailsOpen = false"
     />
 
+    <!-- Modal de Confirmação de Conclusão do Dia no Quadro Semanal -->
+    <WorkoutDayCompletionModal
+      :is-open="showDayCompletionModal"
+      :suggested-day-id="dayCompletionPayload.suggestedDayId"
+      :all-days="activePlan?.weekSchedule || []"
+      :split-title="dayCompletionPayload.splitTitle"
+      :xp-reward="50"
+      @confirm="handleConfirmDayCompletion"
+      @skip="handleSkipDayCompletion"
+    />
+
     <!-- Modal de Celebração e Impacto do Treino -->
     <WorkoutCelebrationModal
       :is-open="showCelebrationModal"
@@ -1687,8 +1711,9 @@ import MuscleBodyMap from './components/MuscleBodyMap.vue';
 import GamificationIronStatus from './components/GamificationIronStatus.vue';
 import WorkoutTonnageLiveWidget from './components/WorkoutTonnageLiveWidget.vue';
 import WorkoutCelebrationModal from './components/WorkoutCelebrationModal.vue';
+import WorkoutDayCompletionModal from './components/WorkoutDayCompletionModal.vue';
 import { calculateSessionGamification, checkBadges } from './engine/gamification.js';
-import { loadGamificationState, recordSessionCompletion, recordRestDay } from './db/gamification.js';
+import { loadGamificationState, recordSessionCompletion, recordRestDay, recordWeeklyDayCompletion, WEEKLY_DAY_COMPLETION_XP } from './db/gamification.js';
 import { playPlateClick, playPrFanfare, triggerHaptic } from './engine/audioHaptics.js';
 import { usePwaUpdate } from './composables/usePwaUpdate';
 import {
@@ -1740,6 +1765,12 @@ const weeklyChecks = ref({});
 // Gamificação & Conquistas
 const gamificationState = ref(loadGamificationState());
 const showCelebrationModal = ref(false);
+const showDayCompletionModal = ref(false);
+const dayCompletionPayload = ref({
+  suggestedDayId: 'seg',
+  splitTitle: ''
+});
+const weeklyChecksData = ref({});
 const lastSessionCelebration = ref({
   tonnageKg: 0,
   doneSets: 0,
@@ -2182,10 +2213,21 @@ async function loadWeeklyChecks() {
   const weekKey = currentWeekKey.value;
   const rows = await db.weekly_checks.where('weekKey').equals(weekKey).toArray();
   const map = {};
+  const dataMap = {};
   rows.forEach(r => {
-    map[r.dayId] = r.done;
+    map[r.dayId] = !!r.done;
+    if (r.done) {
+      dataMap[r.dayId] = {
+        completedAt: r.completedAt || r.updatedAt,
+        completedDate: r.completedDate || (r.updatedAt ? new Date(r.updatedAt).toLocaleDateString('pt-BR') : null),
+        completedTime: r.completedTime || (r.updatedAt ? new Date(r.updatedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : null),
+        workoutTitle: r.workoutTitle || null,
+        xpAwarded: r.xpAwarded || null
+      };
+    }
   });
   weeklyChecks.value = map;
+  weeklyChecksData.value = dataMap;
 }
 
 function setupPWA() {
@@ -2773,14 +2815,50 @@ function handleRegisterRestDay() {
 
 async function toggleDayCheck(dayId) {
   const next = !weeklyChecks.value[dayId];
+  const now = new Date();
+  const completedDate = now.toLocaleDateString('pt-BR');
+  const completedTime = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  const completedAt = now.toISOString();
+
   weeklyChecks.value = { ...weeklyChecks.value, [dayId]: next };
+
+  if (next) {
+    weeklyChecksData.value = {
+      ...weeklyChecksData.value,
+      [dayId]: {
+        completedAt,
+        completedDate,
+        completedTime,
+        workoutTitle: 'Concluído no Quadro',
+        xpAwarded: WEEKLY_DAY_COMPLETION_XP
+      }
+    };
+
+    const res = recordWeeklyDayCompletion({
+      dayId,
+      weekKey: currentWeekKey.value,
+      xpReward: WEEKLY_DAY_COMPLETION_XP
+    });
+    gamificationState.value = res.updated;
+    triggerHaptic('success');
+  } else {
+    const updatedData = { ...weeklyChecksData.value };
+    delete updatedData[dayId];
+    weeklyChecksData.value = updatedData;
+    triggerHaptic('click');
+  }
+
   await persistOrReport('Não foi possível salvar a marcação do dia.', () =>
     db.weekly_checks.put({
       id: buildWeekCheckId(dayId, currentWeekKey.value),
       weekKey: currentWeekKey.value,
       dayId,
       done: next,
-      updatedAt: new Date().toISOString()
+      completedAt: next ? completedAt : null,
+      completedDate: next ? completedDate : null,
+      completedTime: next ? completedTime : null,
+      xpAwarded: next ? WEEKLY_DAY_COMPLETION_XP : 0,
+      updatedAt: completedAt
     })
   );
 
@@ -2963,8 +3041,6 @@ async function finishCurrentSession() {
     realWorldEquivalence: stats.realWorldEquivalence,
     newBadges
   };
-  showCelebrationModal.value = true;
-  triggerHaptic('celebrate');
 
   const next = { ...openSessionBySplit.value };
   delete next[currentSplitTab.value];
@@ -2976,6 +3052,88 @@ async function finishCurrentSession() {
 
   // Com a sessão encerrada, ela passa a contar como "último treino" nos selos.
   await loadLastSets();
+
+  // Sugestão e confirmação de marcação do dia da semana
+  const currentSplitObj = (activePlan.value?.workoutSplits || []).find(s => s.id === currentSplitTab.value);
+  const splitTitle = currentSplitObj?.title || 'Treino Concluído';
+  const suggestedDayId = getTodayScheduleDayId();
+
+  dayCompletionPayload.value = {
+    suggestedDayId,
+    splitTitle
+  };
+  showDayCompletionModal.value = true;
+  triggerHaptic('celebrate');
+}
+
+function getTodayScheduleDayId() {
+  const DAY_MAP = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab'];
+  const todayId = DAY_MAP[new Date().getDay()];
+  const schedule = activePlan.value?.weekSchedule || [];
+  if (schedule.some(d => d.id === todayId)) {
+    return todayId;
+  }
+  const pending = schedule.find(d => !weeklyChecks.value[d.id]);
+  return pending?.id || schedule[0]?.id || 'seg';
+}
+
+async function handleConfirmDayCompletion({ dayId, dayLabel, completedAt, completedDate, completedTime }) {
+  showDayCompletionModal.value = false;
+
+  weeklyChecks.value = { ...weeklyChecks.value, [dayId]: true };
+  weeklyChecksData.value = {
+    ...weeklyChecksData.value,
+    [dayId]: {
+      completedAt,
+      completedDate,
+      completedTime,
+      workoutTitle: dayCompletionPayload.value.splitTitle,
+      xpAwarded: WEEKLY_DAY_COMPLETION_XP
+    }
+  };
+
+  await persistOrReport('Não foi possível salvar a marcação do dia.', () =>
+    db.weekly_checks.put({
+      id: buildWeekCheckId(dayId, currentWeekKey.value),
+      weekKey: currentWeekKey.value,
+      dayId,
+      done: true,
+      completedAt,
+      completedDate,
+      completedTime,
+      workoutTitle: dayCompletionPayload.value.splitTitle,
+      xpAwarded: WEEKLY_DAY_COMPLETION_XP,
+      updatedAt: completedAt
+    })
+  );
+
+  const dayXpRes = recordWeeklyDayCompletion({
+    dayId,
+    weekKey: currentWeekKey.value,
+    xpReward: WEEKLY_DAY_COMPLETION_XP
+  });
+  gamificationState.value = dayXpRes.updated;
+
+  if (lastSessionCelebration.value && dayXpRes.xpGained > 0) {
+    lastSessionCelebration.value = {
+      ...lastSessionCelebration.value,
+      earnedXp: lastSessionCelebration.value.earnedXp + dayXpRes.xpGained
+    };
+  }
+
+  confetti({
+    particleCount: 120,
+    spread: 90,
+    origin: { y: 0.5 }
+  });
+  triggerHaptic('celebrate');
+  showCelebrationModal.value = true;
+}
+
+function handleSkipDayCompletion() {
+  showDayCompletionModal.value = false;
+  showCelebrationModal.value = true;
+  triggerHaptic('celebrate');
 }
 
 // --- Modo Treino (tela cheia durante a execução da ficha) ---
@@ -3405,6 +3563,7 @@ async function rehydrateAfterRestore() {
   lastSets.value = {};
   workoutLogs.value = {};
   weeklyChecks.value = {};
+  weeklyChecksData.value = {};
   historySessions.value = [];
   currentMainTab.value = 'workout';
 

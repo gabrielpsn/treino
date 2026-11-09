@@ -1,9 +1,11 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
   GAMIFICATION_STORAGE_KEY,
+  WEEKLY_DAY_COMPLETION_XP,
   loadGamificationState,
   saveGamificationState,
   recordSessionCompletion,
+  recordWeeklyDayCompletion,
   recordRestDay
 } from '../../src/db/gamification.js';
 
@@ -61,5 +63,30 @@ describe('Gamification DB State', () => {
 
     const res2 = recordRestDay('2026-11-06');
     expect(res2.alreadyClaimed).toBe(true);
+  });
+
+  it('concede XP por dia da semana concluído e impede duplicidade de resgate na mesma semana', () => {
+    const res1 = recordWeeklyDayCompletion({ dayId: 'seg', weekKey: '2026-W45', xpReward: 50 });
+    expect(res1.alreadyClaimed).toBe(false);
+    expect(res1.xpGained).toBe(50);
+    expect(res1.updated.totalXp).toBe(50);
+
+    // Tentativa repetida no mesmo dia da mesma semana não duplica XP
+    const res2 = recordWeeklyDayCompletion({ dayId: 'seg', weekKey: '2026-W45', xpReward: 50 });
+    expect(res2.alreadyClaimed).toBe(true);
+    expect(res2.xpGained).toBe(0);
+    expect(res2.updated.totalXp).toBe(50);
+
+    // Outro dia da semana recebe seu próprio XP
+    const resTer = recordWeeklyDayCompletion({ dayId: 'ter', weekKey: '2026-W45', xpReward: 50 });
+    expect(resTer.alreadyClaimed).toBe(false);
+    expect(resTer.xpGained).toBe(50);
+    expect(resTer.updated.totalXp).toBe(100);
+
+    // Mesma segunda-feira em semana futura recebe novo XP
+    const resNextWeek = recordWeeklyDayCompletion({ dayId: 'seg', weekKey: '2026-W46', xpReward: 50 });
+    expect(resNextWeek.alreadyClaimed).toBe(false);
+    expect(resNextWeek.xpGained).toBe(50);
+    expect(resNextWeek.updated.totalXp).toBe(150);
   });
 });

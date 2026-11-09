@@ -6,6 +6,7 @@
  */
 
 export const GAMIFICATION_STORAGE_KEY = 'treinopro_gamification_state';
+export const WEEKLY_DAY_COMPLETION_XP = 50;
 
 const DEFAULT_STATE = {
   totalXp: 0,
@@ -14,7 +15,8 @@ const DEFAULT_STATE = {
   weeklyStreak: 0,
   shieldsCount: 1, // Começa com 1 escudo de deload de boas-vindas
   lastActiveWeekKey: null,
-  lastRestDayDate: null
+  lastRestDayDate: null,
+  claimedWeeklyDays: []
 };
 
 export function loadGamificationState() {
@@ -33,7 +35,8 @@ export function loadGamificationState() {
       weeklyStreak: Math.max(0, Number(parsed.weeklyStreak) || 0),
       shieldsCount: Math.min(2, Math.max(0, Number(parsed.shieldsCount) || 0)),
       lastActiveWeekKey: parsed.lastActiveWeekKey || null,
-      lastRestDayDate: parsed.lastRestDayDate || null
+      lastRestDayDate: parsed.lastRestDayDate || null,
+      claimedWeeklyDays: Array.isArray(parsed.claimedWeeklyDays) ? parsed.claimedWeeklyDays : []
     };
   } catch {
     return { ...DEFAULT_STATE };
@@ -50,7 +53,8 @@ export function saveGamificationState(state) {
       weeklyStreak: Math.max(0, Number(state?.weeklyStreak) || 0),
       shieldsCount: Math.min(2, Math.max(0, Number(state?.shieldsCount) || 0)),
       lastActiveWeekKey: state?.lastActiveWeekKey || null,
-      lastRestDayDate: state?.lastRestDayDate || null
+      lastRestDayDate: state?.lastRestDayDate || null,
+      claimedWeeklyDays: Array.isArray(state?.claimedWeeklyDays) ? state.claimedWeeklyDays : []
     };
     window.localStorage.setItem(GAMIFICATION_STORAGE_KEY, JSON.stringify(safeState));
   } catch {
@@ -102,13 +106,41 @@ export function recordSessionCompletion({
 }
 
 /**
+ * Registra a conclusão de um dia da semana no Quadro Semanal e concede XP de consistência.
+ */
+export function recordWeeklyDayCompletion({
+  dayId,
+  weekKey,
+  xpReward = WEEKLY_DAY_COMPLETION_XP
+}) {
+  const current = loadGamificationState();
+  const claimKey = `day_xp_${weekKey || 'current'}_${dayId}`;
+  const claimedWeeklyDays = Array.isArray(current.claimedWeeklyDays) ? current.claimedWeeklyDays : [];
+
+  if (claimedWeeklyDays.includes(claimKey)) {
+    return { updated: current, alreadyClaimed: true, xpGained: 0 };
+  }
+
+  const reward = Math.max(0, Number(xpReward) || WEEKLY_DAY_COMPLETION_XP);
+  const nextXp = current.totalXp + reward;
+  const updated = {
+    ...current,
+    totalXp: nextXp,
+    claimedWeeklyDays: [...claimedWeeklyDays, claimKey]
+  };
+
+  saveGamificationState(updated);
+  return { updated, alreadyClaimed: false, xpGained: reward };
+}
+
+/**
  * Registra o descanso ativo (Rest Day) e concede XP de recuperação.
  */
 export function recordRestDay(todayDateStr) {
   const current = loadGamificationState();
 
   if (current.lastRestDayDate === todayDateStr) {
-    return { updated: current, alreadyClaimed: true };
+    return { updated: current, alreadyClaimed: true, xpGained: 0 };
   }
 
   const restXp = 25; // XP de regeneração muscular
