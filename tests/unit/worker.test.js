@@ -274,7 +274,7 @@ describe('Worker — Cloudflare Workers AI nativo (Opção 2 100% gratuita)', ()
     expect(body.plan.targetCalories).toBe(2500);
     expect(body.plan.splits[0].exercises[0].id).toBe('supino_reto_halteres');
     expect(aiRun).toHaveBeenCalled();
-    expect(aiRun.mock.calls[0][0]).toBe('@cf/meta/llama-3.1-8b-instruct');
+    expect(aiRun.mock.calls[0][0]).toBe('@cf/meta/llama-3.1-8b-instruct-fast');
   });
 
   it('aceita resposta do Workers AI com cercas de markdown (```json ... ```)', async () => {

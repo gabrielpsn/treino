@@ -17,7 +17,7 @@ const PLAN_PATH = '/api/gemini/plan';
 // O pedido leva o perfil e o catálogo seguro do usuário. 24KB é folgado para
 // 60 exercícios e preferências nutricionais, pequeno o bastante para barrar abuso.
 const MAX_BODY_BYTES = 24 * 1024;
-const REQUEST_TIMEOUT_MS = 25_000;
+const REQUEST_TIMEOUT_MS = 40_000;
 
 // Frequência por IP, em memória. Em Workers isso é por isolate: é uma barreira
 // contra abuso acidental (loop, duplo clique, robô ingênuo), não uma
@@ -195,6 +195,8 @@ function extractCandidate(payload) {
 
 function extractJsonFromText(text) {
   if (!text) return null;
+  if (typeof text === 'object') return text;
+  if (typeof text !== 'string') return null;
   const unfenced = text.replace(/^```(?:json)?/gim, '').replace(/```$/gm, '').trim();
   try {
     return JSON.parse(unfenced);
@@ -202,7 +204,11 @@ function extractJsonFromText(text) {
     const firstBrace = unfenced.indexOf('{');
     const lastBrace = unfenced.lastIndexOf('}');
     if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-      return JSON.parse(unfenced.slice(firstBrace, lastBrace + 1));
+      try {
+        return JSON.parse(unfenced.slice(firstBrace, lastBrace + 1));
+      } catch {
+        return null;
+      }
     }
     return null;
   }
@@ -234,7 +240,7 @@ function requestId() {
  * Executa o agente nativamente no Cloudflare Workers AI (100% gratuito, sem chaves externas).
  */
 async function handleWorkersAiRequest(payload, env, id) {
-  const model = env.CF_AI_MODEL || '@cf/meta/llama-3.1-8b-instruct';
+  const model = env.CF_AI_MODEL || '@cf/meta/llama-3.1-8b-instruct-fast';
   const timeoutMs = Number(env.REQUEST_TIMEOUT_MS) || REQUEST_TIMEOUT_MS;
 
   const systemPrompt = [
@@ -261,7 +267,7 @@ async function handleWorkersAiRequest(payload, env, id) {
         { role: 'user', content: userPrompt }
       ],
       temperature: 0.3,
-      max_tokens: 3584
+      max_tokens: 2048
     });
 
     const timeoutPromise = new Promise((_, reject) => {
@@ -274,31 +280,100 @@ async function handleWorkersAiRequest(payload, env, id) {
 
     aiResult = await Promise.race([aiPromise, timeoutPromise]);
   } catch (error) {
-    console.error(`[${id}] falha no Cloudflare Workers AI:`, error?.name ?? error);
+    const errorMsg = error?.message || (typeof error === 'string' ? error : (error?.name || 'AiError'));
+    console.error(`[${id}] falha no Cloudflare Workers AI:`, errorMsg, error?.stack || error);
     if (error?.name === 'AbortError' || error?.message?.includes('timeout') || error?.message?.includes('aborted')) {
       return jsonResponse(
-        { error: 'A geração por IA não respondeu a tempo. A ficha atual continua valendo.', code: 'ai_timeout' },
+        { error: 'A geração por IA não respondeu a tempo. A ficha atual continua valendo.', code: 'ai_timeout', detail: errorMsg },
         504
       );
     }
     return jsonResponse(
-      { error: 'A geração por IA falhou. A ficha atual continua valendo.', code: 'ai_upstream_error' },
+      { error: 'A geração por IA falhou. A ficha atual continua valendo.', code: 'ai_upstream_error', detail: errorMsg },
       502
     );
   } finally {
     clearTimeout(timeoutHandle);
   }
 
-  const rawText = typeof aiResult === 'string' ? aiResult : (aiResult?.response ?? '');
   let parsed;
-  try {
-    parsed = extractJsonFromText(rawText);
-  } catch (error) {
-    console.error(`[${id}] resposta do Workers AI não é JSON utilizável:`, error?.message ?? error);
-    return jsonResponse(
-      { error: 'A resposta da IA veio em formato inesperado.', code: 'ai_bad_response' },
-      502
-    );
+  if (aiResult && typeof aiResult === 'object' && Array.isArray(aiResult.splits)) {
+    parsed = aiResult;
+  } else if (aiResult?.response && typeof aiResult.response === 'object' && Array.isArray(aiResult.response.splits)) {
+    parsed = aiResult.response;
+  } else {
+    const rawText = typeof aiResult === 'string'
+      ? aiResult
+      : (typeof aiResult?.response === 'string'
+        ? aiResult.response
+        : (aiResult?.choices?.[0]?.message?.content ?? ''));
+    try {
+      parsed = extractJsonFromText(rawText);
+    } catch (error) {
+      console.error(`[${id}] resposta do Workers AI não é JSON utilizável:`, error?.message ?? error);
+      return jsonResponse(
+        { error: 'A resposta da IA veio em formato inesperado.', code: 'ai_bad_response' },
+        502
+      );
+    }
+  }
+
+  // Normalização caso o modelo tenha traduzido chaves em português
+  if (parsed && typeof parsed === 'object') {
+    if (!Array.isArray(parsed.splits) && Array.isArray(parsed.fichas)) {
+      parsed.splits = parsed.fichas;
+    }
+    if (!Array.isArray(parsed.meals) && Array.isArray(parsed.refeicoes)) {
+      parsed.meals = parsed.refeicoes;
+    }
+    if (Array.isArray(parsed.meals)) {
+      parsed.meals = parsed.meals.map((m, idx) => {
+        let itemsStr = '';
+        if (typeof m.items === 'string') {
+          itemsStr = m.items;
+        } else if (Array.isArray(m.items)) {
+          itemsStr = m.items.map(it => {
+            if (typeof it === 'string') return it;
+            if (it && typeof it === 'object') {
+              const name = it.nome || it.name || it.alimento || it.item || '';
+              const qty = it.quantidade || it.quantity || '';
+              const unit = it.unidade || it.unit || '';
+              return qty ? `${qty}${unit ? ` ${unit}` : ''} de ${name}` : name;
+            }
+            return String(it);
+          }).filter(Boolean).join(' + ');
+        } else if (Array.isArray(m.alimentos)) {
+          itemsStr = m.alimentos.map(it => typeof it === 'string' ? it : (it.nome || it.name || '')).filter(Boolean).join(' + ');
+        }
+        return {
+          id: m.id || `meal-${idx + 1}`,
+          order: Number(m.order) || (idx + 1),
+          title: String(m.title || m.titulo || m.nome || `Refeição ${idx + 1}`),
+          tag: String(m.tag || 'Refeição Equilibrada'),
+          objective: String(m.objective || m.objetivo || 'Nutrição e energia'),
+          timeSuggestion: m.timeSuggestion || m.horario || undefined,
+          items: itemsStr || 'Alimentos variados e equilibrados',
+          calories: Number(m.calories || m.calorias) || undefined,
+          protein: Number(m.protein || m.proteina) || undefined,
+          carbs: Number(m.carbs || m.carboidratos) || undefined,
+          fat: Number(m.fat || m.gordura) || undefined
+        };
+      });
+    }
+    if (Array.isArray(parsed.splits)) {
+      parsed.splits = parsed.splits.map((s, idx) => {
+        const splitId = s.splitId || s.id || `treino-${String.fromCharCode(97 + idx)}`;
+        const focus = s.focus || s.foco || s.grupo || 'Treino Geral';
+        const rawEx = s.exercises || s.exercicios || [];
+        const exercises = Array.isArray(rawEx) ? rawEx.map(ex => ({
+          id: ex.id || ex.exercicioId || ex.nome,
+          sets: Number(ex.sets || ex.series || s.series || 3),
+          reps: String(ex.reps || ex.repeticoes || '8-12'),
+          restSeconds: Number(ex.restSeconds || ex.descanso || s.descanso || 60)
+        })) : [];
+        return { splitId, focus, exercises };
+      });
+    }
   }
 
   if (!parsed || !Array.isArray(parsed.splits) || parsed.splits.length === 0) {
@@ -316,7 +391,7 @@ async function handleWorkersAiRequest(payload, env, id) {
  * Executa o agente via proxy do Google Gemini.
  */
 async function handleGeminiRequest(payload, env, id) {
-  const model = env.GEMINI_MODEL || 'gemini-3.5-flash';
+  const model = env.GEMINI_MODEL || 'gemini-1.5-flash';
   const base = env.GEMINI_API_BASE || 'https://generativelanguage.googleapis.com/v1beta';
   const url = `${base}/models/${encodeURIComponent(model)}:generateContent`;
 
@@ -425,7 +500,16 @@ async function handlePlanRequest(request, env) {
 
   // Se env.AI estiver configurado (Cloudflare Workers AI nativo e gratuito), prioriza a execução nativa
   if (env.AI) {
-    return handleWorkersAiRequest(payload, env, id);
+    const aiResponse = await handleWorkersAiRequest(payload, env, id);
+    if (aiResponse.status === 200) {
+      return aiResponse;
+    }
+    // Fallback: se houver GEMINI_API_KEY, utiliza o proxy Gemini quando o Workers AI falha
+    if (env.GEMINI_API_KEY) {
+      console.warn(`[${id}] Workers AI respondeu status ${aiResponse.status}. Tentando fallback no Gemini...`);
+      return handleGeminiRequest(payload, env, id);
+    }
+    return aiResponse;
   }
 
   // Fallback: se houver GEMINI_API_KEY, utiliza o proxy Gemini

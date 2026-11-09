@@ -47,6 +47,29 @@ function round(value) {
   return Math.round(Number(value) || 0);
 }
 
+function formatMealItems(rawItems) {
+  if (typeof rawItems === 'string') return rawItems.trim();
+  if (Array.isArray(rawItems)) {
+    return rawItems
+      .map(item => {
+        if (typeof item === 'string') return item.trim();
+        if (item && typeof item === 'object') {
+          const name = item.nome || item.name || item.alimento || item.item || '';
+          const qty = item.quantidade || item.quantity || item.qtd || '';
+          const unit = item.unidade || item.unit || '';
+          if (name && qty) {
+            return `${qty}${unit ? ` ${unit}` : ''} de ${name}`;
+          }
+          return name || JSON.stringify(item);
+        }
+        return String(item);
+      })
+      .filter(Boolean)
+      .join(' + ');
+  }
+  return '';
+}
+
 /**
  * Só o que o modelo precisa para escolher: id, nome, músculo, padrão,
  * equipamento, articulação estressada, séries e descanso de referência.
@@ -138,20 +161,26 @@ function assemblePlan(basePlan, aiPlan, { profile, catalog }) {
   let meals = basePlan.meals;
   if (Array.isArray(aiPlan.meals) && aiPlan.meals.length >= 2) {
     const validMeals = aiPlan.meals
-      .filter(m => m && typeof m.title === 'string' && typeof m.items === 'string' && m.items.trim())
-      .map((m, idx) => ({
-        id: m.id || `meal-${idx + 1}`,
-        order: Number(m.order) || (idx + 1),
-        title: String(m.title).trim(),
-        tag: String(m.tag || 'Refeição Equilibrada').trim(),
-        objective: String(m.objective || 'Nutrição e energia').trim(),
-        timeSuggestion: m.timeSuggestion ? String(m.timeSuggestion).trim() : undefined,
-        items: String(m.items).trim(),
-        calories: Number(m.calories) || undefined,
-        protein: Number(m.protein) || undefined,
-        carbs: Number(m.carbs) || undefined,
-        fat: Number(m.fat) || undefined
-      }));
+      .map((m, idx) => {
+        if (!m || typeof m !== 'object') return null;
+        const title = String(m.title || m.titulo || m.nome || `Refeição ${idx + 1}`).trim();
+        const items = formatMealItems(m.items || m.alimentos);
+        if (!title || !items) return null;
+        return {
+          id: m.id || `meal-${idx + 1}`,
+          order: Number(m.order) || (idx + 1),
+          title,
+          tag: String(m.tag || 'Refeição Equilibrada').trim(),
+          objective: String(m.objective || m.objetivo || 'Nutrição e energia').trim(),
+          timeSuggestion: m.timeSuggestion ? String(m.timeSuggestion).trim() : undefined,
+          items,
+          calories: Number(m.calories) || undefined,
+          protein: Number(m.protein) || undefined,
+          carbs: Number(m.carbs) || undefined,
+          fat: Number(m.fat) || undefined
+        };
+      })
+      .filter(Boolean);
 
     if (validMeals.length >= 2) {
       meals = validMeals;
@@ -231,7 +260,7 @@ export function validateAiPlan(aiPlan, { profile, catalog }) {
  * testes: o app offline não tem `fetch` disponível por decisão de produto, e o
  * caminho do erro precisa ser testável.
  */
-export async function requestAiPlan({ profile, catalog, splitIds, fetchImpl, timeoutMs = 30000 }) {
+export async function requestAiPlan({ profile, catalog, splitIds, fetchImpl, timeoutMs = 45000 }) {
   const doFetch = fetchImpl ?? (typeof fetch === 'function' ? fetch : null);
 
   // Sem proxy (dev sem `wrangler dev`, app aberto por file://) a geração por IA
