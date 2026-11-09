@@ -14,7 +14,8 @@ import {
   unlockAndEquipTitle,
   equipTitle,
   claimRaidMilestone,
-  recordDailyDietCompletion
+  recordDailyDietCompletion,
+  recordDailyWalkingGoalCompletion
 } from '../../src/db/gamification.js';
 
 describe('Gamification DB State', () => {
@@ -207,5 +208,20 @@ describe('Gamification DB State', () => {
     expect(resNext.alreadyClaimed).toBe(false);
     expect(resNext.updated.ironCoins).toBe(160);
     expect(resNext.updated.totalXp).toBe(100);
+  });
+
+  it('concede bônus de moedas, XP e ramos RPG ao bater meta diária de caminhada', () => {
+    const res1 = recordDailyWalkingGoalCompletion('2026-11-09');
+    expect(res1.alreadyClaimed).toBe(false);
+    expect(res1.updated.ironCoins).toBe(130);
+    expect(res1.updated.totalXp).toBe(50);
+    expect(res1.updated.claimedWalkingDates).toContain('2026-11-09');
+    expect(res1.updated.rpgBranches.legs).toBe(30);
+    expect(res1.updated.rpgBranches.core).toBe(20);
+
+    // Duplicado no mesmo dia
+    const resDup = recordDailyWalkingGoalCompletion('2026-11-09');
+    expect(resDup.alreadyClaimed).toBe(true);
+    expect(resDup.updated.ironCoins).toBe(130);
   });
 });

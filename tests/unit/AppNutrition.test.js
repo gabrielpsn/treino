@@ -49,4 +49,17 @@ describe('App.vue Nutrition & Training Mode', () => {
       expect(wrapper.text()).not.toContain('ReferenceError');
     }
   });
+
+  it('exibe o widget de caminhada e abre o WalkingTrackerModal ao clicar', async () => {
+    const wrapper = mount(App);
+    const walkingWidget = wrapper.find('#widget-walking-summary');
+    expect(walkingWidget.exists()).toBe(true);
+    expect(walkingWidget.text()).toContain('Caminhada & Passos');
+
+    const openWalkingBtn = wrapper.find('#btn-open-walking-tracker');
+    expect(openWalkingBtn.exists()).toBe(true);
+    await openWalkingBtn.trigger('click');
+
+    expect(wrapper.find('#walking-tracker-modal').exists()).toBe(true);
+  });
 });

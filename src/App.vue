@@ -195,6 +195,54 @@
         @toggle-creatine="toggleCreatineToday"
       />
 
+      <!-- WIDGET DE CAMINHADA & PASSOS DIÁRIOS (MOBILE & DESKTOP) -->
+      <div
+        id="widget-walking-summary"
+        class="bg-white border border-[#E2E8F0] rounded-2xl p-4 sm:p-5 shadow-xs flex flex-wrap items-center justify-between gap-4 text-[#0F172A] cursor-pointer hover:border-[#0066FF]/40 transition-all"
+        @click="isWalkingModalOpen = true"
+        role="button"
+        tabindex="0"
+        aria-label="Abrir rastreador de caminhada e passos"
+        @keydown.enter="isWalkingModalOpen = true"
+      >
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-11 h-11 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-xl shadow-2xs flex-shrink-0">
+            🚶
+          </div>
+          <div class="min-w-0">
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold uppercase tracking-wider text-emerald-600">
+                Caminhada & Passos
+              </span>
+              <span
+                id="walking-steps-badge"
+                class="text-[10px] font-black px-2 py-0.5 rounded-full"
+                :class="todayWalkingData.steps >= todayWalkingData.goalSteps
+                  ? 'bg-emerald-500/15 text-emerald-700 border border-emerald-500/30'
+                  : 'bg-[#0066FF]/10 text-[#0066FF] border border-[#0066FF]/20'"
+              >
+                {{ Math.min(100, Math.round((todayWalkingData.steps / todayWalkingData.goalSteps) * 100)) }}% da meta
+              </span>
+            </div>
+            <p class="text-sm sm:text-base font-black text-[#0F172A] mt-0.5 truncate">
+              {{ todayWalkingData.steps.toLocaleString('pt-BR') }} / {{ todayWalkingData.goalSteps.toLocaleString('pt-BR') }} passos
+              <span class="text-xs font-bold text-[#64748B] ml-1">({{ todayWalkingData.distanceKm.toFixed(2) }} km)</span>
+            </p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+          <button
+            type="button"
+            id="btn-open-walking-tracker"
+            class="tap-btn px-4 py-2 rounded-xl text-xs font-bold bg-[#0066FF] text-white hover:bg-[#0052cc] transition-all flex items-center gap-1.5 shadow-xs"
+            @click.stop="isWalkingModalOpen = true"
+          >
+            <span>▶ Iniciar Caminhada</span>
+          </button>
+        </div>
+      </div>
+
       <!-- BANNER DE BOAS-VINDAS / RESUMO INTELIGENTE -->
       <div v-if="activePlan?.physiology" id="banner-physiology-summary" class="bg-white border border-[#E2E8F0] rounded-2xl p-4 sm:p-5 shadow-xs flex flex-wrap items-center justify-between gap-4 text-[#0F172A]">
         <div>
@@ -1809,6 +1857,7 @@
       :equipped-title-name="equippedTitleObj.title"
       :equipped-title-icon="equippedTitleObj.icon"
       :league-tier="gamificationState.leagueTier || 'bronze'"
+      :today-steps="todayWalkingData.steps"
       :is-app-installed="isAppInstalled"
       @close="isDrawerOpen = false"
       @navigate="tab => currentMainTab = tab"
@@ -1825,6 +1874,7 @@
       @open-league="isLeagueModalOpen = true"
       @open-wrapped="isWrappedModalOpen = true"
       @open-raid="isRaidModalOpen = true"
+      @open-walking="isWalkingModalOpen = true"
     />
 
     <!-- Modal de Demonstração e Detalhes do Exercício -->
@@ -1921,6 +1971,17 @@
       @close="prToastState.isOpen = false"
     />
 
+    <!-- Modal do Rastreador de Caminhada e Passos no Celular -->
+    <WalkingTrackerModal
+      :is-open="isWalkingModalOpen"
+      :user-height-cm="userProfile?.heightCm || 170"
+      :user-weight-kg="userProfile?.weightKg || 70"
+      :today-date-str="todayKey"
+      @close="isWalkingModalOpen = false"
+      @steps-updated="handleWalkingStepsUpdated"
+      @goal-reached="handleWalkingGoalReached"
+    />
+
   </div>
 </template>
 
@@ -1961,6 +2022,8 @@ import CareerWrappedModal from './components/CareerWrappedModal.vue';
 import YearlyHeatmapWidget from './components/YearlyHeatmapWidget.vue';
 import CommunityRaidModal from './components/CommunityRaidModal.vue';
 import PrCelebrationToast from './components/PrCelebrationToast.vue';
+import WalkingTrackerModal from './components/WalkingTrackerModal.vue';
+import { loadDailyWalkingData } from './engine/walkingTracker';
 import {
   calculateSessionGamification,
   checkBadges,
@@ -1984,7 +2047,8 @@ import {
   claimBossVictory,
   promoteLeague,
   claimRaidMilestone,
-  recordDailyDietCompletion
+  recordDailyDietCompletion,
+  recordDailyWalkingGoalCompletion
 } from './db/gamification.js';
 import { playPlateClick, playPrFanfare, triggerHaptic, speakCoachMessage } from './engine/audioHaptics.js';
 import { usePwaUpdate } from './composables/usePwaUpdate';
@@ -2098,6 +2162,8 @@ const isShopOpen = ref(false);
 const isLeagueModalOpen = ref(false);
 const isWrappedModalOpen = ref(false);
 const isRaidModalOpen = ref(false);
+const isWalkingModalOpen = ref(false);
+const todayWalkingData = ref(loadDailyWalkingData(getDayKey()));
 const prToastState = ref({
   isOpen: false,
   exerciseName: '',
@@ -2184,6 +2250,28 @@ function handleClaimRaidMilestone({ milestonePercent, rewardCoins, rewardXp, unl
     });
     playPrFanfare();
     triggerHaptic('success');
+  }
+}
+
+function handleWalkingStepsUpdated(data) {
+  todayWalkingData.value = { ...data };
+}
+
+function handleWalkingGoalReached({ date, steps }) {
+  const res = recordDailyWalkingGoalCompletion(date);
+  if (!res.alreadyClaimed) {
+    gamificationState.value = res.updated;
+    confetti({
+      particleCount: 80,
+      spread: 70,
+      origin: { y: 0.6 }
+    });
+    playPrFanfare();
+    triggerHaptic('celebrate');
+    speakCoachMessage(
+      'finish',
+      `Meta diária de passos batida com sucesso! Você deu ${Number(steps).toLocaleString('pt-BR')} passos e ganhou 30 moedas de ferro e 50 XP!`
+    );
   }
 }
 const showSplitBodyMap = ref(false);

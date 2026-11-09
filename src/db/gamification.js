@@ -30,7 +30,8 @@ const DEFAULT_STATE = {
   claimedBossMonths: [],
   leagueTier: 'bronze',
   claimedRaidMilestones: [],
-  claimedDietDates: []
+  claimedDietDates: [],
+  claimedWalkingDates: []
 };
 
 export function loadGamificationState() {
@@ -67,7 +68,8 @@ export function loadGamificationState() {
       claimedBossMonths: Array.isArray(parsed.claimedBossMonths) ? parsed.claimedBossMonths : [],
       leagueTier: parsed.leagueTier || 'bronze',
       claimedRaidMilestones: Array.isArray(parsed.claimedRaidMilestones) ? parsed.claimedRaidMilestones : [],
-      claimedDietDates: Array.isArray(parsed.claimedDietDates) ? parsed.claimedDietDates : []
+      claimedDietDates: Array.isArray(parsed.claimedDietDates) ? parsed.claimedDietDates : [],
+      claimedWalkingDates: Array.isArray(parsed.claimedWalkingDates) ? parsed.claimedWalkingDates : []
     };
   } catch {
     return { ...DEFAULT_STATE };
@@ -102,7 +104,8 @@ export function saveGamificationState(state) {
       claimedBossMonths: Array.isArray(state?.claimedBossMonths) ? state.claimedBossMonths : [],
       leagueTier: state?.leagueTier || 'bronze',
       claimedRaidMilestones: Array.isArray(state?.claimedRaidMilestones) ? state.claimedRaidMilestones : [],
-      claimedDietDates: Array.isArray(state?.claimedDietDates) ? state.claimedDietDates : []
+      claimedDietDates: Array.isArray(state?.claimedDietDates) ? state.claimedDietDates : [],
+      claimedWalkingDates: Array.isArray(state?.claimedWalkingDates) ? state.claimedWalkingDates : []
     };
     window.localStorage.setItem(GAMIFICATION_STORAGE_KEY, JSON.stringify(safeState));
   } catch {
@@ -421,6 +424,35 @@ export function recordDailyDietCompletion(dateStr) {
     totalXp: current.totalXp + 50,
     ironCoins: current.ironCoins + 30,
     claimedDietDates: [...claimed, dateStr]
+  };
+
+  saveGamificationState(updated);
+  return { alreadyClaimed: false, updated };
+}
+
+/**
+ * Concede XP (+50 XP), Moedas de Ferro (+30 Coins) e XP de RPG (Membros Inferiores & Core)
+ * ao bater a meta diária de passos de caminhada.
+ */
+export function recordDailyWalkingGoalCompletion(dateStr) {
+  const current = loadGamificationState();
+  const claimed = Array.isArray(current.claimedWalkingDates) ? current.claimedWalkingDates : [];
+
+  if (claimed.includes(dateStr)) {
+    return { alreadyClaimed: true, updated: current };
+  }
+
+  const currentBranches = current.rpgBranches || { push: 0, pull: 0, legs: 0, core: 0 };
+  const updated = {
+    ...current,
+    totalXp: current.totalXp + 50,
+    ironCoins: current.ironCoins + 30,
+    claimedWalkingDates: [...claimed, dateStr],
+    rpgBranches: {
+      ...currentBranches,
+      legs: (currentBranches.legs || 0) + 30,
+      core: (currentBranches.core || 0) + 20
+    }
   };
 
   saveGamificationState(updated);

@@ -79,6 +79,9 @@ describe('AppSideDrawer', () => {
 
     await wrapper.find('#btn-drawer-ai-plan').trigger('click');
     expect(wrapper.emitted('generate-ai-plan')).toHaveLength(1);
+
+    await wrapper.find('#btn-drawer-walking').trigger('click');
+    expect(wrapper.emitted('open-walking')).toHaveLength(1);
   });
 
   it('emite export-backup e import-backup', async () => {

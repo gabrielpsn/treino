@@ -241,6 +241,21 @@
 
           <button
             type="button"
+            id="btn-drawer-walking"
+            @click="handleAction('open-walking')"
+            class="tap-btn w-full p-2.5 rounded-xl font-bold text-xs flex items-center justify-between text-[#0F172A] bg-[#F8FAFC] hover:bg-[#F1F5F9] transition-colors text-left border border-[#E2E8F0]"
+          >
+            <div class="flex items-center gap-3">
+              <span class="text-base">🚶</span>
+              <span>Caminhada & Passos</span>
+            </div>
+            <span class="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-800">
+              {{ todaySteps > 0 ? `${todaySteps.toLocaleString('pt-BR')} passos` : 'Rastrear' }}
+            </span>
+          </button>
+
+          <button
+            type="button"
             id="btn-drawer-create-split"
             @click="handleAction('open-create-split')"
             class="tap-btn w-full p-2.5 rounded-xl font-bold text-xs flex items-center gap-3 text-[#0F172A] bg-[#F8FAFC] hover:bg-[#F1F5F9] transition-colors text-left border border-[#E2E8F0]"
@@ -393,6 +408,10 @@ const props = defineProps({
     type: String,
     default: 'bronze'
   },
+  todaySteps: {
+    type: Number,
+    default: 0
+  },
   isAppInstalled: Boolean
 });
 
@@ -417,7 +436,8 @@ const emit = defineEmits([
   'open-shop',
   'open-league',
   'open-wrapped',
-  'open-raid'
+  'open-raid',
+  'open-walking'
 ]);
 
 function handleNavigate(tab) {
