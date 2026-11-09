@@ -1,0 +1,80 @@
+name: Agent Autonomous CI & Quality Gate
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      task_id:
+        description: 'ID da Tarefa do Jira (ex: TREINO-101)'
+        required: true
+        type: string
+      task_summary:
+        description: 'Resumo da Tarefa'
+        required: false
+        type: string
+        default: 'Execução autônoma de tarefa'
+  repository_dispatch:
+    types:
+      - jira_task_trigger
+      - agent_task
+
+concurrency:
+  group: agent-ci-${{ github.ref || github.event.client_payload.task_id }}
+  cancel-in-progress: true
+
+jobs:
+  agent-quality-gate:
+    name: Quality Gate & Testes Autônomos
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout do Repositório
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Instalar Dependências
+        run: npm ci
+
+      - name: Auditoria de Governança dos Agentes (.agent/)
+        run: |
+          echo "Verificando integridade das diretrizes e skills..."
+          test -f .agent/docs/architecture.md || exit 1
+          test -f .agent/docs/conventions.md || exit 1
+          test -f .agent/docs/stack-and-tools.md || exit 1
+          test -f .agent/docs/guidelines-for-agents.md || exit 1
+          test -f .agent/skills/skill-planner.md || exit 1
+          test -f .agent/skills/skill-executor.md || exit 1
+          test -f .agent/skills/skill-quality.md || exit 1
+          test -f .agent/skills/skill-reviewer.md || exit 1
+          echo "Governança e skills 100% íntegras."
+
+      - name: Build de Produção (Vite + PWA)
+        run: npm run build
+
+      - name: Testes Unitários (Vitest)
+        run: npm test -- --run
+
+      - name: Instalar Navegadores do Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Testes E2E (Playwright)
+        run: npx playwright test
+
+      - name: Status de Aprovação
+        if: success()
+        run: |
+          echo "=========================================================="
+          echo "  QUALIDADE E INTEGRIDADE AUTÔNOMA APROVADAS COM SUCESSO  "
+          echo "=========================================================="

@@ -1,0 +1,118 @@
+name: Agent Autonomous Dispatcher (Jira & Webhook Trigger)
+
+on:
+  workflow_dispatch:
+    inputs:
+      task_id:
+        description: 'Jira Task Key (ex: TREINO-42)'
+        required: true
+        type: string
+      task_summary:
+        description: 'Resumo / Escopo da Tarefa'
+        required: true
+        type: string
+  repository_dispatch:
+    types:
+      - jira_task_trigger
+      - agent_task
+
+jobs:
+  run-autonomous-task:
+    name: Processar Tarefa Autônoma
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Extrair Dados da Tarefa
+        id: task_meta
+        run: |
+          if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+            TASK_ID="${{ github.event.client_payload.task_id }}"
+            TASK_SUMMARY="${{ github.event.client_payload.task_summary }}"
+          else
+            TASK_ID="${{ inputs.task_id }}"
+            TASK_SUMMARY="${{ inputs.task_summary }}"
+          fi
+
+          if [ -z "$TASK_ID" ]; then
+            echo "Erro: TASK_ID não informado no payload."
+            exit 1
+          fi
+
+          echo "task_id=$TASK_ID" >> $GITHUB_OUTPUT
+          echo "task_summary=$TASK_SUMMARY" >> $GITHUB_OUTPUT
+
+      - name: Checkout do Repositório
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Instalar Dependências
+        run: npm ci
+
+      - name: Configurar Git Identity
+        run: |
+          git config user.name "TreinoPro Autonomous Bot"
+          git config user.email "bot@treinopro.local"
+
+      - name: Executar Esteira Autônoma
+        env:
+          TASK_ID: ${{ steps.task_meta.outputs.task_id }}
+          TASK_SUMMARY: ${{ steps.task_meta.outputs.task_summary }}
+        run: |
+          ./scripts/agent-task-runner.sh "$TASK_ID" "$TASK_SUMMARY"
+          git push origin "feature/$TASK_ID"
+
+      - name: Abrir Pull Request Automatizado
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const taskId = '${{ steps.task_meta.outputs.task_id }}';
+            const taskSummary = '${{ steps.task_meta.outputs.task_summary }}';
+            const branch = `feature/${taskId}`;
+            
+            const { data: existingPrs } = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              head: `${context.repo.owner}:${branch}`,
+              state: 'open'
+            });
+
+            if (existingPrs.length > 0) {
+              console.log(`PR já existe: ${existingPrs[0].html_url}`);
+              return;
+            }
+
+            const body = `## 🤖 Implementação Autônoma — ${taskId}
+            
+### Resumo
+${taskSummary}
+
+### Checklist de Qualidade Executado
+- [x] Diretrizes arquiteturais validadas (\`.agent/docs/architecture.md\`)
+- [x] Convenções e acessibilidade auditadas (\`.agent/docs/conventions.md\`)
+- [x] Build de produção aprovado (\`npm run build\`)
+- [x] Suíte de testes unitários aprovada (\`npm test -- --run\`)
+
+---
+*Gerado automaticamente pelo ecossistema de agentes autônomos do TreinoPro.*`;
+
+            const { data: pr } = await github.rest.pulls.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `feat(${taskId}): ${taskSummary}`,
+              head: branch,
+              base: 'main',
+              body: body
+            });
+
+            console.log(`Pull Request aberto com sucesso: ${pr.html_url}`);
