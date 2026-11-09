@@ -356,6 +356,43 @@ describe('Worker — Cloudflare Workers AI nativo (Opção 2 100% gratuita)', ()
     expect(response.status).toBe(504);
     expect((await response.json()).code).toBe('ai_timeout');
   });
+
+  it('filtra exercícios com estresse articular proibido e substitui por exercício seguro', async () => {
+    const catalogWithUnsafe = [
+      { id: 'desenvolvimento_barra', name: 'Desenvolvimento', muscle: 'ombro', pattern: 'press', equipment: 'gym', jointStress: ['ombro'] },
+      { id: 'elevacao_lateral_halteres', name: 'Elevação Lateral', muscle: 'ombro', pattern: 'isolation', equipment: 'gym', jointStress: [] }
+    ];
+
+    const modelResponse = {
+      splits: [
+        {
+          splitId: 'treino-a',
+          focus: 'Ombros',
+          exercises: [{ id: 'desenvolvimento_barra', sets: 4, reps: '8-10', restSeconds: 60 }]
+        }
+      ]
+    };
+
+    const aiRun = vi.fn(async () => ({
+      response: JSON.stringify(modelResponse)
+    }));
+
+    const response = await worker.fetch(planRequest({
+      profile: { restrictions: ['ombro'], equipment: 'gym' },
+      catalog: catalogWithUnsafe
+    }), {
+      AI: { run: aiRun },
+      ASSETS: env.ASSETS
+    });
+
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    const splitEx = body.plan.splits[0].exercises;
+    // O exercício que estressa ombro não pode estar presente
+    expect(splitEx.some(e => e.id === 'desenvolvimento_barra')).toBe(false);
+    // E foi substituído pelo exercício seguro
+    expect(splitEx.some(e => e.id === 'elevacao_lateral_halteres')).toBe(true);
+  });
 });
 
 describe('Worker — o resto é app estático', () => {

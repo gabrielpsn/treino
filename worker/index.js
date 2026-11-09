@@ -156,9 +156,23 @@ function buildSystemInstruction() {
   ].join('\n');
 }
 
+function isExerciseSafe(exercise, profile = {}) {
+  if (!exercise || typeof exercise !== 'object') return false;
+  const equipment = profile.equipment || 'gym';
+  if (equipment === 'home' && exercise.equipment === 'gym') return false;
+  const restrictions = Array.isArray(profile.restrictions) ? profile.restrictions : [];
+  if (restrictions.length > 0 && Array.isArray(exercise.jointStress)) {
+    if (exercise.jointStress.some(j => restrictions.includes(j))) return false;
+  }
+  return true;
+}
+
 function buildUserPrompt(payload) {
-  const { profile, bmr, tdee, catalog, splits } = payload;
+  const { profile = {}, bmr, tdee, catalog = [], splits } = payload;
   const dietaryPreference = profile?.dietaryPreference || 'omnivore';
+
+  // Filtra rigorosamente o catálogo para enviar ao modelo APENAS exercícios seguros
+  const safeCatalog = Array.isArray(catalog) ? catalog.filter(c => isExerciseSafe(c, profile)) : [];
 
   return [
     'Monte a ficha de treino e o plano alimentar deste aluno.',
@@ -174,7 +188,7 @@ function buildUserPrompt(payload) {
     JSON.stringify(splits),
     '',
     'CATÁLOGO SEGURO (ids e propriedades já filtradas por equipamento e restrição):',
-    JSON.stringify(catalog)
+    JSON.stringify(safeCatalog.length > 0 ? safeCatalog : catalog)
   ].join('\n');
 }
 
@@ -234,6 +248,149 @@ async function readJsonBody(request) {
 
 function requestId() {
   return `req_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function sanitizePlanResponse(parsed, payload) {
+  if (!parsed || typeof parsed !== 'object') return parsed;
+
+  parsed.targetCalories = Number(parsed.targetCalories || parsed.calorias || parsed.calories || parsed.metaCalorica || 0);
+  parsed.proteinGrams = Number(parsed.proteinGrams || parsed.protein || parsed.proteina || parsed.proteinas || 0);
+  parsed.carbsGrams = Number(parsed.carbsGrams || parsed.carbs || parsed.carboidratos || parsed.carbo || 0);
+  parsed.fatGrams = Number(parsed.fatGrams || parsed.fat || parsed.gordura || parsed.gorduras || 0);
+
+  const weight = Number(payload?.profile?.weightKg) || 75;
+  const isLoss = payload?.profile?.goal === 'weight_loss';
+  const fallbackCalories = Math.round(payload?.tdee ? (isLoss ? payload.tdee - 400 : payload.tdee + 250) : 2200);
+
+  if (!parsed.targetCalories || parsed.targetCalories <= 0) {
+    parsed.targetCalories = fallbackCalories;
+  }
+  if (!parsed.proteinGrams || parsed.proteinGrams <= 0) {
+    parsed.proteinGrams = Math.round(weight * 2.0);
+  }
+  if (!parsed.fatGrams || parsed.fatGrams <= 0) {
+    parsed.fatGrams = Math.round(weight * 0.8);
+  }
+  if (!parsed.carbsGrams || parsed.carbsGrams <= 0) {
+    const remainingKcal = Math.max(200, parsed.targetCalories - (parsed.proteinGrams * 4 + parsed.fatGrams * 9));
+    parsed.carbsGrams = Math.round(remainingKcal / 4);
+  }
+
+  if (!Array.isArray(parsed.splits) && Array.isArray(parsed.fichas)) {
+    parsed.splits = parsed.fichas;
+  }
+  if (!Array.isArray(parsed.meals) && Array.isArray(parsed.refeicoes)) {
+    parsed.meals = parsed.refeicoes;
+  }
+  if (Array.isArray(parsed.meals)) {
+    parsed.meals = parsed.meals.map((m, idx) => {
+      let itemsStr = '';
+      if (typeof m.items === 'string') {
+        itemsStr = m.items;
+      } else if (Array.isArray(m.items)) {
+        itemsStr = m.items.map(it => {
+          if (typeof it === 'string') return it;
+          if (it && typeof it === 'object') {
+            const name = it.nome || it.name || it.alimento || it.item || '';
+            const qty = it.quantidade || it.quantity || '';
+            const unit = it.unidade || it.unit || '';
+            return qty ? `${qty}${unit ? ` ${unit}` : ''} de ${name}` : name;
+          }
+          return String(it);
+        }).filter(Boolean).join(' + ');
+      } else if (Array.isArray(m.alimentos)) {
+        itemsStr = m.alimentos.map(it => typeof it === 'string' ? it : (it.nome || it.name || '')).filter(Boolean).join(' + ');
+      }
+      return {
+        id: m.id || `meal-${idx + 1}`,
+        order: Number(m.order) || (idx + 1),
+        title: String(m.title || m.titulo || m.nome || `Refeição ${idx + 1}`),
+        tag: String(m.tag || 'Refeição Equilibrada'),
+        objective: String(m.objective || m.objetivo || 'Nutrição e energia'),
+        timeSuggestion: m.timeSuggestion || m.horario || undefined,
+        items: itemsStr || 'Alimentos variados e equilibrados',
+        calories: Number(m.calories || m.calorias) || undefined,
+        protein: Number(m.protein || m.proteina) || undefined,
+        carbs: Number(m.carbs || m.carboidratos) || undefined,
+        fat: Number(m.fat || m.gordura) || undefined
+      };
+    });
+  }
+  if (Array.isArray(parsed.splits) && parsed.splits.length > 0) {
+    const catalogItems = Array.isArray(payload.catalog) ? payload.catalog : [];
+    const safeCatalogItems = catalogItems.filter(c => isExerciseSafe(c, payload.profile));
+    const effectiveCatalog = safeCatalogItems.length > 0 ? safeCatalogItems : catalogItems;
+
+    const safeCatalogById = new Map(effectiveCatalog.map(c => [c.id, c]));
+    const safeCatalogByName = new Map(effectiveCatalog.map(c => [String(c.name || '').toLowerCase().trim(), c]));
+    const allCatalogById = new Map(catalogItems.map(c => [c.id, c]));
+
+    parsed.splits = parsed.splits.map((s, idx) => {
+      const splitId = s.splitId || s.id || (payload.splits?.[idx]?.id) || `treino-${String.fromCharCode(97 + idx)}`;
+      const focus = s.focus || s.foco || s.grupo || 'Treino Geral';
+      const rawEx = s.exercises || s.exercicios || [];
+      const seenIds = new Set();
+      const exercises = [];
+
+      if (Array.isArray(rawEx)) {
+        for (const ex of rawEx) {
+          const rawId = String(ex.id || ex.exercicioId || ex.nome || '').trim();
+          if (!rawId) continue;
+          let matched = safeCatalogById.get(rawId);
+          if (!matched) {
+            matched = safeCatalogByName.get(rawId.toLowerCase());
+          }
+          if (!matched) {
+            const cleanRaw = rawId.toLowerCase().replace(/[-_]/g, '');
+            matched = effectiveCatalog.find(c => c.id.toLowerCase().replace(/[-_]/g, '') === cleanRaw || String(c.name || '').toLowerCase().replace(/[-_]/g, '') === cleanRaw);
+          }
+          if (!matched) {
+            matched = effectiveCatalog.find(c => c.id.toLowerCase().includes(rawId.toLowerCase()) || rawId.toLowerCase().includes(c.id.toLowerCase()));
+          }
+
+          // Se o modelo escolheu um exercício que não é seguro, busca substituto seguro do mesmo músculo
+          if (!matched) {
+            const unsafeMatch = allCatalogById.get(rawId);
+            if (unsafeMatch) {
+              matched = effectiveCatalog.find(c => c.muscle === unsafeMatch.muscle && !seenIds.has(c.id))
+                || effectiveCatalog.find(c => !seenIds.has(c.id));
+            }
+          }
+
+          // Validação final de segurança: NUNCA adiciona exercício inseguro
+          if (matched && isExerciseSafe(matched, payload.profile) && !seenIds.has(matched.id)) {
+            seenIds.add(matched.id);
+            exercises.push({
+              id: matched.id,
+              sets: Number(ex.sets || ex.series || s.series || 3),
+              reps: String(ex.reps || ex.repeticoes || '8-12'),
+              restSeconds: Number(ex.restSeconds || ex.descanso || s.descanso || 60)
+            });
+          }
+        }
+      }
+
+      // Se a ficha ficou com menos de 4 exercícios seguros, completa com exercícios seguros do catálogo
+      if (exercises.length < 4 && effectiveCatalog.length >= 4) {
+        for (const cand of effectiveCatalog) {
+          if (exercises.length >= 5) break;
+          if (!seenIds.has(cand.id) && isExerciseSafe(cand, payload.profile)) {
+            seenIds.add(cand.id);
+            exercises.push({
+              id: cand.id,
+              sets: 3,
+              reps: '10-12',
+              restSeconds: 60
+            });
+          }
+        }
+      }
+
+      return { splitId, focus, exercises };
+    });
+  }
+
+  return parsed;
 }
 
 /**
@@ -318,115 +475,8 @@ async function handleWorkersAiRequest(payload, env, id) {
     }
   }
 
-  // Normalização caso o modelo tenha traduzido chaves em português
-  if (parsed && typeof parsed === 'object') {
-    parsed.targetCalories = Number(parsed.targetCalories || parsed.calorias || parsed.calories || parsed.metaCalorica || 0);
-    parsed.proteinGrams = Number(parsed.proteinGrams || parsed.protein || parsed.proteina || parsed.proteinas || 0);
-    parsed.carbsGrams = Number(parsed.carbsGrams || parsed.carbs || parsed.carboidratos || parsed.carbo || 0);
-    parsed.fatGrams = Number(parsed.fatGrams || parsed.fat || parsed.gordura || parsed.gorduras || 0);
-
-    const weight = Number(payload?.profile?.weightKg) || 75;
-    const isLoss = payload?.profile?.goal === 'weight_loss';
-    const fallbackCalories = Math.round(payload?.tdee ? (isLoss ? payload.tdee - 400 : payload.tdee + 250) : 2200);
-
-    if (!parsed.targetCalories || parsed.targetCalories <= 0) {
-      parsed.targetCalories = fallbackCalories;
-    }
-    if (!parsed.proteinGrams || parsed.proteinGrams <= 0) {
-      parsed.proteinGrams = Math.round(weight * 2.0);
-    }
-    if (!parsed.fatGrams || parsed.fatGrams <= 0) {
-      parsed.fatGrams = Math.round(weight * 0.8);
-    }
-    if (!parsed.carbsGrams || parsed.carbsGrams <= 0) {
-      const remainingKcal = Math.max(200, parsed.targetCalories - (parsed.proteinGrams * 4 + parsed.fatGrams * 9));
-      parsed.carbsGrams = Math.round(remainingKcal / 4);
-    }
-
-    if (!Array.isArray(parsed.splits) && Array.isArray(parsed.fichas)) {
-      parsed.splits = parsed.fichas;
-    }
-    if (!Array.isArray(parsed.meals) && Array.isArray(parsed.refeicoes)) {
-      parsed.meals = parsed.refeicoes;
-    }
-    if (Array.isArray(parsed.meals)) {
-      parsed.meals = parsed.meals.map((m, idx) => {
-        let itemsStr = '';
-        if (typeof m.items === 'string') {
-          itemsStr = m.items;
-        } else if (Array.isArray(m.items)) {
-          itemsStr = m.items.map(it => {
-            if (typeof it === 'string') return it;
-            if (it && typeof it === 'object') {
-              const name = it.nome || it.name || it.alimento || it.item || '';
-              const qty = it.quantidade || it.quantity || '';
-              const unit = it.unidade || it.unit || '';
-              return qty ? `${qty}${unit ? ` ${unit}` : ''} de ${name}` : name;
-            }
-            return String(it);
-          }).filter(Boolean).join(' + ');
-        } else if (Array.isArray(m.alimentos)) {
-          itemsStr = m.alimentos.map(it => typeof it === 'string' ? it : (it.nome || it.name || '')).filter(Boolean).join(' + ');
-        }
-        return {
-          id: m.id || `meal-${idx + 1}`,
-          order: Number(m.order) || (idx + 1),
-          title: String(m.title || m.titulo || m.nome || `Refeição ${idx + 1}`),
-          tag: String(m.tag || 'Refeição Equilibrada'),
-          objective: String(m.objective || m.objetivo || 'Nutrição e energia'),
-          timeSuggestion: m.timeSuggestion || m.horario || undefined,
-          items: itemsStr || 'Alimentos variados e equilibrados',
-          calories: Number(m.calories || m.calorias) || undefined,
-          protein: Number(m.protein || m.proteina) || undefined,
-          carbs: Number(m.carbs || m.carboidratos) || undefined,
-          fat: Number(m.fat || m.gordura) || undefined
-        };
-      });
-    }
-    if (Array.isArray(parsed.splits)) {
-      const catalogItems = Array.isArray(payload.catalog) ? payload.catalog : [];
-      const catalogById = new Map(catalogItems.map(c => [c.id, c]));
-      const catalogByName = new Map(catalogItems.map(c => [String(c.name || '').toLowerCase().trim(), c]));
-
-      parsed.splits = parsed.splits.map((s, idx) => {
-        const splitId = s.splitId || s.id || (payload.splits?.[idx]?.id) || `treino-${String.fromCharCode(97 + idx)}`;
-        const focus = s.focus || s.foco || s.grupo || 'Treino Geral';
-        const rawEx = s.exercises || s.exercicios || [];
-        const seenIds = new Set();
-        const exercises = [];
-
-        if (Array.isArray(rawEx)) {
-          for (const ex of rawEx) {
-            const rawId = String(ex.id || ex.exercicioId || ex.nome || '').trim();
-            if (!rawId) continue;
-            let matched = catalogById.get(rawId);
-            if (!matched) {
-              matched = catalogByName.get(rawId.toLowerCase());
-            }
-            if (!matched) {
-              const cleanRaw = rawId.toLowerCase().replace(/[-_]/g, '');
-              matched = catalogItems.find(c => c.id.toLowerCase().replace(/[-_]/g, '') === cleanRaw || String(c.name || '').toLowerCase().replace(/[-_]/g, '') === cleanRaw);
-            }
-            if (!matched) {
-              matched = catalogItems.find(c => c.id.toLowerCase().includes(rawId.toLowerCase()) || rawId.toLowerCase().includes(c.id.toLowerCase()));
-            }
-
-            const chosenId = matched ? matched.id : rawId;
-            if (chosenId && !seenIds.has(chosenId)) {
-              seenIds.add(chosenId);
-              exercises.push({
-                id: chosenId,
-                sets: Number(ex.sets || ex.series || s.series || 3),
-                reps: String(ex.reps || ex.repeticoes || '8-12'),
-                restSeconds: Number(ex.restSeconds || ex.descanso || s.descanso || 60)
-              });
-            }
-          }
-        }
-        return { splitId, focus, exercises };
-      });
-    }
-  }
+  // Normalização e sanitização rigorosa de segurança articular e equipamento
+  parsed = sanitizePlanResponse(parsed, payload);
 
   if (!parsed || !Array.isArray(parsed.splits) || parsed.splits.length === 0) {
     console.error(`[${id}] resposta do Workers AI sem splits:`, JSON.stringify(parsed).slice(0, 300));
@@ -500,6 +550,8 @@ async function handleGeminiRequest(payload, env, id) {
       502
     );
   }
+
+  parsed = sanitizePlanResponse(parsed, payload);
 
   if (!parsed || !Array.isArray(parsed.splits) || parsed.splits.length === 0) {
     console.error(`[${id}] resposta do Gemini sem splits:`, JSON.stringify(parsed).slice(0, 300));
