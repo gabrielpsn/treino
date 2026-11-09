@@ -17,7 +17,9 @@ import {
   getTitleById,
   RPG_BRANCHES,
   COSMETIC_THEMES,
-  TITLES_CATALOG
+  TITLES_CATALOG,
+  calculateActivityHeatmap,
+  calculateActiveRaidStatus
 } from '../../src/engine/gamification.js';
 
 describe('Gamification Engine', () => {
@@ -279,6 +281,73 @@ describe('Gamification Engine', () => {
       expect(getTitleById('iniciante_ferro').title).toBe('Iniciante do Ferro');
       expect(getTitleById('tita_supino').icon).toBe('🛡️');
       expect(getTitleById('inexistente').id).toBe('iniciante_ferro');
+      expect(getTitleById('heroi_raid').title).toBe('Herói da Raid');
+    });
+  });
+
+  describe('Activity Heatmap (Mapa de Calor de Consistência)', () => {
+    it('gera semanas com 7 dias e calcula intensidades corretas', () => {
+      const sessions = [
+        {
+          dayKey: '2026-11-09',
+          sets: [
+            { isDone: true, weight: 80, reps: 10 },
+            { isDone: true, weight: 80, reps: 10 },
+            { isDone: true, weight: 80, reps: 10 },
+            { isDone: true, weight: 80, reps: 10 },
+            { isDone: true, weight: 80, reps: 10 },
+            { isDone: true, weight: 80, reps: 10 },
+            { isDone: true, weight: 80, reps: 10 },
+            { isDone: true, weight: 80, reps: 10 }
+          ]
+        }
+      ];
+
+      const res = calculateActivityHeatmap({
+        historySessions: sessions,
+        weeksCount: 10,
+        referenceDate: new Date('2026-11-09T12:00:00Z')
+      });
+
+      expect(res.weeks).toHaveLength(10);
+      expect(res.weeks[0]).toHaveLength(7);
+      expect(res.totalActiveDays).toBe(1);
+      expect(res.totalSetsInPeriod).toBe(8);
+      expect(res.totalVolumeInPeriod).toBe(6400);
+
+      // Localiza o dia 2026-11-09 na grade
+      let foundDay = null;
+      for (const w of res.weeks) {
+        for (const d of w) {
+          if (d.dayKey === '2026-11-09') foundDay = d;
+        }
+      }
+
+      expect(foundDay).not.toBeNull();
+      expect(foundDay.setsCount).toBe(8);
+      expect(foundDay.intensity).toBe(2); // 6-12 sets = nível 2
+    });
+  });
+
+  describe('Community Raids (Raids Coletivas)', () => {
+    it('calcula progresso e marcos com status de resgate', () => {
+      const res = calculateActiveRaidStatus({
+        userMonthlyTonnageKg: 25000,
+        claimedMilestones: [25],
+        date: new Date('2026-11-15T12:00:00Z')
+      });
+
+      expect(res.raid).toBeDefined();
+      expect(res.raid.monument).toBeTruthy();
+      expect(res.totalGoalKg).toBeGreaterThan(0);
+      expect(res.progressPercent).toBeGreaterThan(0);
+      expect(res.userMonthlyTonnageKg).toBe(25000);
+      expect(res.milestones).toHaveLength(4);
+
+      // O marco de 25% já resgatado deve ter canClaim = false
+      const m25 = res.milestones.find(m => m.percent === 25);
+      expect(m25.isClaimed).toBe(true);
+      expect(m25.canClaim).toBe(false);
     });
   });
 });

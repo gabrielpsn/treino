@@ -216,6 +216,21 @@
               Carreira
             </span>
           </button>
+
+          <button
+            type="button"
+            id="btn-drawer-raid"
+            @click="handleAction('open-raid')"
+            class="tap-btn w-full p-2.5 rounded-xl font-bold text-xs flex items-center justify-between text-[#0F172A] bg-[#F8FAFC] hover:bg-[#F1F5F9] transition-colors text-left border border-[#E2E8F0]"
+          >
+            <div class="flex items-center gap-3">
+              <span class="text-base">🏛️</span>
+              <span>Raids Coletivas Globais</span>
+            </div>
+            <span class="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-800">
+              Mensal
+            </span>
+          </button>
         </div>
 
         <!-- Gestão de Fichas e Treino -->
@@ -401,7 +416,8 @@ const emit = defineEmits([
   'open-skill-tree',
   'open-shop',
   'open-league',
-  'open-wrapped'
+  'open-wrapped',
+  'open-raid'
 ]);
 
 function handleNavigate(tab) {

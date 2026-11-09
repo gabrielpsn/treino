@@ -269,6 +269,13 @@ export const TITLES_CATALOG = [
     description: 'Mestre da progressão constante e tonelagem mecânica massiva.',
     price: 600,
     icon: '👑'
+  },
+  {
+    id: 'heroi_raid',
+    title: 'Herói da Raid',
+    description: 'Contribuiu com força muscular para erguer o marco mundial na Raid Coletiva.',
+    price: 500,
+    icon: '🏛️'
   }
 ];
 
@@ -864,5 +871,199 @@ export function calculateCareerWrapped({
     maxStreak: gamificationState.dailyStreak || 1,
     ironCoins: gamificationState.ironCoins || 0,
     totalXp: gamificationState.totalXp || 0
+  };
+}
+
+/**
+ * Gera a matriz de mapa de calor de consistência (estilo GitHub / Fitness Heatmap).
+ * Retorna semanas (cada uma com 7 dias, Segunda a Domingo), meses para cabeçalho e estatísticas.
+ */
+export function calculateActivityHeatmap({
+  historySessions = [],
+  weeksCount = 20,
+  referenceDate = new Date()
+} = {}) {
+  const sessionsByDay = {};
+  for (const session of historySessions) {
+    const day = session?.dayKey;
+    if (!day) continue;
+    if (!sessionsByDay[day]) {
+      sessionsByDay[day] = { setsCount: 0, volumeKg: 0, sessionCount: 0 };
+    }
+    const sets = session.sets || [];
+    const done = sets.filter(s => s.isDone || s.weight > 0);
+    sessionsByDay[day].setsCount += done.length;
+    sessionsByDay[day].volumeKg += sets.reduce((tot, s) => {
+      const w = Number(s.weight) || 0;
+      const r = Number(s.reps) || 0;
+      return tot + (w * r);
+    }, 0);
+    sessionsByDay[day].sessionCount += 1;
+  }
+
+  const end = new Date(referenceDate);
+  const currentDayOfWeek = end.getDay(); // 0 = Domingo, 1 = Segunda, etc.
+  const daysUntilSunday = currentDayOfWeek === 0 ? 0 : 7 - currentDayOfWeek;
+  end.setDate(end.getDate() + daysUntilSunday);
+  end.setHours(23, 59, 59, 999);
+
+  const totalDays = weeksCount * 7;
+  const start = new Date(end);
+  start.setDate(end.getDate() - totalDays + 1);
+  start.setHours(0, 0, 0, 0);
+
+  const weeks = [];
+  let currentWeek = [];
+  let totalActiveDays = 0;
+  let totalSetsInPeriod = 0;
+  let totalVolumeInPeriod = 0;
+  const monthLabels = [];
+  let lastMonth = -1;
+
+  const cursor = new Date(start);
+
+  while (cursor <= end) {
+    const y = cursor.getFullYear();
+    const m = String(cursor.getMonth() + 1).padStart(2, '0');
+    const d = String(cursor.getDate()).padStart(2, '0');
+    const dayKey = `${y}-${m}-${d}`;
+    const dayData = sessionsByDay[dayKey] || { setsCount: 0, volumeKg: 0, sessionCount: 0 };
+
+    const isFuture = cursor > referenceDate;
+    let intensity = 0;
+    if (!isFuture && dayData.setsCount > 0) {
+      if (dayData.setsCount >= 20) intensity = 4;
+      else if (dayData.setsCount >= 13) intensity = 3;
+      else if (dayData.setsCount >= 6) intensity = 2;
+      else intensity = 1;
+      totalActiveDays++;
+      totalSetsInPeriod += dayData.setsCount;
+      totalVolumeInPeriod += Math.round(dayData.volumeKg);
+    }
+
+    const dayObj = {
+      date: dayKey,
+      dayKey,
+      dayOfMonth: cursor.getDate(),
+      month: cursor.getMonth(),
+      dayOfWeek: (cursor.getDay() + 6) % 7,
+      intensity: isFuture ? 0 : intensity,
+      isFuture,
+      setsCount: dayData.setsCount,
+      volumeKg: Math.round(dayData.volumeKg),
+      sessionCount: dayData.sessionCount
+    };
+
+    currentWeek.push(dayObj);
+
+    if (currentWeek.length === 7) {
+      const weekIndex = weeks.length;
+      const weekMonth = currentWeek[0].month;
+      if (weekMonth !== lastMonth) {
+        const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+        monthLabels.push({
+          label: monthNames[weekMonth],
+          weekIndex
+        });
+        lastMonth = weekMonth;
+      }
+
+      weeks.push(currentWeek);
+      currentWeek = [];
+    }
+
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
+  return {
+    weeks,
+    monthLabels,
+    totalActiveDays,
+    totalSetsInPeriod,
+    totalVolumeInPeriod,
+    weeksCount
+  };
+}
+
+/**
+ * Raids Coletivas Globais (Missões comunitárias mensais de grande porte).
+ */
+export const COMMUNITY_RAIDS = [
+  {
+    id: 'empire_state',
+    name: 'Operação Empire State',
+    monument: 'Empire State Building',
+    icon: '🏙️',
+    totalGoalKg: 250000,
+    description: 'Una forças com a comunidade de atletas para erguer o peso colossal de um arranha-céu!',
+    milestones: [
+      { percent: 25, label: 'Fundações de Titânio', coins: 100, xp: 200 },
+      { percent: 50, label: 'Estrutura de Aço', coins: 150, xp: 350 },
+      { percent: 75, label: 'Torre de Observação', coins: 200, xp: 500 },
+      { percent: 100, label: 'Pináculo da Glória', coins: 400, xp: 1000, unlockTitleId: 'heroi_raid' }
+    ]
+  },
+  {
+    id: 'coliseu_roma',
+    name: 'Operação Coliseu Eterno',
+    monument: 'Coliseu de Roma',
+    icon: '🏛️',
+    totalGoalKg: 200000,
+    description: 'Erga as pedras milenares da arena lendária com pura tonelagem muscular!',
+    milestones: [
+      { percent: 25, label: 'Arcos Inferiores', coins: 100, xp: 200 },
+      { percent: 50, label: 'Arena de Combate', coins: 150, xp: 350 },
+      { percent: 75, label: 'Arquibancada Imperial', coins: 200, xp: 500 },
+      { percent: 100, label: 'Monumento Eterno', coins: 400, xp: 1000, unlockTitleId: 'heroi_raid' }
+    ]
+  }
+];
+
+export function getActiveCommunityRaid(date = new Date()) {
+  const month = date.getMonth();
+  const raidIndex = month % COMMUNITY_RAIDS.length;
+  return COMMUNITY_RAIDS[raidIndex];
+}
+
+export function calculateActiveRaidStatus({
+  userMonthlyTonnageKg = 0,
+  claimedMilestones = [],
+  date = new Date()
+} = {}) {
+  const raid = getActiveCommunityRaid(date);
+  const dayOfMonth = date.getDate();
+  const daysInMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+  const monthProgress = Math.min(1, dayOfMonth / daysInMonth);
+
+  // Avanço comunitário global combinado com o mês e tonelagem do usuário
+  const baseCommunityKg = Math.round(raid.totalGoalKg * (0.6 * monthProgress + 0.15));
+  const totalRaidKg = Math.min(raid.totalGoalKg, baseCommunityKg + Math.max(0, userMonthlyTonnageKg));
+  const progressPercent = Math.min(100, Math.round((totalRaidKg / raid.totalGoalKg) * 100));
+  const userPercent = totalRaidKg > 0
+    ? Math.min(100, Math.round((userMonthlyTonnageKg / totalRaidKg) * 1000) / 10)
+    : 0;
+
+  const milestonesWithStatus = raid.milestones.map(m => {
+    const isReached = progressPercent >= m.percent;
+    const isClaimed = Array.isArray(claimedMilestones) && claimedMilestones.includes(m.percent);
+    const canClaim = isReached && !isClaimed;
+    return {
+      ...m,
+      isReached,
+      isClaimed,
+      canClaim
+    };
+  });
+
+  return {
+    raid,
+    totalRaidKg,
+    totalGoalKg: raid.totalGoalKg,
+    progressPercent,
+    userMonthlyTonnageKg: Math.round(userMonthlyTonnageKg),
+    userPercent,
+    daysRemaining: daysInMonth - dayOfMonth,
+    milestones: milestonesWithStatus,
+    isCompleted: progressPercent >= 100
   };
 }

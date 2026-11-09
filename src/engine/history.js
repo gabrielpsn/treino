@@ -125,11 +125,22 @@ export function buildExerciseProgression(sessionsWithSets = [], exerciseId) {
     const topWeight = maxWeight(sets);
     if (topWeight === null) continue;
 
+    let topEstimated1RM = 0;
+    for (const s of sets) {
+      const w = parseWeight(s.weight);
+      const r = parseReps(s.reps);
+      if (w !== null && r !== null && w > 0 && r > 0) {
+        const est = w * (1 + r / 30);
+        if (est > topEstimated1RM) topEstimated1RM = Math.round(est * 10) / 10;
+      }
+    }
+
     points.push({
       sessionId: session.id,
       dayKey: session.dayKey,
       startedAt: session.startedAt,
       topWeight,
+      topEstimated1RM: topEstimated1RM || topWeight,
       volume: sessionVolume(sets),
       doneSets: sets.length
     });

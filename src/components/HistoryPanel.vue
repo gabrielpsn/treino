@@ -69,8 +69,32 @@
         id="history-exercise-chart"
         class="bg-white border border-[#E2E8F0] rounded-2xl p-4 sm:p-5 shadow-xs"
       >
-        <div class="flex items-center justify-between gap-3 mb-1">
-          <h3 class="text-sm font-black text-[#0F172A]">Carga por exercício</h3>
+        <div class="flex items-center justify-between gap-3 mb-1 flex-wrap">
+          <div class="flex items-center gap-2">
+            <h3 class="text-sm font-black text-[#0F172A]">Evolução de Força</h3>
+            <!-- Alternador de Métrica (Carga vs 1RM Estimado) -->
+            <div class="flex items-center gap-1 p-0.5 bg-[#F1F5F9] rounded-xl text-[10px] font-bold">
+              <button
+                type="button"
+                id="btn-metric-top-weight"
+                @click="metricType = 'topWeight'"
+                class="px-2 py-0.5 rounded-lg transition-all"
+                :class="metricType === 'topWeight' ? 'bg-white text-[#0066FF] shadow-xs' : 'text-[#64748B]'"
+              >
+                Carga Real
+              </button>
+              <button
+                type="button"
+                id="btn-metric-1rm"
+                @click="metricType = 'estimated1RM'"
+                class="px-2 py-0.5 rounded-lg transition-all"
+                :class="metricType === 'estimated1RM' ? 'bg-white text-[#0066FF] shadow-xs' : 'text-[#64748B]'"
+              >
+                1RM Estimado ⚡
+              </button>
+            </div>
+          </div>
+
           <label class="sr-only" for="history-exercise-select">Exercício do gráfico</label>
           <select
             id="history-exercise-select"
@@ -84,7 +108,9 @@
           </select>
         </div>
         <p class="text-[11px] text-[#64748B] mb-3">
-          Maior carga registrada em cada treino concluído.
+          {{ metricType === 'estimated1RM'
+            ? 'Força máxima teórica estimada (1 repetição máxima pela fórmula de Brzycki).'
+            : 'Maior carga registrada em cada treino concluído.' }}
         </p>
 
         <svg
@@ -322,6 +348,7 @@ const CHART_PAD_T = 14;
 const CHART_PAD_B = 24;
 
 const selectedExerciseId = ref(null);
+const metricType = ref('topWeight');
 
 // Exercícios com pelo menos DUAS sessões carregadas: com um ponto só não há
 // linha para desenhar, e a pessoa não ganha nada de um gráfico de um valor.
@@ -355,7 +382,8 @@ const chart = computed(() => {
   const progression = selectedProgression.value;
   if (!progression) return null;
 
-  const weights = progression.points.map(point => point.topWeight);
+  const metricKey = metricType.value === 'estimated1RM' ? 'topEstimated1RM' : 'topWeight';
+  const weights = progression.points.map(point => point[metricKey] || point.topWeight);
   const min = Math.min(...weights);
   const max = Math.max(...weights);
   const span = max - min;
@@ -366,7 +394,8 @@ const chart = computed(() => {
     const x = progression.points.length === 1
       ? CHART_PAD_L + innerW / 2
       : CHART_PAD_L + (index * innerW) / (progression.points.length - 1);
-    const ratio = span === 0 ? 0.5 : (point.topWeight - min) / span;
+    const val = point[metricKey] || point.topWeight;
+    const ratio = span === 0 ? 0.5 : (val - min) / span;
     const y = CHART_PAD_T + (1 - ratio) * innerH;
     const day = String(point.dayKey || '');
     return {
@@ -390,17 +419,22 @@ const chart = computed(() => {
 const chartAriaLabel = computed(() => {
   const progression = selectedProgression.value;
   if (!progression || progression.points.length < 2) return 'Evolução de carga';
+  const metricKey = metricType.value === 'estimated1RM' ? 'topEstimated1RM' : 'topWeight';
   const first = progression.points[0];
   const last = progression.points[progression.points.length - 1];
-  return `Carga de ${progression.name}: de ${formatKg(first.topWeight)} em ${formatDayKey(first.dayKey)} a ${formatKg(last.topWeight)} em ${formatDayKey(last.dayKey)}`;
+  const firstVal = first[metricKey] || first.topWeight;
+  const lastVal = last[metricKey] || last.topWeight;
+  const metricTitle = metricType.value === 'estimated1RM' ? '1RM estimado' : 'Carga';
+  return `${metricTitle} de ${progression.name}: de ${formatKg(firstVal)} em ${formatDayKey(first.dayKey)} a ${formatKg(lastVal)} em ${formatDayKey(last.dayKey)}`;
 });
 
 const progressionDelta = computed(() => {
   const progression = selectedProgression.value;
   if (!progression || progression.points.length < 2) return null;
 
-  const first = progression.points[0].topWeight;
-  const last = progression.points[progression.points.length - 1].topWeight;
+  const metricKey = metricType.value === 'estimated1RM' ? 'topEstimated1RM' : 'topWeight';
+  const first = progression.points[0][metricKey] || progression.points[0].topWeight;
+  const last = progression.points[progression.points.length - 1][metricKey] || progression.points[progression.points.length - 1].topWeight;
   const diff = Math.round((last - first) * 10) / 10;
   const formatted = String(Math.abs(diff)).replace('.', ',');
 

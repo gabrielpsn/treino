@@ -1469,6 +1469,9 @@
           :exercise-muscle-map="exerciseMuscleMap"
         />
 
+        <!-- Mapa de Calor de Consistência Anual (20 semanas) -->
+        <YearlyHeatmapWidget :history-sessions="historySessions" />
+
         <HistoryPanel
           :sessions="historySessions"
           :split-titles="splitTitles"
@@ -1749,6 +1752,7 @@
       @open-shop="isShopOpen = true"
       @open-league="isLeagueModalOpen = true"
       @open-wrapped="isWrappedModalOpen = true"
+      @open-raid="isRaidModalOpen = true"
     />
 
     <!-- Modal de Demonstração e Detalhes do Exercício -->
@@ -1826,6 +1830,25 @@
       @close="isWrappedModalOpen = false"
     />
 
+    <!-- Modal de Raids Coletivas Globais -->
+    <CommunityRaidModal
+      :is-open="isRaidModalOpen"
+      :user-monthly-tonnage-kg="monthlyTonnageKg"
+      :claimed-milestones="gamificationState.claimedRaidMilestones || []"
+      @claim-milestone="handleClaimRaidMilestone"
+      @close="isRaidModalOpen = false"
+    />
+
+    <!-- Toast / Banner de Comemoração de PR ao Vivo -->
+    <PrCelebrationToast
+      :is-open="prToastState.isOpen"
+      :exercise-name="prToastState.exerciseName"
+      :weight-kg="prToastState.weightKg"
+      :reps="prToastState.reps"
+      :diff-kg="prToastState.diffKg"
+      @close="prToastState.isOpen = false"
+    />
+
   </div>
 </template>
 
@@ -1863,6 +1886,9 @@ import MonthlyBossWidget from './components/MonthlyBossWidget.vue';
 import WeeklyVolumeRadar from './components/WeeklyVolumeRadar.vue';
 import WeeklyLeagueModal from './components/WeeklyLeagueModal.vue';
 import CareerWrappedModal from './components/CareerWrappedModal.vue';
+import YearlyHeatmapWidget from './components/YearlyHeatmapWidget.vue';
+import CommunityRaidModal from './components/CommunityRaidModal.vue';
+import PrCelebrationToast from './components/PrCelebrationToast.vue';
 import {
   calculateSessionGamification,
   checkBadges,
@@ -1884,7 +1910,8 @@ import {
   unlockAndEquipTitle,
   equipTitle,
   claimBossVictory,
-  promoteLeague
+  promoteLeague,
+  claimRaidMilestone
 } from './db/gamification.js';
 import { playPlateClick, playPrFanfare, triggerHaptic } from './engine/audioHaptics.js';
 import { usePwaUpdate } from './composables/usePwaUpdate';
@@ -1997,6 +2024,14 @@ const isSkillTreeOpen = ref(false);
 const isShopOpen = ref(false);
 const isLeagueModalOpen = ref(false);
 const isWrappedModalOpen = ref(false);
+const isRaidModalOpen = ref(false);
+const prToastState = ref({
+  isOpen: false,
+  exerciseName: '',
+  weightKg: 0,
+  reps: 0,
+  diffKg: 0
+});
 const currentTheme = ref(gamificationState.value?.equippedTheme || 'blue');
 
 const appRootThemeClasses = computed(() => {
@@ -2058,6 +2093,20 @@ function handleClaimBossReward({ monthKey, rewardCoins, rewardXp }) {
     confetti({
       particleCount: 80,
       spread: 70,
+      origin: { y: 0.6 }
+    });
+    playPrFanfare();
+    triggerHaptic('success');
+  }
+}
+
+function handleClaimRaidMilestone({ milestonePercent, rewardCoins, rewardXp, unlockTitleId }) {
+  const res = claimRaidMilestone({ milestonePercent, rewardCoins, rewardXp, unlockTitleId });
+  if (res.success) {
+    gamificationState.value = res.updated;
+    confetti({
+      particleCount: 90,
+      spread: 75,
       origin: { y: 0.6 }
     });
     playPrFanfare();
@@ -2881,13 +2930,21 @@ async function toggleExerciseCheck(exerciseId, splitId) {
       ?.exercises?.find(e => e.id === exerciseId);
     if (ex) triggerRestTimer(ex.rest);
 
-    // Feedback sonoro e tátil
+    // Feedback sonoro, tátil e visual de PR
     const pr = personalRecords.value[exerciseId];
     const weight = Number(current.weight) || 0;
     const isPr = pr && weight > (pr.maxWeightKg || 0);
     if (isPr) {
       playPrFanfare();
       triggerHaptic('pr');
+      const diff = Math.round((weight - (pr.maxWeightKg || 0)) * 10) / 10;
+      prToastState.value = {
+        isOpen: true,
+        exerciseName: exerciseNames.value[exerciseId] || exerciseId,
+        weightKg: weight,
+        reps: Number(current.reps) || 0,
+        diffKg: diff > 0 ? diff : 0
+      };
     } else {
       playPlateClick();
       triggerHaptic('click');
@@ -3081,13 +3138,21 @@ async function toggleSetDone(exerciseId, splitId, setNumber) {
         ?.exercises?.find(e => e.id === exerciseId);
       if (ex) triggerRestTimer(ex.rest);
 
-      // Feedback sonoro e tátil
+      // Feedback sonoro, tátil e visual de PR
       const pr = personalRecords.value[exerciseId];
       const weight = Number(target.weight) || 0;
       const isPr = pr && weight > (pr.maxWeightKg || 0);
       if (isPr) {
         playPrFanfare();
         triggerHaptic('pr');
+        const diff = Math.round((weight - (pr.maxWeightKg || 0)) * 10) / 10;
+        prToastState.value = {
+          isOpen: true,
+          exerciseName: exerciseNames.value[exerciseId] || exerciseId,
+          weightKg: weight,
+          reps: Number(target.reps) || 0,
+          diffKg: diff > 0 ? diff : 0
+        };
       } else {
         playPlateClick();
         triggerHaptic('click');

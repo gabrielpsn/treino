@@ -28,7 +28,8 @@ const DEFAULT_STATE = {
   unlockedTitles: ['iniciante_ferro'],
   equippedTitle: 'iniciante_ferro',
   claimedBossMonths: [],
-  leagueTier: 'bronze'
+  leagueTier: 'bronze',
+  claimedRaidMilestones: []
 };
 
 export function loadGamificationState() {
@@ -63,7 +64,8 @@ export function loadGamificationState() {
       unlockedTitles: Array.isArray(parsed.unlockedTitles) && parsed.unlockedTitles.length > 0 ? parsed.unlockedTitles : ['iniciante_ferro'],
       equippedTitle: parsed.equippedTitle || 'iniciante_ferro',
       claimedBossMonths: Array.isArray(parsed.claimedBossMonths) ? parsed.claimedBossMonths : [],
-      leagueTier: parsed.leagueTier || 'bronze'
+      leagueTier: parsed.leagueTier || 'bronze',
+      claimedRaidMilestones: Array.isArray(parsed.claimedRaidMilestones) ? parsed.claimedRaidMilestones : []
     };
   } catch {
     return { ...DEFAULT_STATE };
@@ -96,7 +98,8 @@ export function saveGamificationState(state) {
       unlockedTitles: Array.isArray(state?.unlockedTitles) ? state.unlockedTitles : ['iniciante_ferro'],
       equippedTitle: state?.equippedTitle || 'iniciante_ferro',
       claimedBossMonths: Array.isArray(state?.claimedBossMonths) ? state.claimedBossMonths : [],
-      leagueTier: state?.leagueTier || 'bronze'
+      leagueTier: state?.leagueTier || 'bronze',
+      claimedRaidMilestones: Array.isArray(state?.claimedRaidMilestones) ? state.claimedRaidMilestones : []
     };
     window.localStorage.setItem(GAMIFICATION_STORAGE_KEY, JSON.stringify(safeState));
   } catch {
@@ -364,4 +367,37 @@ export function promoteLeague(nextTier, bonusCoins = 150) {
 
   saveGamificationState(updated);
   return updated;
+}
+
+/**
+ * Resgata a recompensa de um marco da Raid Coletiva.
+ */
+export function claimRaidMilestone({
+  milestonePercent,
+  rewardCoins = 100,
+  rewardXp = 200,
+  unlockTitleId = null
+}) {
+  const current = loadGamificationState();
+  const claimed = Array.isArray(current.claimedRaidMilestones) ? current.claimedRaidMilestones : [];
+
+  if (claimed.includes(milestonePercent)) {
+    return { success: false, updated: current, alreadyClaimed: true };
+  }
+
+  const titles = Array.isArray(current.unlockedTitles) ? [...current.unlockedTitles] : ['iniciante_ferro'];
+  if (unlockTitleId && !titles.includes(unlockTitleId)) {
+    titles.push(unlockTitleId);
+  }
+
+  const updated = {
+    ...current,
+    totalXp: current.totalXp + rewardXp,
+    ironCoins: current.ironCoins + rewardCoins,
+    claimedRaidMilestones: [...claimed, milestonePercent],
+    unlockedTitles: titles
+  };
+
+  saveGamificationState(updated);
+  return { success: true, updated, alreadyClaimed: false };
 }

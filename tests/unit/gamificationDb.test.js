@@ -12,7 +12,8 @@ import {
   unlockAndEquipTheme,
   equipTheme,
   unlockAndEquipTitle,
-  equipTitle
+  equipTitle,
+  claimRaidMilestone
 } from '../../src/db/gamification.js';
 
 describe('Gamification DB State', () => {
@@ -153,5 +154,38 @@ describe('Gamification DB State', () => {
     expect(updated.rpgBranches.push).toBe(180);
     expect(updated.rpgBranches.core).toBe(120);
     expect(updated.rpgBranches.pull).toBe(0);
+  });
+
+  it('permite resgatar marcos da Raid Coletiva sem duplicar recompensas', () => {
+    const res1 = claimRaidMilestone({
+      milestonePercent: 25,
+      rewardCoins: 100,
+      rewardXp: 200
+    });
+    expect(res1.success).toBe(true);
+    expect(res1.updated.ironCoins).toBe(200); // 100 inicial + 100
+    expect(res1.updated.totalXp).toBe(200);
+    expect(res1.updated.claimedRaidMilestones).toContain(25);
+
+    // Resgate repetido é bloqueado
+    const resDup = claimRaidMilestone({
+      milestonePercent: 25,
+      rewardCoins: 100,
+      rewardXp: 200
+    });
+    expect(resDup.success).toBe(false);
+    expect(resDup.alreadyClaimed).toBe(true);
+    expect(resDup.updated.ironCoins).toBe(200);
+
+    // Marco de 100% desbloqueia título heroi_raid
+    const res100 = claimRaidMilestone({
+      milestonePercent: 100,
+      rewardCoins: 400,
+      rewardXp: 1000,
+      unlockTitleId: 'heroi_raid'
+    });
+    expect(res100.success).toBe(true);
+    expect(res100.updated.unlockedTitles).toContain('heroi_raid');
+    expect(res100.updated.ironCoins).toBe(600);
   });
 });
