@@ -2580,6 +2580,9 @@ function loadMealChecks() {
   }
 }
 
+const targetCalories = computed(() => effectiveTargetCalories.value || 0);
+const targetProteinGrams = computed(() => effectiveMacros.value?.proteinGrams || 0);
+
 const totalMealsCount = computed(() => activePlan.value?.meals?.length || 0);
 const checkedMealsCount = computed(() => {
   return Object.values(todayMealChecks.value || {}).filter(Boolean).length;
@@ -2590,16 +2593,29 @@ const dietAdherencePercent = computed(() => {
 });
 
 const consumedCaloriesEstimated = computed(() => {
-  let total = 0;
+  let explicitTotal = 0;
+  let hasExplicit = false;
   for (const meal of activePlan.value?.meals || []) {
-    if (todayMealChecks.value[meal.id]) {
-      total += Number(meal.calories) || 0;
+    if (todayMealChecks.value[meal.id] && meal.calories) {
+      explicitTotal += Number(meal.calories) || 0;
+      hasExplicit = true;
     }
   }
-  return total;
+  if (hasExplicit && explicitTotal > 0) return explicitTotal;
+  if (totalMealsCount.value === 0 || !targetCalories.value) return 0;
+  return Math.round((checkedMealsCount.value / totalMealsCount.value) * targetCalories.value);
 });
 
 const consumedProteinEstimated = computed(() => {
+  let explicitProtein = 0;
+  let hasExplicit = false;
+  for (const meal of activePlan.value?.meals || []) {
+    if (todayMealChecks.value[meal.id] && meal.protein) {
+      explicitProtein += Number(meal.protein) || 0;
+      hasExplicit = true;
+    }
+  }
+  if (hasExplicit && explicitProtein > 0) return explicitProtein;
   if (totalMealsCount.value === 0 || !targetProteinGrams.value) return 0;
   return Math.round((checkedMealsCount.value / totalMealsCount.value) * targetProteinGrams.value);
 });
