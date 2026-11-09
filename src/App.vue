@@ -183,13 +183,15 @@
         @open-shop="isShopOpen = true"
       />
 
-      <!-- ANÉIS DE ATIVIDADE DIÁRIA (Treino, Água, Hábitos) -->
+      <!-- ANÉIS DE ATIVIDADE DIÁRIA (Treino, Água, Hábitos & Dieta) -->
       <DailyActivityRings
         :workout-percent="todayWorkoutProgressPercent"
         :workout-status-text="todayWorkoutStatusText"
         :water-percent="waterPercent"
         :water-text="`${todayWaterMl} / ${targetWaterMl} ml`"
         :creatine-taken="!!todayHabits.creatineTaken"
+        :diet-percent="dietAdherencePercent"
+        :diet-text="`${checkedMealsCount}/${totalMealsCount} Refeições`"
         @toggle-creatine="toggleCreatineToday"
       />
 
@@ -1311,13 +1313,72 @@
           </div>
         </div>
 
+        <!-- Resumo de Adesão Nutricional Diária -->
+        <div id="section-diet-adherence" class="p-4 sm:p-5 rounded-2xl bg-white border border-[#E2E8F0] shadow-xs space-y-3">
+          <div class="flex items-center justify-between gap-3 flex-wrap">
+            <div class="flex items-center gap-3">
+              <div class="w-11 h-11 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-2xl shadow-xs flex-shrink-0">
+                🥗
+              </div>
+              <div>
+                <h4 class="text-sm sm:text-base font-black text-[#0F172A] uppercase tracking-tight">
+                  Adesão Nutricional Diária
+                </h4>
+                <p class="text-xs text-[#64748B]">
+                  Marque cada refeição consumida para bater seus macros e ganhar moedas de ferro.
+                </p>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <span
+                id="diet-adherence-badge"
+                class="text-xs font-black px-3 py-1 rounded-full shadow-xs"
+                :class="dietAdherencePercent === 100
+                  ? 'bg-emerald-500/15 text-emerald-700 border border-emerald-500/30'
+                  : 'bg-[#0066FF]/10 text-[#0066FF] border border-[#0066FF]/20'"
+              >
+                {{ checkedMealsCount }}/{{ totalMealsCount }} Refeições ({{ dietAdherencePercent }}%)
+              </span>
+            </div>
+          </div>
+
+          <!-- Barra de Progresso de Adesão à Dieta -->
+          <div class="w-full bg-[#E2E8F0] h-2.5 rounded-full overflow-hidden" role="progressbar" :aria-valuenow="dietAdherencePercent" aria-valuemin="0" aria-valuemax="100">
+            <div
+              id="diet-progress-bar"
+              class="h-full bg-gradient-to-r from-emerald-400 to-emerald-600 transition-all duration-500 rounded-full"
+              :style="{ width: `${dietAdherencePercent}%` }"
+            ></div>
+          </div>
+
+          <!-- Calorias e Proteínas Consumidas Estimadas -->
+          <div class="grid grid-cols-2 gap-3 pt-1 text-xs">
+            <div class="p-2.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] flex items-center justify-between">
+              <span class="text-[#64748B] font-bold">Calorias Ingeridas:</span>
+              <span class="font-black text-[#0F172A]">
+                {{ consumedCaloriesEstimated }} / {{ targetCalories }} kcal
+              </span>
+            </div>
+            <div class="p-2.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] flex items-center justify-between">
+              <span class="text-[#64748B] font-bold">Proteína Ingerida:</span>
+              <span class="font-black text-[#0066FF]">
+                {{ consumedProteinEstimated }} / {{ targetProteinGrams }} g
+              </span>
+            </div>
+          </div>
+        </div>
+
         <!-- Cards de Refeições -->
         <div class="grid md:grid-cols-2 gap-4">
           <div
             v-for="meal in activePlan?.meals"
             :key="meal.id"
             :id="`meal-card-${meal.id}`"
-            class="p-5 rounded-2xl bg-white border border-[#E2E8F0] flex flex-col justify-between hover:border-[#0066FF]/40 transition-all shadow-xs"
+            class="p-5 rounded-2xl border flex flex-col justify-between transition-all shadow-xs"
+            :class="todayMealChecks[meal.id]
+              ? 'bg-emerald-500/5 border-emerald-500/40 shadow-sm'
+              : 'bg-white border-[#E2E8F0] hover:border-[#0066FF]/40'"
           >
             <div>
               <div class="flex items-center justify-between gap-2 mb-2">
@@ -1328,6 +1389,17 @@
                   </span>
                 </div>
                 <div class="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    :id="`btn-check-meal-${meal.id}`"
+                    @click="toggleMealCheck(meal.id)"
+                    class="tap-btn px-2.5 py-1 rounded-xl text-xs font-black transition-all flex items-center gap-1"
+                    :class="todayMealChecks[meal.id]
+                      ? 'bg-emerald-600 text-white shadow-xs'
+                      : 'bg-[#F1F5F9] text-[#64748B] hover:text-[#0F172A] border border-[#CBD5E1]'"
+                  >
+                    <span>{{ todayMealChecks[meal.id] ? '✓ Feita' : 'Marcar' }}</span>
+                  </button>
                   <span v-if="activePlan?.planSource === 'ai'" class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 uppercase tracking-wider">
                     IA
                   </span>
@@ -1911,9 +1983,10 @@ import {
   equipTitle,
   claimBossVictory,
   promoteLeague,
-  claimRaidMilestone
+  claimRaidMilestone,
+  recordDailyDietCompletion
 } from './db/gamification.js';
-import { playPlateClick, playPrFanfare, triggerHaptic } from './engine/audioHaptics.js';
+import { playPlateClick, playPrFanfare, triggerHaptic, speakCoachMessage } from './engine/audioHaptics.js';
 import { usePwaUpdate } from './composables/usePwaUpdate';
 import {
   buildFullCatalog,
@@ -2491,12 +2564,86 @@ async function toggleCreatineToday() {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Aderência Alimentar & Checklist Diário de Refeições
+// ---------------------------------------------------------------------------
+const todayMealChecks = ref({});
+
+function loadMealChecks() {
+  if (typeof window === 'undefined' || !window.localStorage) return;
+  try {
+    const key = `treinopro_meal_checks_${todayKey.value}`;
+    const raw = window.localStorage.getItem(key);
+    todayMealChecks.value = raw ? JSON.parse(raw) : {};
+  } catch {
+    todayMealChecks.value = {};
+  }
+}
+
+const totalMealsCount = computed(() => activePlan.value?.meals?.length || 0);
+const checkedMealsCount = computed(() => {
+  return Object.values(todayMealChecks.value || {}).filter(Boolean).length;
+});
+const dietAdherencePercent = computed(() => {
+  if (totalMealsCount.value === 0) return 0;
+  return Math.min(100, Math.round((checkedMealsCount.value / totalMealsCount.value) * 100));
+});
+
+const consumedCaloriesEstimated = computed(() => {
+  let total = 0;
+  for (const meal of activePlan.value?.meals || []) {
+    if (todayMealChecks.value[meal.id]) {
+      total += Number(meal.calories) || 0;
+    }
+  }
+  return total;
+});
+
+const consumedProteinEstimated = computed(() => {
+  if (totalMealsCount.value === 0 || !targetProteinGrams.value) return 0;
+  return Math.round((checkedMealsCount.value / totalMealsCount.value) * targetProteinGrams.value);
+});
+
+function toggleMealCheck(mealId) {
+  const current = !!todayMealChecks.value[mealId];
+  const next = !current;
+  todayMealChecks.value = {
+    ...todayMealChecks.value,
+    [mealId]: next
+  };
+  if (typeof window !== 'undefined' && window.localStorage) {
+    window.localStorage.setItem(`treinopro_meal_checks_${todayKey.value}`, JSON.stringify(todayMealChecks.value));
+  }
+
+  if (next) {
+    playPlateClick();
+    triggerHaptic('click');
+
+    const total = totalMealsCount.value;
+    const checked = Object.values(todayMealChecks.value).filter(Boolean).length;
+    if (total > 0 && checked === total) {
+      confetti({
+        particleCount: 70,
+        spread: 60,
+        origin: { y: 0.6 }
+      });
+      playPrFanfare();
+      triggerHaptic('celebrate');
+      const dietRes = recordDailyDietCompletion(todayKey.value);
+      if (!dietRes.alreadyClaimed) {
+        gamificationState.value = dietRes.updated;
+      }
+    }
+  }
+}
+
 const WEEK_REFRESH_INTERVAL_MS = 60 * 1000;
 let weekWatcherTimer = null;
 
 onMounted(async () => {
   setupPWA();
   await loadUserData();
+  loadMealChecks();
   startWeekRolloverWatcher();
 });
 
@@ -2930,13 +3077,14 @@ async function toggleExerciseCheck(exerciseId, splitId) {
       ?.exercises?.find(e => e.id === exerciseId);
     if (ex) triggerRestTimer(ex.rest);
 
-    // Feedback sonoro, tátil e visual de PR
+    // Feedback sonoro, tátil, visual de PR e treinador de voz
     const pr = personalRecords.value[exerciseId];
     const weight = Number(current.weight) || 0;
     const isPr = pr && weight > (pr.maxWeightKg || 0);
     if (isPr) {
       playPrFanfare();
       triggerHaptic('pr');
+      speakCoachMessage('pr');
       const diff = Math.round((weight - (pr.maxWeightKg || 0)) * 10) / 10;
       prToastState.value = {
         isOpen: true,
@@ -2948,6 +3096,7 @@ async function toggleExerciseCheck(exerciseId, splitId) {
     } else {
       playPlateClick();
       triggerHaptic('click');
+      speakCoachMessage('set_done');
     }
   }
 }
@@ -3138,13 +3287,14 @@ async function toggleSetDone(exerciseId, splitId, setNumber) {
         ?.exercises?.find(e => e.id === exerciseId);
       if (ex) triggerRestTimer(ex.rest);
 
-      // Feedback sonoro, tátil e visual de PR
+      // Feedback sonoro, tátil, visual de PR e treinador de voz
       const pr = personalRecords.value[exerciseId];
       const weight = Number(target.weight) || 0;
       const isPr = pr && weight > (pr.maxWeightKg || 0);
       if (isPr) {
         playPrFanfare();
         triggerHaptic('pr');
+        speakCoachMessage('pr');
         const diff = Math.round((weight - (pr.maxWeightKg || 0)) * 10) / 10;
         prToastState.value = {
           isOpen: true,
@@ -3156,6 +3306,7 @@ async function toggleSetDone(exerciseId, splitId, setNumber) {
       } else {
         playPlateClick();
         triggerHaptic('click');
+        speakCoachMessage('set_done');
       }
     }
   }
@@ -3508,6 +3659,7 @@ async function finishCurrentSession() {
   };
   showDayCompletionModal.value = true;
   triggerHaptic('celebrate');
+  speakCoachMessage('finish');
 }
 
 function getTodayScheduleDayId() {

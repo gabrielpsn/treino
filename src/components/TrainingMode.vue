@@ -9,15 +9,32 @@
   >
     <!-- Topo: saída, identificação da ficha, cronômetro da sessão e progresso -->
     <header class="flex items-center justify-between gap-3 px-4 py-3 border-b border-[#E2E8F0] bg-white flex-shrink-0 shadow-xs">
-      <button
-        type="button"
-        id="btn-exit-training-mode"
-        aria-label="Sair do modo treino"
-        class="tap-btn w-11 h-11 rounded-xl border border-[#CBD5E1] bg-white text-[#0F172A] hover:bg-[#F8FAFC] text-sm font-bold flex items-center justify-center transition-colors"
-        @click="$emit('close')"
-      >
-        ✕
-      </button>
+      <div class="flex items-center gap-2">
+        <button
+          type="button"
+          id="btn-exit-training-mode"
+          aria-label="Sair do modo treino"
+          class="tap-btn w-11 h-11 rounded-xl border border-[#CBD5E1] bg-white text-[#0F172A] hover:bg-[#F8FAFC] text-sm font-bold flex items-center justify-center transition-colors"
+          @click="$emit('close')"
+        >
+          ✕
+        </button>
+
+        <button
+          type="button"
+          id="btn-toggle-voice-coach"
+          :title="isVoiceOn ? 'Treinador de Voz AI: Ativado' : 'Treinador de Voz AI: Silenciado'"
+          :aria-label="isVoiceOn ? 'Desativar Treinador de Voz AI' : 'Ativar Treinador de Voz AI'"
+          @click="toggleVoiceCoach"
+          class="tap-btn h-11 px-2.5 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 shadow-2xs"
+          :class="isVoiceOn
+            ? 'bg-[#0066FF]/10 text-[#0066FF] border-[#0066FF]/30'
+            : 'bg-[#F1F5F9] text-[#94A3B8] border-[#E2E8F0]'"
+        >
+          <span class="text-base">{{ isVoiceOn ? '🎙️' : '🔇' }}</span>
+          <span class="hidden sm:inline text-[11px] font-black">{{ isVoiceOn ? 'Voz Ativa' : 'Mudo' }}</span>
+        </button>
+      </div>
 
       <div class="text-center min-w-0">
         <p class="text-[10px] uppercase tracking-widest text-[#0066FF] font-black">Modo Treino</p>
@@ -263,6 +280,7 @@ import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 import { formatElapsed, elapsedSince, buildTrainingQueue } from '../engine/sessionMode';
 import { MUSCLE_LABELS, getMuscleBadgeClass, getMuscleDotColor } from '../db/customExercises';
 import { suggestNextLoad } from '../engine/progression';
+import { getVoiceCoachEnabled, setVoiceCoachEnabled, speakCoachMessage } from '../engine/audioHaptics.js';
 
 const props = defineProps({
   split: { type: Object, default: null },
@@ -277,6 +295,15 @@ const manualFocusId = ref(null);
 const activeSetNumber = ref(1);
 const now = ref(Date.now());
 let tick = null;
+const isVoiceOn = ref(getVoiceCoachEnabled());
+
+function toggleVoiceCoach() {
+  isVoiceOn.value = !isVoiceOn.value;
+  setVoiceCoachEnabled(isVoiceOn.value);
+  if (isVoiceOn.value) {
+    speakCoachMessage('start', 'Treinador de voz ativado! Foco total na sobrecarga.');
+  }
+}
 
 const queue = computed(() => buildTrainingQueue(props.split?.exercises || [], props.logs));
 
@@ -372,6 +399,9 @@ onMounted(() => {
   tick = setInterval(() => {
     now.value = Date.now();
   }, 1000);
+  if (isVoiceOn.value) {
+    speakCoachMessage('start');
+  }
 });
 
 onBeforeUnmount(() => {

@@ -29,7 +29,8 @@ const DEFAULT_STATE = {
   equippedTitle: 'iniciante_ferro',
   claimedBossMonths: [],
   leagueTier: 'bronze',
-  claimedRaidMilestones: []
+  claimedRaidMilestones: [],
+  claimedDietDates: []
 };
 
 export function loadGamificationState() {
@@ -65,7 +66,8 @@ export function loadGamificationState() {
       equippedTitle: parsed.equippedTitle || 'iniciante_ferro',
       claimedBossMonths: Array.isArray(parsed.claimedBossMonths) ? parsed.claimedBossMonths : [],
       leagueTier: parsed.leagueTier || 'bronze',
-      claimedRaidMilestones: Array.isArray(parsed.claimedRaidMilestones) ? parsed.claimedRaidMilestones : []
+      claimedRaidMilestones: Array.isArray(parsed.claimedRaidMilestones) ? parsed.claimedRaidMilestones : [],
+      claimedDietDates: Array.isArray(parsed.claimedDietDates) ? parsed.claimedDietDates : []
     };
   } catch {
     return { ...DEFAULT_STATE };
@@ -99,7 +101,8 @@ export function saveGamificationState(state) {
       equippedTitle: state?.equippedTitle || 'iniciante_ferro',
       claimedBossMonths: Array.isArray(state?.claimedBossMonths) ? state.claimedBossMonths : [],
       leagueTier: state?.leagueTier || 'bronze',
-      claimedRaidMilestones: Array.isArray(state?.claimedRaidMilestones) ? state.claimedRaidMilestones : []
+      claimedRaidMilestones: Array.isArray(state?.claimedRaidMilestones) ? state.claimedRaidMilestones : [],
+      claimedDietDates: Array.isArray(state?.claimedDietDates) ? state.claimedDietDates : []
     };
     window.localStorage.setItem(GAMIFICATION_STORAGE_KEY, JSON.stringify(safeState));
   } catch {
@@ -400,4 +403,26 @@ export function claimRaidMilestone({
 
   saveGamificationState(updated);
   return { success: true, updated, alreadyClaimed: false };
+}
+
+/**
+ * Concede XP e Moedas de Ferro ao completar 100% das refeições prescritas do dia.
+ */
+export function recordDailyDietCompletion(dateStr) {
+  const current = loadGamificationState();
+  const claimed = Array.isArray(current.claimedDietDates) ? current.claimedDietDates : [];
+
+  if (claimed.includes(dateStr)) {
+    return { alreadyClaimed: true, updated: current };
+  }
+
+  const updated = {
+    ...current,
+    totalXp: current.totalXp + 50,
+    ironCoins: current.ironCoins + 30,
+    claimedDietDates: [...claimed, dateStr]
+  };
+
+  saveGamificationState(updated);
+  return { alreadyClaimed: false, updated };
 }

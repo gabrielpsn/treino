@@ -149,15 +149,17 @@
           <span class="text-xs">💊</span>
           <span
             class="text-[9px] font-black px-1.5 py-0.5 rounded-full"
-            :class="creatineTaken ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-[#64748B]'"
+            :class="habitsPercent === 100 ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-[#64748B]'"
           >
-            {{ creatineTaken ? '✓' : '○' }}
+            {{ habitsPercent }}%
           </span>
         </div>
         <div class="mt-1">
-          <span class="block text-[9px] font-bold uppercase text-[#64748B] leading-none">Creatina</span>
-          <span class="text-[11px] font-black text-[#0F172A] truncate block">
-            {{ creatineTaken ? 'Tomada' : 'Marcar' }}
+          <span class="block text-[9px] font-bold uppercase text-[#64748B] leading-none">
+            {{ creatineTaken ? '✓ Creatina' : '○ Creatina' }}
+          </span>
+          <span class="text-[11px] font-black text-[#0F172A] truncate block mt-0.5">
+            {{ dietText || (creatineTaken ? 'Tomada' : 'Marcar') }}
           </span>
         </div>
       </div>
@@ -188,6 +190,14 @@ const props = defineProps({
   creatineTaken: {
     type: Boolean,
     default: false
+  },
+  dietPercent: {
+    type: Number,
+    default: 0
+  },
+  dietText: {
+    type: String,
+    default: ''
   }
 });
 
@@ -204,13 +214,22 @@ const c3 = 2 * Math.PI * r3; // ~188.50
 
 const cleanWorkoutPercent = computed(() => Math.min(100, Math.max(0, Math.round(props.workoutPercent || 0))));
 const cleanWaterPercent = computed(() => Math.min(100, Math.max(0, Math.round(props.waterPercent || 0))));
-const habitsPercent = computed(() => (props.creatineTaken ? 100 : 0));
+
+const habitsPercent = computed(() => {
+  if (props.dietText) {
+    const creatinePart = props.creatineTaken ? 50 : 0;
+    const dietPart = Math.min(50, Math.round((props.dietPercent / 100) * 50));
+    return creatinePart + dietPart;
+  }
+  return props.creatineTaken ? 100 : 0;
+});
 
 const offset1 = computed(() => c1 - (c1 * cleanWorkoutPercent.value) / 100);
 const offset2 = computed(() => c2 - (c2 * cleanWaterPercent.value) / 100);
 const offset3 = computed(() => c3 - (c3 * habitsPercent.value) / 100);
 
 const allRingsClosed = computed(() => {
-  return cleanWorkoutPercent.value >= 100 && cleanWaterPercent.value >= 100 && props.creatineTaken;
+  const habitsClosed = props.dietText ? habitsPercent.value >= 100 : props.creatineTaken;
+  return cleanWorkoutPercent.value >= 100 && cleanWaterPercent.value >= 100 && habitsClosed;
 });
 </script>

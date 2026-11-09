@@ -71,6 +71,7 @@
 
 <script setup>
 import { ref, computed, onBeforeUnmount } from 'vue';
+import { speakCoachMessage } from '../engine/audioHaptics.js';
 
 const isActive = ref(false);
 const totalTime = ref(60);
@@ -107,6 +108,7 @@ function startTimer(seconds = 60) {
         if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
           navigator.vibrate([60, 40, 60]);
         }
+        speakCoachMessage('warning_10s');
       }
       return;
     }

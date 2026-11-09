@@ -100,3 +100,86 @@ export function triggerHaptic(type = 'click') {
     // Falha silenciosa
   }
 }
+
+/**
+ * Treinador de Voz AI (Web Speech API nativa em pt-BR).
+ * Fornece feedbacks de voz motivacionais durante a execução do treino.
+ */
+const VOICE_PREF_KEY = 'treinopro_voice_coach_enabled';
+let isVoiceCoachEnabled = true;
+
+if (typeof window !== 'undefined' && window.localStorage) {
+  const stored = window.localStorage.getItem(VOICE_PREF_KEY);
+  if (stored !== null) {
+    isVoiceCoachEnabled = stored === 'true';
+  }
+}
+
+export function isVoiceSupported() {
+  return typeof window !== 'undefined' && 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
+}
+
+export function getVoiceCoachEnabled() {
+  return isVoiceCoachEnabled;
+}
+
+export function setVoiceCoachEnabled(enabled) {
+  isVoiceCoachEnabled = !!enabled;
+  if (typeof window !== 'undefined' && window.localStorage) {
+    window.localStorage.setItem(VOICE_PREF_KEY, String(isVoiceCoachEnabled));
+  }
+}
+
+const COACH_PHRASES = {
+  start: [
+    'Modo treino ativado! Foco total na sobrecarga.',
+    'Vamos com tudo! Cada repetição constrói sua força.',
+    'Sessão iniciada. Amplitude máxima e controle na descida.'
+  ],
+  set_done: [
+    'Excelente série! Descanse e respire fundo.',
+    'Boa! Mais uma série na conta.',
+    'Série concluída! Mantenha a intensidade.',
+    'Perfeito! Recuperação iniciada.'
+  ],
+  pr: [
+    'Incrível! Novo recorde pessoal batido! O ferro nunca mente.',
+    'Sensacional! Você superou sua melhor marca histórica!',
+    'Novo PR na conta! Sobrecarga progressiva em ação!'
+  ],
+  warning_10s: [
+    'Faltam 10 segundos! Prepare-se para a barra.',
+    'Atenção! Dez segundos para a próxima série.',
+    'Bora para a barra! Dez segundos.'
+  ],
+  finish: [
+    'Treino concluído com maestria! O crescimento está garantido.',
+    'Missão cumprida! Excelente intensidade hoje. Bom descanso!',
+    'Treino finalizado com sucesso! Parabéns pela consistência.'
+  ]
+};
+
+export function speakCoachMessage(type = 'set_done', customText = null) {
+  if (!isVoiceCoachEnabled) return;
+  if (!isVoiceSupported()) return;
+
+  try {
+    const list = COACH_PHRASES[type] || COACH_PHRASES.set_done;
+    const textToSpeak = customText || list[Math.floor(Math.random() * list.length)];
+    if (!textToSpeak) return;
+
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(textToSpeak);
+    utterance.lang = 'pt-BR';
+    utterance.rate = 1.05;
+    utterance.pitch = 1.0;
+
+    const voices = window.speechSynthesis.getVoices();
+    const ptVoice = voices.find(v => v.lang && (v.lang.startsWith('pt') || v.lang.startsWith('pt_')));
+    if (ptVoice) utterance.voice = ptVoice;
+
+    window.speechSynthesis.speak(utterance);
+  } catch {
+    // Falha silenciosa
+  }
+}

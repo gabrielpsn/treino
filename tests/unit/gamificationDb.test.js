@@ -13,7 +13,8 @@ import {
   equipTheme,
   unlockAndEquipTitle,
   equipTitle,
-  claimRaidMilestone
+  claimRaidMilestone,
+  recordDailyDietCompletion
 } from '../../src/db/gamification.js';
 
 describe('Gamification DB State', () => {
@@ -187,5 +188,24 @@ describe('Gamification DB State', () => {
     expect(res100.success).toBe(true);
     expect(res100.updated.unlockedTitles).toContain('heroi_raid');
     expect(res100.updated.ironCoins).toBe(600);
+  });
+
+  it('concede bônus de moedas e XP ao completar dieta diária sem duplicar no mesmo dia', () => {
+    const res1 = recordDailyDietCompletion('2026-11-09');
+    expect(res1.alreadyClaimed).toBe(false);
+    expect(res1.updated.ironCoins).toBe(130); // 100 inicial + 30
+    expect(res1.updated.totalXp).toBe(50);
+    expect(res1.updated.claimedDietDates).toContain('2026-11-09');
+
+    // Tentativa duplicada no mesmo dia
+    const resDup = recordDailyDietCompletion('2026-11-09');
+    expect(resDup.alreadyClaimed).toBe(true);
+    expect(resDup.updated.ironCoins).toBe(130);
+
+    // Novo dia concede novo bônus
+    const resNext = recordDailyDietCompletion('2026-11-10');
+    expect(resNext.alreadyClaimed).toBe(false);
+    expect(resNext.updated.ironCoins).toBe(160);
+    expect(resNext.updated.totalXp).toBe(100);
   });
 });
