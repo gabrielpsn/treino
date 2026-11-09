@@ -134,9 +134,34 @@ function assemblePlan(basePlan, aiPlan, { profile, catalog }) {
     };
   });
 
+  // Validação e incorporação das refeições (meals) geradas pela IA, se fornecidas
+  let meals = basePlan.meals;
+  if (Array.isArray(aiPlan.meals) && aiPlan.meals.length >= 2) {
+    const validMeals = aiPlan.meals
+      .filter(m => m && typeof m.title === 'string' && typeof m.items === 'string' && m.items.trim())
+      .map((m, idx) => ({
+        id: m.id || `meal-${idx + 1}`,
+        order: Number(m.order) || (idx + 1),
+        title: String(m.title).trim(),
+        tag: String(m.tag || 'Refeição Equilibrada').trim(),
+        objective: String(m.objective || 'Nutrição e energia').trim(),
+        timeSuggestion: m.timeSuggestion ? String(m.timeSuggestion).trim() : undefined,
+        items: String(m.items).trim(),
+        calories: Number(m.calories) || undefined,
+        protein: Number(m.protein) || undefined,
+        carbs: Number(m.carbs) || undefined,
+        fat: Number(m.fat) || undefined
+      }));
+
+    if (validMeals.length >= 2) {
+      meals = validMeals;
+    }
+  }
+
   return {
     ...basePlan,
     workoutSplits,
+    meals,
     planSource: 'ai',
     aiRationale: typeof aiPlan.rationale === 'string' ? aiPlan.rationale.trim().slice(0, 300) : '',
     physiology: {
@@ -239,7 +264,8 @@ export async function requestAiPlan({ profile, catalog, splitIds, fetchImpl, tim
           experienceLevel: profile.experienceLevel,
           equipment: profile.equipment,
           restrictions: profile.restrictions ?? [],
-          daysPerWeek: profile.daysPerWeek
+          daysPerWeek: profile.daysPerWeek,
+          dietaryPreference: profile.dietaryPreference || 'omnivore'
         },
         bmr,
         tdee,

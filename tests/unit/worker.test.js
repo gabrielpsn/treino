@@ -292,6 +292,41 @@ describe('Worker — Cloudflare Workers AI nativo (Opção 2 100% gratuita)', ()
     expect(body.plan.proteinGrams).toBe(165);
   });
 
+  it('retorna a lista de refeições (meals) quando o Workers AI devolve o plano alimentar', async () => {
+    const planWithMeals = {
+      ...dummyPlan,
+      meals: [
+        {
+          id: 'meal-1',
+          order: 1,
+          title: 'Café da Manhã Anabólico',
+          tag: 'Desjejum',
+          objective: 'Quebra de jejum proteica',
+          items: '3 ovos mexidos + 2 fatias de pão integral + 1 banana com aveia',
+          calories: 550,
+          protein: 32,
+          carbs: 65,
+          fat: 15
+        }
+      ]
+    };
+
+    const aiRun = vi.fn(async () => ({
+      response: JSON.stringify(planWithMeals)
+    }));
+
+    const response = await worker.fetch(planRequest(), {
+      AI: { run: aiRun },
+      ASSETS: env.ASSETS
+    });
+
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.plan.meals).toHaveLength(1);
+    expect(body.plan.meals[0].title).toBe('Café da Manhã Anabólico');
+    expect(body.plan.meals[0].calories).toBe(550);
+  });
+
   it('rejeita resposta vazia do Workers AI', async () => {
     const aiRun = vi.fn(async () => ({
       response: JSON.stringify({ splits: [] })

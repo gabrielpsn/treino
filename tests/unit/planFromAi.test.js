@@ -103,6 +103,42 @@ describe('validateAiPlan — o que a IA pode decidir', () => {
     expect(plan.workoutSplits.map(s => s.id)).toEqual(splitIds);
   });
 
+  it('adota o cardápio e refeições personalizadas quando a IA fornece a lista de refeições', () => {
+    const aiMeals = [
+      {
+        id: 'meal-1',
+        order: 1,
+        title: 'Café da Manhã Hiperproteico',
+        tag: 'Desjejum Anabólico',
+        objective: 'Disparo de síntese proteica',
+        items: '4 ovos mexidos + 2 fatias de pão integral + 1 banana com aveia',
+        calories: 600,
+        protein: 38,
+        carbs: 65,
+        fat: 18
+      },
+      {
+        id: 'meal-2',
+        order: 2,
+        title: 'Almoço Construtor',
+        tag: 'Pico Anabólico & Creatina',
+        objective: 'Alta densidade nutricional',
+        items: '200g de peito de frango + 200g de arroz + feijão e salada',
+        calories: 800,
+        protein: 55,
+        carbs: 90,
+        fat: 20
+      }
+    ];
+
+    const plan = validate(validAiPlan({ meals: aiMeals }));
+
+    expect(plan.meals).toHaveLength(2);
+    expect(plan.meals[0].title).toBe('Café da Manhã Hiperproteico');
+    expect(plan.meals[0].items).toContain('4 ovos mexidos');
+    expect(plan.meals[1].calories).toBe(800);
+  });
+
   it('escreve séries e descanso no mesmo idioma da ficha da fórmula', () => {
     const plan = validate(validAiPlan());
     const [first] = plan.workoutSplits[0].exercises;

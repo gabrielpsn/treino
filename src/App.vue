@@ -950,24 +950,40 @@
           </p>
         </div>
 
-        <!-- Barra de Seleção de Preferência Alimentar -->
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-white border border-[#E2E8F0] shadow-xs">
+        <!-- Barra de Seleção de Preferência Alimentar e Agente IA -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 p-4 rounded-2xl bg-white border border-[#E2E8F0] shadow-xs">
           <div>
             <span class="text-xs font-bold uppercase tracking-wider text-[#64748B]">Estilo de Dieta</span>
             <p class="text-xs text-[#0F172A]">Escolha o padrão para adaptar os alimentos do cardápio</p>
           </div>
-          <div class="flex flex-wrap gap-1.5" role="group" aria-label="Preferência alimentar">
+          <div class="flex flex-wrap items-center gap-2">
+            <div class="flex flex-wrap gap-1.5" role="group" aria-label="Preferência alimentar">
+              <button
+                v-for="diet in DIETARY_PREFERENCES"
+                :key="diet.id"
+                :id="`btn-diet-switch-${diet.id}`"
+                type="button"
+                @click="setDietaryPreference(diet.id)"
+                :class="currentDietaryPreference === diet.id ? 'bg-[#0066FF] text-white font-bold shadow-xs' : 'bg-white text-[#64748B] hover:text-[#0F172A] hover:bg-[#F1F5F9] border border-[#E2E8F0]'"
+                class="tap-btn px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5"
+              >
+                <span>{{ diet.icon }}</span>
+                <span>{{ diet.label }}</span>
+              </button>
+            </div>
+
+            <!-- Botão de Sincronizar com Agente de IA -->
             <button
-              v-for="diet in DIETARY_PREFERENCES"
-              :key="diet.id"
-              :id="`btn-diet-switch-${diet.id}`"
+              v-if="userProfile"
               type="button"
-              @click="setDietaryPreference(diet.id)"
-              :class="currentDietaryPreference === diet.id ? 'bg-[#0066FF] text-white font-bold shadow-xs' : 'bg-white text-[#64748B] hover:text-[#0F172A] hover:bg-[#F1F5F9] border border-[#E2E8F0]'"
-              class="tap-btn px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5"
+              id="btn-diet-generate-ai"
+              @click="generatePlanWithAi"
+              :disabled="isAiPlanLoading"
+              class="tap-btn px-3 py-1.5 rounded-xl text-xs font-bold border transition-colors disabled:opacity-50 flex items-center gap-1.5 shadow-xs border-[#0066FF]/30 bg-white text-[#0066FF] hover:bg-[#F1F5F9]"
+              :title="isAiPlanLoading ? 'Gerando plano completo com IA...' : 'Gerar cardápio e rotina de treino com Agente Cloudflare'"
             >
-              <span>{{ diet.icon }}</span>
-              <span>{{ diet.label }}</span>
+              <span>{{ isAiPlanLoading ? '⏳' : '🤖' }}</span>
+              <span>{{ isAiPlanLoading ? 'Gerando...' : 'Personalizar Dieta & Treino com IA' }}</span>
             </button>
           </div>
         </div>
@@ -1244,19 +1260,34 @@
           >
             <div>
               <div class="flex items-center justify-between gap-2 mb-2">
-                <h5 class="font-bold text-[#0F172A] text-sm sm:text-base">{{ meal.title }}</h5>
-                <span 
-                  :class="isWeightLoss ? 'text-rose-600 bg-rose-50 border-rose-200' : 'text-[#0066FF] bg-blue-50 border-blue-200'"
-                  class="text-[11px] font-semibold px-2 py-0.5 rounded border"
-                >
-                  {{ meal.tag }}
-                </span>
+                <div class="flex items-center gap-2">
+                  <h5 class="font-bold text-[#0F172A] text-sm sm:text-base">{{ meal.title }}</h5>
+                  <span v-if="meal.timeSuggestion" class="text-[10px] font-semibold text-[#64748B] bg-[#F1F5F9] px-2 py-0.5 rounded-md">
+                    ⏰ {{ meal.timeSuggestion }}
+                  </span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <span v-if="activePlan?.planSource === 'ai'" class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 uppercase tracking-wider">
+                    IA
+                  </span>
+                  <span 
+                    :class="isWeightLoss ? 'text-rose-600 bg-rose-50 border-rose-200' : 'text-[#0066FF] bg-blue-50 border-blue-200'"
+                    class="text-[11px] font-semibold px-2 py-0.5 rounded border"
+                  >
+                    {{ meal.tag }}
+                  </span>
+                </div>
               </div>
               <p class="text-xs sm:text-sm text-[#0F172A] leading-relaxed mt-2">{{ meal.items }}</p>
             </div>
-            <p class="text-[11px] text-[#64748B] mt-4 pt-3 border-t border-[#E2E8F0]">
-              <strong>Objetivo Fisiológico:</strong> {{ meal.objective }}
-            </p>
+            <div class="mt-4 pt-3 border-t border-[#E2E8F0] flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px] text-[#64748B]">
+              <p>
+                <strong>Objetivo Fisiológico:</strong> {{ meal.objective }}
+              </p>
+              <span v-if="meal.calories" class="font-bold text-[#0066FF] flex-shrink-0">
+                ⚡ ~{{ meal.calories }} kcal
+              </span>
+            </div>
           </div>
         </div>
       </section>
@@ -2487,7 +2518,7 @@ const AI_FAILURE_MESSAGES = {
 };
 
 /**
- * Gera a ficha e as metas com o Gemini, pelo proxy do servidor.
+ * Gera a ficha e as metas com o Agente no Cloudflare Workers / Gemini.
  *
  * Regra que dá nome à função: o plano atual só é trocado depois que a gravação
  * no banco termina. Se a IA falhar, responder devagar ou devolver lixo, o
@@ -2498,13 +2529,16 @@ async function generatePlanWithAi() {
   if (!profile || isAiPlanLoading.value) return;
 
   isAiPlanLoading.value = true;
-  aiPlanMessage.value = { tone: 'info', text: 'Consultando a IA... ela leva alguns segundos.' };
+  aiPlanMessage.value = { tone: 'info', text: 'Consultando o Agente Cloudflare... gerando treino e cardápio.' };
 
   try {
     const splitIds = (activePlan.value?.workoutSplits ?? []).map(s => s.id);
 
     const aiPlan = await requestAiPlan({
-      profile,
+      profile: {
+        ...profile,
+        dietaryPreference: currentDietaryPreference.value || profile.dietaryPreference || 'omnivore'
+      },
       catalog: fullCatalog.value,
       splitIds: splitIds.length > 0 ? splitIds : ['treino-a']
     });
@@ -2525,9 +2559,10 @@ async function generatePlanWithAi() {
     await loadLastSets();
 
     const count = rawPlan.workoutSplits.reduce((total, s) => total + s.exercises.length, 0);
+    const mealsCount = rawPlan.meals?.length || 0;
     aiPlanMessage.value = {
       tone: 'info',
-      text: `Ficha gerada por IA: ${rawPlan.workoutSplits.length} fichas, ${count} exercícios e ${rawPlan.physiology.targetCalories} kcal.${rawPlan.aiRationale ? ` ${rawPlan.aiRationale}` : ''}`
+      text: `Plano gerado por IA: ${rawPlan.workoutSplits.length} fichas (${count} exercícios), ${mealsCount} refeições personalizadas e ${rawPlan.physiology.targetCalories} kcal.${rawPlan.aiRationale ? ` ${rawPlan.aiRationale}` : ''}`
     };
   } catch (error) {
     const reason = error instanceof AiPlanError ? error.reason : 'unknown';
