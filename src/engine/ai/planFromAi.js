@@ -267,7 +267,7 @@ export function validateAiPlan(aiPlan, { profile, catalog }) {
  * testes: o app offline não tem `fetch` disponível por decisão de produto, e o
  * caminho do erro precisa ser testável.
  */
-export async function requestAiPlan({ profile, catalog, splitIds, fetchImpl, timeoutMs = 45000 }) {
+export async function requestAiPlan({ profile, catalog, splitIds, splits, fetchImpl, timeoutMs = 45000 }) {
   const doFetch = fetchImpl ?? (typeof fetch === 'function' ? fetch : null);
 
   // Sem proxy (dev sem `wrangler dev`, app aberto por file://) a geração por IA
@@ -284,6 +284,15 @@ export async function requestAiPlan({ profile, catalog, splitIds, fetchImpl, tim
   // contra a mesma conta depois.
   const bmr = calculateBMR(profile);
   const tdee = calculateTDEE(bmr, profile.daysPerWeek);
+
+  const splitsPayload = Array.isArray(splits) && splits.length > 0
+    ? splits.map(s => ({
+        id: s.id,
+        title: s.title,
+        subtitle: s.subtitle,
+        muscles: s.muscles || (s.exercises ? [...new Set(s.exercises.map(e => e.muscle))] : [])
+      }))
+    : (splitIds || []).map(id => ({ id }));
 
   let response;
   try {
@@ -306,7 +315,7 @@ export async function requestAiPlan({ profile, catalog, splitIds, fetchImpl, tim
         bmr,
         tdee,
         catalog: buildCatalogForModel(catalog),
-        splits: splitIds.map(id => ({ id }))
+        splits: splitsPayload
       }),
       signal: controller?.signal
     });

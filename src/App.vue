@@ -348,11 +348,10 @@
           >
             <template v-if="aiPlanMessage">{{ aiPlanMessage.text }}</template>
             <template v-else-if="activePlan?.planSource === 'ai'">
-              Ficha montada por IA a partir dos seus dados e das suas restrições —
-              vale revisar antes de treinar.
+              🤖 Ficha montada pelo Agente Overload AI com base na sinergia muscular (Push/Pull/Legs) e restrições articulares.
             </template>
             <template v-else>
-              Ficha calculada por fórmula (TDEE e volume por grupo muscular).
+              ⚡ Ficha calculada pelo motor biomecânico (sinergia muscular e volume por grupo). Toque em "Gerar com IA" para personalizar via IA.
             </template>
           </p>
         </div>
@@ -2475,6 +2474,16 @@ async function handleSaveProfile(newProfile) {
       origin: { y: 0.6 }
     });
 
+    // A ficha deve ser sempre gerada pela IA disponível no APP:
+    // Se não for para preservar treinos antigos, gera automaticamente a ficha pela IA
+    if (!preserveWorkouts) {
+      nextTick(() => {
+        generatePlanWithAi().catch(err => {
+          console.warn('Geração por IA pós-onboarding:', err);
+        });
+      });
+    }
+
     return plan;
   } catch (err) {
     // O modal NÃO pode ser fechado aqui: sem plano novo o usuário ficaria preso
@@ -2571,7 +2580,12 @@ async function generatePlanWithAi() {
   aiPlanMessage.value = { tone: 'info', text: 'Consultando o Agente Cloudflare... gerando treino e cardápio.' };
 
   try {
-    const splitIds = (activePlan.value?.workoutSplits ?? []).map(s => s.id);
+    const splitsPayload = (activePlan.value?.workoutSplits ?? []).map(s => ({
+      id: s.id,
+      title: s.title,
+      subtitle: s.subtitle,
+      muscles: getSplitMuscleGroups(s)
+    }));
 
     const aiPlan = await requestAiPlan({
       profile: {
@@ -2579,7 +2593,8 @@ async function generatePlanWithAi() {
         dietaryPreference: currentDietaryPreference.value || profile.dietaryPreference || 'omnivore'
       },
       catalog: fullCatalog.value,
-      splitIds: splitIds.length > 0 ? splitIds : ['treino-a']
+      splitIds: splitsPayload.map(s => s.id),
+      splits: splitsPayload
     });
 
     const rawPlan = JSON.parse(JSON.stringify(aiPlan));

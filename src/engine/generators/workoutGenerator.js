@@ -206,8 +206,8 @@ export function generateWorkoutSplit(profile) {
     // ABC Clássico Sinergista (Peito/Tríceps/Ombro, Costas/Bíceps, Pernas/Core)
     splits.push({
       id: 'treino-a',
-      title: 'Treino A (Peito, Ombros & Tríceps)',
-      subtitle: 'Peitoral pesado, deltóide anterior/lateral e isolamento de tríceps',
+      title: 'Treino A (Peito, Ombros & Tríceps - Push)',
+      subtitle: 'Padrão Push: Peito, ombros e tríceps em sinergia biomecânica de empurrar',
       color: 'amber',
       accentBg: 'bg-amber-50 border-amber-200 text-amber-800',
       exercises: buildExerciseList([
@@ -223,8 +223,8 @@ export function generateWorkoutSplit(profile) {
 
     splits.push({
       id: 'treino-b',
-      title: 'Treino B (Costas & Bíceps)',
-      subtitle: 'Dorsais completas, deltóide posterior e flexores de cotovelo (bíceps)',
+      title: 'Treino B (Costas & Bíceps - Pull)',
+      subtitle: 'Padrão Pull: Costas, bíceps e posterior de ombro em sinergia biomecânica de puxar',
       color: 'blue',
       accentBg: 'bg-blue-50 border-blue-200 text-blue-800',
       exercises: buildExerciseList([
@@ -239,8 +239,8 @@ export function generateWorkoutSplit(profile) {
 
     splits.push({
       id: 'treino-c',
-      title: 'Treino C (Pernas Completas & Abdômen)',
-      subtitle: 'Quadríceps, isquiotibiais, glúteos, panturrilha e core',
+      title: 'Treino C (Pernas & Abdômen - Legs)',
+      subtitle: 'Padrão Legs & Core: Quadríceps, isquiotibiais, glúteos e estabilização do core',
       color: 'emerald',
       accentBg: 'bg-emerald-50 border-emerald-200 text-emerald-800',
       exercises: buildExerciseList([
