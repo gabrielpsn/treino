@@ -5,6 +5,8 @@
  * e sincronização sem fricção no dispositivo.
  */
 
+import { calculateDailyStreak } from '../engine/gamification.js';
+
 export const GAMIFICATION_STORAGE_KEY = 'treinopro_gamification_state';
 export const WEEKLY_DAY_COMPLETION_XP = 50;
 
@@ -13,6 +15,8 @@ const DEFAULT_STATE = {
   lifetimeTonnageKg: 0,
   unlockedBadgeIds: [],
   weeklyStreak: 0,
+  dailyStreak: 0,
+  lastActiveDate: null,
   shieldsCount: 1, // Começa com 1 escudo de deload de boas-vindas
   lastActiveWeekKey: null,
   lastRestDayDate: null,
@@ -33,6 +37,8 @@ export function loadGamificationState() {
       lifetimeTonnageKg: Math.max(0, Number(parsed.lifetimeTonnageKg) || 0),
       unlockedBadgeIds: Array.isArray(parsed.unlockedBadgeIds) ? parsed.unlockedBadgeIds : [],
       weeklyStreak: Math.max(0, Number(parsed.weeklyStreak) || 0),
+      dailyStreak: Math.max(0, Number(parsed.dailyStreak) || 0),
+      lastActiveDate: parsed.lastActiveDate || null,
       shieldsCount: Math.min(2, Math.max(0, Number(parsed.shieldsCount) || 0)),
       lastActiveWeekKey: parsed.lastActiveWeekKey || null,
       lastRestDayDate: parsed.lastRestDayDate || null,
@@ -51,6 +57,8 @@ export function saveGamificationState(state) {
       lifetimeTonnageKg: Math.max(0, Number(state?.lifetimeTonnageKg) || 0),
       unlockedBadgeIds: Array.isArray(state?.unlockedBadgeIds) ? state.unlockedBadgeIds : [],
       weeklyStreak: Math.max(0, Number(state?.weeklyStreak) || 0),
+      dailyStreak: Math.max(0, Number(state?.dailyStreak) || 0),
+      lastActiveDate: state?.lastActiveDate || null,
       shieldsCount: Math.min(2, Math.max(0, Number(state?.shieldsCount) || 0)),
       lastActiveWeekKey: state?.lastActiveWeekKey || null,
       lastRestDayDate: state?.lastRestDayDate || null,
@@ -69,7 +77,8 @@ export function recordSessionCompletion({
   earnedXp = 0,
   tonnageKg = 0,
   newBadgeIds = [],
-  currentWeekKey = null
+  currentWeekKey = null,
+  todayDateStr = new Date().toISOString().slice(0, 10)
 }) {
   const current = loadGamificationState();
 
@@ -91,12 +100,17 @@ export function recordSessionCompletion({
     }
   }
 
+  // Atualização de Streak Diário (Chama de Fogo)
+  const streakCalc = calculateDailyStreak(current.lastActiveDate, current.dailyStreak, todayDateStr);
+
   const updated = {
     ...current,
     totalXp: nextXp,
     lifetimeTonnageKg: nextTonnage,
     unlockedBadgeIds: Array.from(badgeSet),
     weeklyStreak: nextStreak,
+    dailyStreak: streakCalc.streak,
+    lastActiveDate: streakCalc.lastActiveDate,
     shieldsCount: nextShields,
     lastActiveWeekKey: currentWeekKey || current.lastActiveWeekKey
   };

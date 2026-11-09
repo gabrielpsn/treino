@@ -54,6 +54,20 @@
           </div>
         </div>
 
+        <!-- Lado Direito do Cabeçalho: Chama de Streak Diário -->
+        <div class="flex items-center gap-2 flex-shrink-0">
+          <div
+            v-if="dailyStreak > 0"
+            id="header-daily-streak"
+            class="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-white/15 hover:bg-white/20 border border-white/25 text-white font-black text-xs shadow-xs transition-all"
+            :title="`Sequência ativa: ${dailyStreak} ${dailyStreak === 1 ? 'dia' : 'dias'} (${dailyStreakFlame.flameLabel})`"
+          >
+            <span class="text-base select-none">{{ dailyStreakFlame.flameEmoji }}</span>
+            <span class="text-amber-300 font-black text-xs sm:text-sm">{{ dailyStreak }}</span>
+            <span class="hidden sm:inline text-[11px] text-white/90 font-bold">{{ dailyStreak === 1 ? 'dia' : 'dias' }}</span>
+          </div>
+        </div>
+
       </div>
 
       <!-- input escondido: acionado pelo menu lateral para importar arquivo JSON -->
@@ -147,7 +161,18 @@
       <GamificationIronStatus
         :total-xp="gamificationState.totalXp"
         :streak="gamificationState.weeklyStreak"
+        :daily-streak="gamificationState.dailyStreak || 0"
         :shields="gamificationState.shieldsCount"
+      />
+
+      <!-- ANÉIS DE ATIVIDADE DIÁRIA (Treino, Água, Hábitos) -->
+      <DailyActivityRings
+        :workout-percent="todayWorkoutProgressPercent"
+        :workout-status-text="todayWorkoutStatusText"
+        :water-percent="waterPercent"
+        :water-text="`${todayWaterMl} / ${targetWaterMl} ml`"
+        :creatine-taken="!!todayHabits.creatineTaken"
+        @toggle-creatine="toggleCreatineToday"
       />
 
       <!-- BANNER DE BOAS-VINDAS / RESUMO INTELIGENTE -->
@@ -1486,6 +1511,7 @@
       v-if="isTrainingModeOpen"
       :split="trainingSplit"
       :logs="workoutLogs"
+      :last-sets="lastSets"
       :started-at="trainingStartedAt"
       @close="isTrainingModeOpen = false"
       @toggle="onTrainingToggle"
@@ -1671,6 +1697,7 @@
       :is-weight-loss="isWeightLoss"
       :active-tab="currentMainTab"
       :current-theme="currentTheme"
+      :daily-streak="dailyStreak"
       :is-app-installed="isAppInstalled"
       @close="isDrawerOpen = false"
       @navigate="tab => currentMainTab = tab"
@@ -1710,6 +1737,9 @@
       :earned-xp="lastSessionCelebration.earnedXp"
       :real-world-equivalence="lastSessionCelebration.realWorldEquivalence"
       :new-badges="lastSessionCelebration.newBadges"
+      :daily-streak="gamificationState.dailyStreak || 1"
+      :athlete-name="userProfile?.userName || 'Atleta'"
+      :patent-title="currentPatentTitle"
       @close="showCelebrationModal = false"
     />
 
@@ -1742,11 +1772,12 @@ import AppSideDrawer from './components/AppSideDrawer.vue';
 import ExerciseDetailsModal from './components/ExerciseDetailsModal.vue';
 import MuscleBodyMap from './components/MuscleBodyMap.vue';
 import GamificationIronStatus from './components/GamificationIronStatus.vue';
+import DailyActivityRings from './components/DailyActivityRings.vue';
 import WorkoutTonnageLiveWidget from './components/WorkoutTonnageLiveWidget.vue';
 import WorkoutCelebrationModal from './components/WorkoutCelebrationModal.vue';
 import WorkoutDayCompletionModal from './components/WorkoutDayCompletionModal.vue';
 import AiPlanLoadingModal from './components/AiPlanLoadingModal.vue';
-import { calculateSessionGamification, checkBadges } from './engine/gamification.js';
+import { calculateSessionGamification, checkBadges, calculateLevelFromXp, getFlameInfo } from './engine/gamification.js';
 import { loadGamificationState, recordSessionCompletion, recordRestDay, recordWeeklyDayCompletion, WEEKLY_DAY_COMPLETION_XP } from './db/gamification.js';
 import { playPlateClick, playPrFanfare, triggerHaptic } from './engine/audioHaptics.js';
 import { usePwaUpdate } from './composables/usePwaUpdate';
@@ -3034,6 +3065,24 @@ const liveSessionGamification = computed(() => {
     existingPrs: personalRecords.value,
     isFinished: false
   });
+});
+
+const dailyStreak = computed(() => gamificationState.value?.dailyStreak || 0);
+const dailyStreakFlame = computed(() => getFlameInfo(dailyStreak.value));
+const currentPatentTitle = computed(() => calculateLevelFromXp(gamificationState.value?.totalXp || 0).patent);
+
+const todayWorkoutProgressPercent = computed(() => {
+  if (gamificationState.value?.lastActiveDate === todayKey.value) return 100;
+  const done = liveSessionGamification.value?.doneSetsCount || 0;
+  if (done > 0) return Math.min(95, Math.round((done / 10) * 100));
+  return 0;
+});
+
+const todayWorkoutStatusText = computed(() => {
+  if (gamificationState.value?.lastActiveDate === todayKey.value) return 'Concluído hoje';
+  const done = liveSessionGamification.value?.doneSetsCount || 0;
+  if (done > 0) return `${done} séries feitas`;
+  return 'Pendente';
 });
 
 // Sugestões de próxima carga por exercício (derivadas do histórico)

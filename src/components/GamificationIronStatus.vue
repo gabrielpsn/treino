@@ -43,15 +43,28 @@
       </div>
     </div>
 
-    <!-- Lado Direito: Ofensiva Semanal (Streak) e Escudos -->
-    <div class="flex items-center gap-2 border-t sm:border-t-0 sm:border-l border-[#E2E8F0] pt-2 sm:pt-0 sm:pl-3 flex-shrink-0">
+    <!-- Lado Direito: Ofensiva Semanal (Streak), Chama Diária e Escudos -->
+    <div class="flex items-center gap-2 border-t sm:border-t-0 sm:border-l border-[#E2E8F0] pt-2 sm:pt-0 sm:pl-3 flex-shrink-0 flex-wrap">
+      <!-- Chama de Streak Diário -->
+      <div
+        id="badge-daily-streak"
+        class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-amber-500/10 border border-amber-400/30 shadow-xs"
+        :title="`Sequência diária: ${dailyStreak} ${dailyStreak === 1 ? 'dia' : 'dias'} consecutivos de treino (${flameInfo.flameLabel})`"
+      >
+        <span class="text-sm">{{ flameInfo.flameEmoji }}</span>
+        <div class="text-left">
+          <span class="block text-[9px] font-bold uppercase text-amber-700 leading-none">Streak</span>
+          <span class="text-xs font-black text-amber-800 leading-none">{{ dailyStreak }} {{ dailyStreak === 1 ? 'dia' : 'dias' }}</span>
+        </div>
+      </div>
+
       <!-- Sequência Semanal -->
       <div
         id="badge-weekly-streak"
         class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] shadow-xs"
         title="Semanas consecutivas cumprindo a meta de treinos"
       >
-        <span class="text-sm">🔥</span>
+        <span class="text-sm">📅</span>
         <div class="text-left">
           <span class="block text-[9px] font-bold uppercase text-[#64748B] leading-none">Ofensiva</span>
           <span class="text-xs font-black text-[#0F172A] leading-none">{{ streak }} sem</span>
@@ -76,7 +89,7 @@
 
 <script setup>
 import { computed } from 'vue';
-import { calculateLevelFromXp } from '../engine/gamification.js';
+import { calculateLevelFromXp, getFlameInfo } from '../engine/gamification.js';
 
 const props = defineProps({
   totalXp: {
@@ -87,6 +100,10 @@ const props = defineProps({
     type: Number,
     default: 0
   },
+  dailyStreak: {
+    type: Number,
+    default: 0
+  },
   shields: {
     type: Number,
     default: 1
@@ -94,4 +111,5 @@ const props = defineProps({
 });
 
 const levelData = computed(() => calculateLevelFromXp(props.totalXp));
+const flameInfo = computed(() => getFlameInfo(props.dailyStreak));
 </script>

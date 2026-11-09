@@ -56,9 +56,14 @@
             </div>
 
             <div class="min-w-0 flex-1">
-              <span class="text-[9px] font-black tracking-widest uppercase px-1.5 py-0.5 rounded bg-black/25 text-white/90 border border-white/20">
-                Atleta Pro
-              </span>
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="text-[9px] font-black tracking-widest uppercase px-1.5 py-0.5 rounded bg-black/25 text-white/90 border border-white/20">
+                  Atleta Pro
+                </span>
+                <span v-if="dailyStreak > 0" class="text-[9px] font-black px-1.5 py-0.5 rounded bg-amber-400/30 text-amber-200 border border-amber-300/40">
+                  {{ flameEmoji }} {{ dailyStreak }}d
+                </span>
+              </div>
               <h4 id="drawer-user-name" class="text-base font-black truncate text-white mt-0.5">
                 {{ userProfile?.userName || 'Atleta' }}
               </h4>
@@ -266,6 +271,8 @@
 </template>
 
 <script setup>
+import { computed } from 'vue';
+
 const props = defineProps({
   isOpen: Boolean,
   userProfile: {
@@ -281,7 +288,17 @@ const props = defineProps({
     type: String,
     default: 'blue'
   },
+  dailyStreak: {
+    type: Number,
+    default: 0
+  },
   isAppInstalled: Boolean
+});
+
+const flameEmoji = computed(() => {
+  if (props.dailyStreak >= 8) return '💎🔥';
+  if (props.dailyStreak >= 4) return '⚡🔥';
+  return '🔥';
 });
 
 const emit = defineEmits([

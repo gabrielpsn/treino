@@ -8,7 +8,9 @@ import {
   calculateSetXp,
   getRealWorldEquivalence,
   checkBadges,
-  calculateSessionGamification
+  calculateSessionGamification,
+  calculateDailyStreak,
+  getFlameInfo
 } from '../../src/engine/gamification.js';
 
 describe('Gamification Engine', () => {
@@ -144,6 +146,52 @@ describe('Gamification Engine', () => {
       expect(res.doneSetsCount).toBe(2);
       expect(res.totalSetsCount).toBe(3);
       expect(res.earnedXp).toBeGreaterThan(100); // 100 de finish + XP das séries
+    });
+  });
+
+  describe('calculateDailyStreak', () => {
+    it('inicia o streak em 1 dia para o primeiro dia ativo', () => {
+      const res = calculateDailyStreak(null, 0, '2026-11-09');
+      expect(res.streak).toBe(1);
+      expect(res.flameLevel).toBe(1);
+      expect(res.flameEmoji).toBe('🔥');
+      expect(res.lastActiveDate).toBe('2026-11-09');
+    });
+
+    it('mantém o streak no mesmo dia sem duplicar contagem', () => {
+      const res = calculateDailyStreak('2026-11-09', 3, '2026-11-09');
+      expect(res.streak).toBe(3);
+      expect(res.flameLevel).toBe(1);
+    });
+
+    it('avança o streak em dias consecutivos e aumenta o nível da chama', () => {
+      // Dia 3 -> Dia 4 (Chama Dourada)
+      const res1 = calculateDailyStreak('2026-11-08', 3, '2026-11-09');
+      expect(res1.streak).toBe(4);
+      expect(res1.flameLevel).toBe(2);
+      expect(res1.flameEmoji).toBe('⚡🔥');
+
+      // Dia 7 -> Dia 8 (Supernova Azul)
+      const res2 = calculateDailyStreak('2026-11-08', 7, '2026-11-09');
+      expect(res2.streak).toBe(8);
+      expect(res2.flameLevel).toBe(3);
+      expect(res2.flameEmoji).toBe('💎🔥');
+    });
+
+    it('reinicia o streak para 1 se houver intervalo maior que 1 dia', () => {
+      const res = calculateDailyStreak('2026-11-05', 10, '2026-11-09');
+      expect(res.streak).toBe(1);
+      expect(res.flameLevel).toBe(1);
+    });
+  });
+
+  describe('getFlameInfo', () => {
+    it('retorna informações visuais corretas para cada patamar de dias', () => {
+      expect(getFlameInfo(0).flameLevel).toBe(0);
+      expect(getFlameInfo(1).flameEmoji).toBe('🔥');
+      expect(getFlameInfo(4).flameEmoji).toBe('⚡🔥');
+      expect(getFlameInfo(8).flameEmoji).toBe('💎🔥');
+      expect(getFlameInfo(8).flameLevel).toBe(3);
     });
   });
 });

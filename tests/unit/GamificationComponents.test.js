@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import GamificationIronStatus from '../../src/components/GamificationIronStatus.vue';
 import WorkoutTonnageLiveWidget from '../../src/components/WorkoutTonnageLiveWidget.vue';
@@ -6,11 +6,12 @@ import WorkoutCelebrationModal from '../../src/components/WorkoutCelebrationModa
 
 describe('Gamification Vue Components', () => {
   describe('GamificationIronStatus', () => {
-    it('renderiza nível, patente e ofensiva', () => {
+    it('renderiza nível, patente, ofensiva semanal e streak diário', () => {
       const wrapper = mount(GamificationIronStatus, {
         props: {
           totalXp: 1200,
           streak: 4,
+          dailyStreak: 5,
           shields: 2
         }
       });
@@ -18,6 +19,8 @@ describe('Gamification Vue Components', () => {
       expect(wrapper.find('#widget-iron-status').exists()).toBe(true);
       expect(wrapper.text()).toContain('Nv.');
       expect(wrapper.text()).toContain('4 sem');
+      expect(wrapper.text()).toContain('5 dias');
+      expect(wrapper.find('#badge-daily-streak').exists()).toBe(true);
       expect(wrapper.text()).toContain('2/2');
     });
   });
@@ -44,7 +47,7 @@ describe('Gamification Vue Components', () => {
   });
 
   describe('WorkoutCelebrationModal', () => {
-    it('renderiza quando isOpen é true e emite close', async () => {
+    it('renderiza quando isOpen é true, exibe botão de story e emite close', async () => {
       const wrapper = mount(WorkoutCelebrationModal, {
         props: {
           isOpen: true,
@@ -52,6 +55,7 @@ describe('Gamification Vue Components', () => {
           doneSets: 15,
           earnedXp: 280,
           realWorldEquivalence: '1 elefante africano erguido',
+          dailyStreak: 4,
           newBadges: [
             { id: 'century_club', title: 'Clube dos Três Dígitos', description: 'Levantou 100 kg', icon: '🏆', xpReward: 300 }
           ]
@@ -62,6 +66,8 @@ describe('Gamification Vue Components', () => {
       expect(wrapper.text()).toContain('Treino Concluído!');
       expect(wrapper.text()).toContain('6.200');
       expect(wrapper.text()).toContain('Clube dos Três Dígitos');
+      expect(wrapper.find('#btn-share-story').exists()).toBe(true);
+      expect(wrapper.text()).toContain('4d');
 
       await wrapper.find('#btn-close-celebration').trigger('click');
       expect(wrapper.emitted('close')).toHaveLength(1);

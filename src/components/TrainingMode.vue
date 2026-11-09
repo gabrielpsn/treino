@@ -64,6 +64,30 @@
           <p v-if="focusExercise.tips" class="text-[11px] text-[#64748B] italic mt-1">💡 {{ focusExercise.tips }}</p>
         </div>
 
+        <!-- Sugestão Inteligente de Sobrecarga Progressiva -->
+        <div
+          v-if="loadSuggestion && loadSuggestion.suggestedWeightKg > 0"
+          id="training-overload-suggestion"
+          class="p-3 rounded-xl bg-blue-50 border border-blue-200 text-xs flex items-center justify-between gap-3 shadow-xs"
+        >
+          <div class="min-w-0">
+            <div class="flex items-center gap-1.5 font-black text-[#0066FF]">
+              <span>⚡</span>
+              <span>Alvo de Sobrecarga: <strong>{{ loadSuggestion.suggestedWeightKg }} kg × {{ loadSuggestion.suggestedReps }} reps</strong></span>
+            </div>
+            <p class="text-[11px] text-[#64748B] mt-0.5 truncate">{{ loadSuggestion.rationale }}</p>
+          </div>
+          <button
+            type="button"
+            id="btn-apply-load-suggestion"
+            @click="applyLoadSuggestion(loadSuggestion)"
+            class="tap-btn px-3 py-1.5 rounded-lg bg-[#0066FF] text-white font-black text-xs hover:bg-[#0052cc] shadow-xs flex-shrink-0"
+            title="Preencher carga e repetições sugeridas para esta série"
+          >
+            Aplicar
+          </button>
+        </div>
+
         <div v-if="focusExercise.muscle !== 'cardio'" class="space-y-3">
           <!-- Abas de Séries do Exercício Atual -->
           <div class="flex items-center gap-1.5 overflow-x-auto pb-1">
@@ -238,10 +262,12 @@
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 import { formatElapsed, elapsedSince, buildTrainingQueue } from '../engine/sessionMode';
 import { MUSCLE_LABELS, getMuscleBadgeClass, getMuscleDotColor } from '../db/customExercises';
+import { suggestNextLoad } from '../engine/progression';
 
 const props = defineProps({
   split: { type: Object, default: null },
   logs: { type: Object, default: () => ({}) },
+  lastSets: { type: Object, default: () => ({}) },
   startedAt: { type: String, default: null }
 });
 
@@ -290,6 +316,22 @@ const currentSet = computed(() => {
 const activeSetWeight = computed(() => currentSet.value.weight ?? '');
 const activeSetReps = computed(() => currentSet.value.reps ?? '');
 const activeSetRir = computed(() => currentSet.value.rir ?? '');
+
+const loadSuggestion = computed(() => {
+  if (!focusExercise.value) return null;
+  const history = props.lastSets?.[focusExercise.value.id] || [];
+  return suggestNextLoad({
+    exerciseId: focusExercise.value.id,
+    exercise: focusExercise.value,
+    lastSets: history
+  });
+});
+
+function applyLoadSuggestion(sug) {
+  if (!sug || !focusExercise.value) return;
+  onWeightInput({ target: { value: sug.suggestedWeightKg } });
+  onRepsInput({ target: { value: sug.suggestedReps } });
+}
 
 function onWeightInput(e) {
   const val = e.target.value;

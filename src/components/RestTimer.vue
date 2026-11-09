@@ -16,18 +16,25 @@
           r="20" 
           stroke="currentColor" 
           stroke-width="4" 
-          class="text-[#F59E0B] transition-all duration-1000 ease-linear" 
+          class="transition-all duration-1000 ease-linear"
+          :class="timeLeft <= 10 && timeLeft > 0 ? 'text-rose-500 animate-pulse' : 'text-[#F59E0B]'" 
           fill="transparent" 
           :stroke-dasharray="circumference" 
           :stroke-dashoffset="strokeDashoffset" 
         />
       </svg>
-      <span class="absolute text-xs font-black text-[#0F172A] font-mono">{{ timeLeft }}s</span>
+      <span class="absolute text-xs font-black font-mono" :class="timeLeft <= 10 && timeLeft > 0 ? 'text-rose-600' : 'text-[#0F172A]'">{{ timeLeft }}s</span>
     </div>
 
     <div>
-      <h5 class="text-xs font-black text-[#0F172A] uppercase tracking-wider">Descanso Entre Séries</h5>
-      <p class="text-xs text-[#64748B]">Recupere o ATP-CP para a próxima carga</p>
+      <h5 class="text-xs font-black uppercase tracking-wider flex items-center gap-1" :class="timeLeft <= 10 && timeLeft > 0 ? 'text-rose-600' : 'text-[#0F172A]'">
+        <span v-if="timeLeft <= 10 && timeLeft > 0">⚡</span>
+        <span>Descanso Entre Séries</span>
+      </h5>
+      <p v-if="timeLeft <= 10 && timeLeft > 0" class="text-[11px] font-black text-rose-600 animate-pulse">
+        Atenção: 10s para a próxima série!
+      </p>
+      <p v-else class="text-xs text-[#64748B]">Recupere o ATP-CP para a próxima carga</p>
       <div class="flex items-center gap-1.5 mt-1">
         <button
           type="button"
@@ -95,6 +102,12 @@ function startTimer(seconds = 60) {
   timerInterval = setInterval(() => {
     if (timeLeft.value > 0) {
       timeLeft.value--;
+      if (timeLeft.value === 10) {
+        playWarningBeep();
+        if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+          navigator.vibrate([60, 40, 60]);
+        }
+      }
       return;
     }
     stopTimer();
@@ -110,6 +123,28 @@ function adjustTime(deltaSeconds) {
   timeLeft.value = next;
   if (next > totalTime.value) {
     totalTime.value = next;
+  }
+}
+
+function playWarningBeep() {
+  try {
+    if (typeof window === 'undefined') return;
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return;
+    const ctx = new AudioContextClass();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(660, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.15);
+    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.2);
+  } catch {
+    // Ignora se o navegador restringir áudio automático
   }
 }
 

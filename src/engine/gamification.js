@@ -286,3 +286,82 @@ export function calculateSessionGamification({
     realWorldEquivalence: getRealWorldEquivalence(tonnageKg)
   };
 }
+
+/**
+ * Retorna as informações visuais da chama (emoji, level, label) para um dado streak.
+ */
+export function getFlameInfo(streak = 0) {
+  const s = Math.max(0, Number(streak) || 0);
+  if (s === 0) {
+    return {
+      flameLevel: 0,
+      flameEmoji: '🔥',
+      flameLabel: 'Inativo'
+    };
+  }
+  return {
+    flameLevel: s >= 8 ? 3 : s >= 4 ? 2 : 1,
+    flameEmoji: s >= 8 ? '💎🔥' : s >= 4 ? '⚡🔥' : '🔥',
+    flameLabel: s >= 8 ? 'Supernova Azul' : s >= 4 ? 'Chama Dourada' : 'Fogo Ativo'
+  };
+}
+
+/**
+ * Calcula a progressão da Chama de Streak (dias consecutivos de consistência).
+ * Retorna { streak, lastActiveDate, flameLevel, flameEmoji, flameLabel }.
+ */
+export function calculateDailyStreak(lastActiveDate, currentStreak = 0, todayStr = new Date().toISOString().slice(0, 10)) {
+  if (!lastActiveDate) {
+    return {
+      streak: 1,
+      lastActiveDate: todayStr,
+      flameLevel: 1,
+      flameEmoji: '🔥',
+      flameLabel: 'Fogo Ativo'
+    };
+  }
+
+  if (lastActiveDate === todayStr) {
+    const s = Math.max(1, currentStreak);
+    return {
+      streak: s,
+      lastActiveDate: todayStr,
+      flameLevel: s >= 8 ? 3 : s >= 4 ? 2 : 1,
+      flameEmoji: s >= 8 ? '💎🔥' : s >= 4 ? '⚡🔥' : '🔥',
+      flameLabel: s >= 8 ? 'Supernova Azul' : s >= 4 ? 'Chama Dourada' : 'Fogo Ativo'
+    };
+  }
+
+  const last = new Date(lastActiveDate + 'T00:00:00');
+  const today = new Date(todayStr + 'T00:00:00');
+  const diffDays = Math.round((today - last) / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 1) {
+    const s = Math.max(1, currentStreak) + 1;
+    return {
+      streak: s,
+      lastActiveDate: todayStr,
+      flameLevel: s >= 8 ? 3 : s >= 4 ? 2 : 1,
+      flameEmoji: s >= 8 ? '💎🔥' : s >= 4 ? '⚡🔥' : '🔥',
+      flameLabel: s >= 8 ? 'Supernova Azul' : s >= 4 ? 'Chama Dourada' : 'Fogo Ativo'
+    };
+  } else if (diffDays <= 0) {
+    const s = Math.max(1, currentStreak);
+    return {
+      streak: s,
+      lastActiveDate: todayStr,
+      flameLevel: s >= 8 ? 3 : s >= 4 ? 2 : 1,
+      flameEmoji: s >= 8 ? '💎🔥' : s >= 4 ? '⚡🔥' : '🔥',
+      flameLabel: s >= 8 ? 'Supernova Azul' : s >= 4 ? 'Chama Dourada' : 'Fogo Ativo'
+    };
+  } else {
+    // Quebrou o streak (mais de 1 dia sem atividade)
+    return {
+      streak: 1,
+      lastActiveDate: todayStr,
+      flameLevel: 1,
+      flameEmoji: '🔥',
+      flameLabel: 'Fogo Ativo'
+    };
+  }
+}
