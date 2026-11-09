@@ -12,26 +12,37 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'prompt',
-      includeAssets: ['favicon.svg', 'pwa-192x192.svg', 'pwa-192x192.png', 'pwa-512x512.png', 'pwa-512x512.svg'],
+      includeAssets: ['favicon.svg', 'overload_AI.svg', 'pwa-192x192.svg', 'pwa-192x192.png', 'pwa-512x512.png', 'pwa-512x512.svg'],
       manifest: {
-        // O app serve hipertrofia E emagrecimento; o manifest antigo só citava hipertrofia.
-        name: 'TreinoPro — Treino & Dieta Personalizados',
-        short_name: 'TreinoPro',
-        description: 'Plano de treino, carga, dieta e evolução personalizados para hipertrofia ou emagrecimento',
+        name: 'Overload AI — Treino & Dieta com Inteligência Artificial',
+        short_name: 'Overload AI',
+        description: 'Plano de treino, sobrecarga progressiva, dieta e evolução com Inteligência Artificial',
         lang: 'pt-BR',
         dir: 'ltr',
-        theme_color: '#090d16',
-        background_color: '#020617',
+        theme_color: '#0066FF',
+        background_color: '#08090B',
         display: 'standalone',
         orientation: 'portrait',
         start_url: '/',
         scope: '/',
         icons: [
           {
+            src: 'overload_AI.svg',
+            sizes: 'any',
+            type: 'image/svg+xml',
+            purpose: 'any maskable'
+          },
+          {
             src: 'pwa-192x192.svg',
             sizes: '192x192',
             type: 'image/svg+xml',
             purpose: 'any'
+          },
+          {
+            src: 'pwa-512x512.svg',
+            sizes: '512x512',
+            type: 'image/svg+xml',
+            purpose: 'any maskable'
           },
           {
             src: 'pwa-192x192.png',
@@ -44,12 +55,6 @@ export default defineConfig({
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any maskable'
-          },
-          {
-            src: 'pwa-512x512.svg',
-            sizes: 'any',
-            type: 'image/svg+xml',
-            purpose: 'any'
           }
         ]
       }

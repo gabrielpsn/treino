@@ -112,31 +112,31 @@ export const MUSCLE_ORDER = [
 export function getMuscleBadgeClass(muscle) {
   switch (muscle) {
     case 'peito':
-      return 'bg-rose-500/15 text-rose-300 border border-rose-500/30';
+      return 'bg-rose-50 text-rose-700 border border-rose-200';
     case 'costas':
-      return 'bg-blue-500/15 text-blue-300 border border-blue-500/30';
+      return 'bg-blue-50 text-blue-700 border border-blue-200';
     case 'ombro':
-      return 'bg-amber-500/15 text-amber-300 border border-amber-500/30';
+      return 'bg-amber-50 text-amber-800 border border-amber-200';
     case 'biceps':
-      return 'bg-indigo-500/15 text-indigo-300 border border-indigo-500/30';
+      return 'bg-indigo-50 text-indigo-700 border border-indigo-200';
     case 'triceps':
-      return 'bg-purple-500/15 text-purple-300 border border-purple-500/30';
+      return 'bg-purple-50 text-purple-700 border border-purple-200';
     case 'quadriceps':
-      return 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30';
+      return 'bg-emerald-50 text-emerald-800 border border-emerald-200';
     case 'posterior':
-      return 'bg-teal-500/15 text-teal-300 border border-teal-500/30';
+      return 'bg-teal-50 text-teal-800 border border-teal-200';
     case 'gluteos':
-      return 'bg-pink-500/15 text-pink-300 border border-pink-500/30';
+      return 'bg-pink-50 text-pink-700 border border-pink-200';
     case 'panturrilha':
-      return 'bg-lime-500/15 text-lime-300 border border-lime-500/30';
+      return 'bg-lime-50 text-lime-800 border border-lime-200';
     case 'core':
-      return 'bg-yellow-500/15 text-yellow-300 border border-yellow-500/30';
+      return 'bg-yellow-50 text-yellow-800 border border-yellow-200';
     case 'cardio':
-      return 'bg-sky-500/15 text-sky-300 border border-sky-500/30';
+      return 'bg-sky-50 text-sky-700 border border-sky-200';
     case 'trapezio':
-      return 'bg-orange-500/15 text-orange-300 border border-orange-500/30';
+      return 'bg-orange-50 text-orange-800 border border-orange-200';
     default:
-      return 'bg-slate-700/30 text-slate-300 border border-slate-600/30';
+      return 'bg-slate-700/30 text-slate-700 border border-slate-600/30';
   }
 }
 

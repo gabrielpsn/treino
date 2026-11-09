@@ -154,7 +154,7 @@ export function generateWorkoutSplit(profile) {
       title: 'Treino A (Inferiores & Glúteos)',
       subtitle: 'Pernas completas, glúteos e abdômen com foco em queima calórica basal',
       color: 'rose',
-      accentBg: 'bg-rose-500/10 border-rose-500/20 text-rose-300',
+      accentBg: 'bg-rose-50 border-rose-200 text-rose-800',
       exercises: buildExerciseList(femaleExercisesA, restrictions, equipment, '3x 12-15 reps', catalog)
     });
 
@@ -174,7 +174,7 @@ export function generateWorkoutSplit(profile) {
       title: 'Treino B (Costas & Bíceps / Peito & Tríceps)',
       subtitle: 'Superiores sinergistas para melhora postural, tônus muscular e alívio lombar',
       color: 'indigo',
-      accentBg: 'bg-indigo-500/10 border-indigo-500/20 text-indigo-300',
+      accentBg: 'bg-indigo-50 border-indigo-200 text-indigo-800',
       exercises: buildExerciseList(femaleExercisesB, restrictions, equipment, '3x 12-15 reps', catalog)
     });
 
@@ -191,7 +191,7 @@ export function generateWorkoutSplit(profile) {
       title: 'Cardio Estratégico',
       subtitle: 'Gasto calórico aeróbico sem impacto prejudicial para os joelhos e articulações',
       color: 'sky',
-      accentBg: 'bg-sky-500/10 border-sky-500/20 text-sky-300',
+      accentBg: 'bg-sky-50 border-sky-200 text-sky-800',
       exercises: buildExerciseList(femaleExercisesCardio, restrictions, equipment, '20-30 min', catalog)
     });
 
@@ -209,7 +209,7 @@ export function generateWorkoutSplit(profile) {
       title: 'Treino A (Peito, Ombros & Tríceps)',
       subtitle: 'Peitoral pesado, deltóide anterior/lateral e isolamento de tríceps',
       color: 'amber',
-      accentBg: 'bg-amber-500/10 border-amber-500/20 text-amber-300',
+      accentBg: 'bg-amber-50 border-amber-200 text-amber-800',
       exercises: buildExerciseList([
         { muscle: 'peito', pattern: 'push_horizontal' },
         { muscle: 'peito', pattern: 'push_incline' },
@@ -226,7 +226,7 @@ export function generateWorkoutSplit(profile) {
       title: 'Treino B (Costas & Bíceps)',
       subtitle: 'Dorsais completas, deltóide posterior e flexores de cotovelo (bíceps)',
       color: 'blue',
-      accentBg: 'bg-blue-500/10 border-blue-500/20 text-blue-300',
+      accentBg: 'bg-blue-50 border-blue-200 text-blue-800',
       exercises: buildExerciseList([
         { muscle: 'costas', pattern: 'pull_vertical' },
         { muscle: 'costas', pattern: 'pull_horizontal' },
@@ -242,7 +242,7 @@ export function generateWorkoutSplit(profile) {
       title: 'Treino C (Pernas Completas & Abdômen)',
       subtitle: 'Quadríceps, isquiotibiais, glúteos, panturrilha e core',
       color: 'emerald',
-      accentBg: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300',
+      accentBg: 'bg-emerald-50 border-emerald-200 text-emerald-800',
       exercises: buildExerciseList([
         { muscle: 'quadriceps', pattern: 'squat' },
         { muscle: 'quadriceps', pattern: 'leg_extension' },
@@ -260,7 +260,7 @@ export function generateWorkoutSplit(profile) {
       title: 'Treino A (Peito & Tríceps)',
       subtitle: 'Peitoral completo e isolamento de tríceps em sinergia anatômica',
       color: 'amber',
-      accentBg: 'bg-amber-500/10 border-amber-500/20 text-amber-300',
+      accentBg: 'bg-amber-50 border-amber-200 text-amber-800',
       exercises: buildExerciseList([
         { muscle: 'peito', pattern: 'push_horizontal' },
         { muscle: 'peito', pattern: 'push_incline' },
@@ -276,7 +276,7 @@ export function generateWorkoutSplit(profile) {
       title: 'Treino B (Costas & Bíceps)',
       subtitle: 'Largura e espessura de dorsais com finalização isolada de bíceps',
       color: 'blue',
-      accentBg: 'bg-blue-500/10 border-blue-500/20 text-blue-300',
+      accentBg: 'bg-blue-50 border-blue-200 text-blue-800',
       exercises: buildExerciseList([
         { muscle: 'costas', pattern: 'pull_vertical' },
         { muscle: 'costas', pattern: 'pull_horizontal' },
@@ -292,7 +292,7 @@ export function generateWorkoutSplit(profile) {
       title: 'Treino C (Pernas Completas & Panturrilhas)',
       subtitle: 'Cadeia anterior e posterior de pernas com foco em força e hipertrofia',
       color: 'emerald',
-      accentBg: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300',
+      accentBg: 'bg-emerald-50 border-emerald-200 text-emerald-800',
       exercises: buildExerciseList([
         { muscle: 'quadriceps', pattern: 'squat' },
         { muscle: 'quadriceps', pattern: 'leg_extension' },
@@ -308,7 +308,7 @@ export function generateWorkoutSplit(profile) {
       title: 'Treino D (Ombros, Trapézio & Abdômen)',
       subtitle: 'Deltóides completos (anterior, lateral e posterior) e fortalecimento do core',
       color: 'purple',
-      accentBg: 'bg-purple-500/10 border-purple-500/20 text-purple-300',
+      accentBg: 'bg-purple-50 border-purple-200 text-purple-800',
       exercises: buildExerciseList([
         { muscle: 'ombro', pattern: 'push_vertical' },
         { muscle: 'ombro', pattern: 'lateral_raise' },
@@ -326,7 +326,7 @@ export function generateWorkoutSplit(profile) {
       title: 'Treino A (Peito, Ombros & Tríceps - Push)',
       subtitle: 'Padrão de empurrar: peito, ombro frontal/lateral e tríceps',
       color: 'amber',
-      accentBg: 'bg-amber-500/10 border-amber-500/20 text-amber-300',
+      accentBg: 'bg-amber-50 border-amber-200 text-amber-800',
       exercises: buildExerciseList([
         { muscle: 'peito', pattern: 'push_horizontal' },
         { muscle: 'peito', pattern: 'push_incline' },
@@ -343,7 +343,7 @@ export function generateWorkoutSplit(profile) {
       title: 'Treino B (Costas & Bíceps - Pull)',
       subtitle: 'Padrão de puxar: dorsais completas, deltóide posterior e bíceps',
       color: 'blue',
-      accentBg: 'bg-blue-500/10 border-blue-500/20 text-blue-300',
+      accentBg: 'bg-blue-50 border-blue-200 text-blue-800',
       exercises: buildExerciseList([
         { muscle: 'costas', pattern: 'pull_vertical' },
         { muscle: 'costas', pattern: 'pull_horizontal' },
@@ -359,7 +359,7 @@ export function generateWorkoutSplit(profile) {
       title: 'Treino C (Pernas & Abdômen - Legs)',
       subtitle: 'Quadríceps, isquiotibiais, glúteos, panturrilha e core',
       color: 'emerald',
-      accentBg: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300',
+      accentBg: 'bg-emerald-50 border-emerald-200 text-emerald-800',
       exercises: buildExerciseList([
         { muscle: 'quadriceps', pattern: 'squat' },
         { muscle: 'quadriceps', pattern: 'leg_press' },

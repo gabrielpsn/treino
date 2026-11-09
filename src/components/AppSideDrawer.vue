@@ -21,9 +21,9 @@
         
         <!-- Cabeçalho do Drawer com Botão Fechar -->
         <div class="flex items-center justify-between pb-3 border-b border-[#E2E8F0]">
-          <div class="flex items-center gap-2">
-            <span class="text-xl">⚡</span>
-            <span class="text-sm font-black text-[#0066FF] tracking-wider uppercase">TreinoPro</span>
+          <div class="flex items-center gap-2.5">
+            <img src="/overload_AI.svg" alt="Overload AI" class="w-8 h-8 rounded-xl object-cover shadow-sm flex-shrink-0" />
+            <span class="text-sm font-black text-[#0066FF] tracking-wider uppercase">Overload AI</span>
           </div>
 
           <button
@@ -258,8 +258,8 @@
 
       <!-- Rodapé do Drawer -->
       <div class="p-4 border-t border-[#E2E8F0] bg-[#F8FAFC] text-center">
-        <p class="text-[11px] font-bold text-[#0F172A]">TreinoPro • Versão 2.2</p>
-        <p class="text-[10px] text-[#64748B]">Hipertrofia, Progressão de Cargas & Saúde</p>
+        <p class="text-[11px] font-bold text-[#0F172A]">Overload AI • Versão 2.2</p>
+        <p class="text-[10px] text-[#64748B]">Sobrecarga Progressiva, Hipertrofia & Nutrição com IA</p>
       </div>
     </aside>
   </div>

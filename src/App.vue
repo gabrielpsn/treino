@@ -28,15 +28,15 @@
           </button>
 
           <div 
-            class="w-9 h-9 rounded-xl flex items-center justify-center bg-white/20 border border-white/30 text-white shadow-sm font-black text-base transition-colors flex-shrink-0"
+            class="w-9 h-9 rounded-xl flex items-center justify-center bg-white/20 border border-white/30 text-white shadow-sm font-black text-base transition-colors flex-shrink-0 overflow-hidden"
           >
-            {{ isWeightLoss ? '🔥' : '⚡' }}
+            <img src="/overload_AI.svg" alt="Overload AI" class="w-full h-full object-cover" />
           </div>
 
           <div class="min-w-0">
             <div class="flex items-center gap-2">
               <h1 id="app-title" class="text-sm sm:text-base font-black tracking-tight text-white uppercase truncate">
-                {{ appTitle }}
+                <span class="text-amber-300">Overload AI</span> • {{ appTitle }}
               </h1>
               <span 
                 class="text-[10px] px-2 py-0.5 rounded-full font-bold border border-[#D97706] bg-[#F59E0B] text-[#0F172A] shadow-xs flex-shrink-0"
@@ -67,8 +67,8 @@
       />
     </header>
 
-    <!-- Navegação por Abas Principais (Treino, Nutrição, Frequência) -->
-    <nav class="border-b border-[#E2E8F0] bg-white backdrop-blur sticky top-0 z-30 shadow-xs">
+    <!-- Navegação por Abas Principais (Treino, Nutrição, Frequência) - Oculto em mobile, visível em desktop -->
+    <nav class="hidden md:block border-b border-[#E2E8F0] bg-white backdrop-blur sticky top-0 z-30 shadow-xs">
       <div class="max-w-5xl mx-auto px-4 flex items-center justify-between gap-2 overflow-x-auto py-2">
         <div class="flex items-center gap-2" role="tablist" aria-label="Seções do aplicativo">
           <button 
@@ -257,24 +257,30 @@
             <p class="text-xs text-[#64748B]">Anote os pesos de hoje. O app salva automaticamente e exibe seu histórico para o próximo treino.</p>
           </div>
 
-          <div class="flex flex-wrap items-center gap-1.5 bg-[#F1F5F9] p-1.5 rounded-2xl border border-[#E2E8F0] max-w-full">
+          <!-- Seletor de Fichas (Sub-tabs A, B, C...) em scroll horizontal -->
+          <div class="w-full flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full scrollbar-none" role="tablist" aria-label="Seletor de Fichas de Treino">
             <button 
               v-for="split in activePlan?.workoutSplits" 
               :key="split.id"
               :id="`btn-split-${split.id}`"
+              role="tab"
+              :aria-selected="currentSplitTab === split.id"
               @click="currentSplitTab = split.id"
-              :class="currentSplitTab === split.id ? 'bg-[#0066FF] text-white font-bold shadow-xs' : 'text-[#64748B] hover:text-[#0066FF] hover:bg-white'"
-              class="tap-btn px-3.5 py-1.5 rounded-xl text-xs md:text-sm font-bold transition-all flex-shrink-0"
+              :class="currentSplitTab === split.id ? 'bg-[#0066FF] text-white font-bold shadow-xs' : 'text-[#64748B] hover:text-[#0066FF] bg-white border border-[#E2E8F0]'"
+              class="tap-btn px-4 py-2 rounded-xl text-xs md:text-sm font-bold transition-all flex-shrink-0"
             >
               {{ getSplitTabLabel(split.title) }}
             </button>
+          </div>
 
+          <!-- Botões de Ação Principais: Grade de 12 colunas no mobile (6 colunas = 50% cada, evitando espaços vazios) -->
+          <div class="grid grid-cols-12 gap-2 w-full pt-1 sm:flex sm:flex-wrap sm:items-center">
             <!-- Botão para o usuário criar sua própria ficha de treino -->
             <button
               type="button"
               id="btn-open-create-split"
               @click="openCreateSplitModal"
-              class="tap-btn px-3 py-1.5 rounded-xl text-xs md:text-sm font-bold bg-[#F59E0B] text-[#0F172A] hover:bg-[#D97706] border border-[#D97706] transition-all flex items-center gap-1 flex-shrink-0 shadow-xs"
+              class="tap-btn col-span-6 sm:w-auto w-full min-h-[44px] px-3.5 py-2 rounded-xl text-xs md:text-sm font-bold bg-[#F59E0B] text-[#0F172A] hover:bg-[#D97706] border border-[#D97706] transition-all flex items-center justify-center gap-1.5 shadow-xs"
               title="Criar sua própria ficha de treino personalizada"
             >
               <span aria-hidden="true">➕</span>
@@ -285,7 +291,7 @@
               type="button"
               id="btn-open-custom-exercises"
               @click="openCustomExercises"
-              class="tap-btn px-3 py-1.5 rounded-xl text-xs font-bold border border-[#E2E8F0] bg-white text-[#0F172A] hover:bg-[#F8FAFC] transition-all flex-shrink-0 shadow-xs"
+              class="tap-btn col-span-6 sm:w-auto w-full min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-bold border border-[#E2E8F0] bg-white text-[#0F172A] hover:bg-[#F8FAFC] transition-all flex items-center justify-center shadow-xs"
               title="Criar e gerenciar seus próprios exercícios"
             >
               + Meus exercícios
@@ -297,21 +303,10 @@
               type="button"
               id="btn-open-training-mode"
               @click="openTrainingMode"
-              class="tap-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-[#F59E0B] text-[#0F172A] hover:bg-[#D97706] border border-[#D97706] transition-all flex-shrink-0 shadow-xs"
+              class="tap-btn col-span-6 sm:w-auto w-full min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-bold bg-[#F59E0B] text-[#0F172A] hover:bg-[#D97706] border border-[#D97706] transition-all flex items-center justify-center gap-1 shadow-xs"
               title="Abrir o modo treino em tela cheia"
             >
               <span aria-hidden="true">▶</span> Modo Treino
-            </button>
-
-            <button
-              v-if="activeSessionId"
-              type="button"
-              id="btn-finish-session"
-              @click="finishCurrentSession"
-              class="tap-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-[#0066FF] hover:bg-[#0052cc] text-white transition-all ml-1 flex-shrink-0 shadow-xs"
-              title="Encerrar este treino e registrá-lo no histórico"
-            >
-              ✓ Concluir treino
             </button>
 
             <!-- Geração por IA -->
@@ -321,7 +316,7 @@
               id="btn-generate-ai-plan"
               @click="generatePlanWithAi"
               :disabled="isAiPlanLoading"
-              class="tap-btn px-3 py-1.5 rounded-xl text-xs font-bold border transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 shadow-xs"
+              class="tap-btn col-span-6 sm:w-auto w-full min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-bold border transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 shadow-xs"
               :class="isAiPlanLoading
                 ? 'border-[#E2E8F0] bg-white text-[#64748B]'
                 : 'border-[#0066FF]/30 bg-white text-[#0066FF] hover:bg-[#F1F5F9]'"
@@ -329,6 +324,17 @@
             >
               <span aria-hidden="true">{{ isAiPlanLoading ? '⏳' : '🤖' }}</span>
               {{ isAiPlanLoading ? 'Gerando...' : 'Gerar com IA' }}
+            </button>
+
+            <button
+              v-if="activeSessionId"
+              type="button"
+              id="btn-finish-session"
+              @click="finishCurrentSession"
+              class="tap-btn col-span-12 sm:w-auto w-full min-h-[44px] px-4 py-2 rounded-xl text-xs font-bold bg-[#0066FF] hover:bg-[#0052cc] text-white transition-all flex items-center justify-center shadow-xs"
+              title="Encerrar este treino e registrá-lo no histórico"
+            >
+              ✓ Concluir treino
             </button>
           </div>
 
@@ -391,17 +397,17 @@
                 </button>
               </div>
 
-              <!-- Botões de ação do split -->
-              <div class="flex items-center gap-2 self-end sm:self-auto flex-shrink-0 flex-wrap">
+              <!-- Botões de ação do split (Grade de 2 colunas no mobile para preencher o espaço) -->
+              <div class="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto self-end sm:self-auto flex-shrink-0">
                 <button
                   type="button"
                   :id="`btn-edit-split-${split.id}`"
                   @click="openEditSplitModal(split)"
-                  class="tap-btn px-2.5 py-1.5 rounded-xl text-xs font-semibold border border-[#E2E8F0] bg-white text-[#0F172A] hover:bg-[#F1F5F9] transition-colors flex items-center gap-1 shadow-xs"
+                  class="tap-btn min-h-10 px-2.5 py-1.5 rounded-xl text-xs font-semibold border border-[#E2E8F0] bg-white text-[#0F172A] hover:bg-[#F1F5F9] transition-colors flex items-center justify-center gap-1 shadow-xs"
                   title="Editar nome e cor desta ficha"
                 >
                   <span aria-hidden="true">✏️</span>
-                  <span class="hidden sm:inline">Editar</span>
+                  <span>Editar</span>
                 </button>
 
                 <button
@@ -409,29 +415,30 @@
                   type="button"
                   :id="`btn-delete-split-${split.id}`"
                   @click="askDeleteSplit(split)"
-                  class="tap-btn px-2.5 py-1.5 rounded-xl text-xs font-semibold border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors flex items-center gap-1 shadow-xs"
+                  class="tap-btn min-h-10 px-2.5 py-1.5 rounded-xl text-xs font-semibold border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors flex items-center justify-center gap-1 shadow-xs"
                   title="Excluir esta ficha de treino"
                 >
                   <span aria-hidden="true">🗑</span>
-                  <span class="hidden sm:inline">Excluir</span>
+                  <span>Excluir</span>
                 </button>
 
                 <button
                   type="button"
                   :id="`btn-group-by-muscle-${split.id}`"
                   @click="sortSplitByMuscle(split.id)"
-                  class="tap-btn px-2.5 py-1.5 rounded-xl text-xs font-semibold border border-[#E2E8F0] bg-white text-[#64748B] hover:text-[#0F172A] hover:bg-[#F1F5F9] transition-colors flex items-center gap-1 shadow-xs"
+                  class="tap-btn min-h-10 px-2.5 py-1.5 rounded-xl text-xs font-semibold border border-[#E2E8F0] bg-white text-[#64748B] hover:text-[#0F172A] hover:bg-[#F1F5F9] transition-colors flex items-center justify-center gap-1 shadow-xs"
                   title="Organizar e agrupar exercícios por grupo muscular"
                 >
                   <span aria-hidden="true">⚡</span>
-                  <span class="hidden sm:inline">Agrupar</span>
+                  <span>Agrupar</span>
                 </button>
 
                 <button
                   type="button"
                   :id="`btn-add-exercise-${split.id}`"
                   @click="openAdderFor(split.id)"
-                  class="tap-btn px-3 py-1.5 rounded-xl text-xs font-bold border border-[#F59E0B] bg-[#F59E0B] text-[#0F172A] hover:bg-[#D97706] transition-colors shadow-xs"
+                  :class="activePlan?.workoutSplits?.length > 1 ? 'col-span-1' : 'col-span-2 sm:col-span-1'"
+                  class="tap-btn min-h-10 px-3 py-1.5 rounded-xl text-xs font-bold border border-[#F59E0B] bg-[#F59E0B] text-[#0F172A] hover:bg-[#D97706] transition-colors flex items-center justify-center shadow-xs"
                   title="Adicionar um exercício a esta ficha"
                 >
                   + Adicionar exercício
@@ -471,7 +478,7 @@
             </div>
             
             <!-- Descrição / Dicas do Split -->
-            <div :class="split.accentBg" class="p-4 rounded-2xl border text-xs sm:text-sm flex items-start justify-between gap-3 shadow-xs">
+            <div :class="getSplitAccentBg(split)" class="p-4 rounded-2xl border text-xs sm:text-sm flex items-start justify-between gap-3 shadow-xs">
               <div>
                 <strong>{{ split.title }}:</strong> {{ split.subtitle }}
               </div>
@@ -543,7 +550,7 @@
                 >
                   <div class="flex items-center gap-2">
                     <span class="w-2.5 h-2.5 rounded-full" :class="getMuscleDotColor(ex.muscle)"></span>
-                    <h5 class="text-xs font-black tracking-wider uppercase" :class="getMuscleTextColor(ex.muscle)">
+                    <h5 class="text-xs font-black tracking-wider uppercase text-[#0F172A]">
                       {{ MUSCLE_LABELS[ex.muscle] || ex.muscle }}
                     </h5>
                     <span class="text-[11px] font-medium text-[#64748B]">
@@ -1203,7 +1210,7 @@
                 id="btn-reset-custom-nutrition"
                 type="button"
                 @click="resetCustomNutrition"
-                class="tap-btn px-3 py-2 rounded-xl text-xs text-rose-400 hover:text-rose-300 border border-rose-500/30 bg-rose-500/10 transition-colors"
+                class="tap-btn px-3 py-2 rounded-xl text-xs font-bold text-rose-700 hover:text-rose-800 border border-rose-200 bg-rose-50 transition-colors"
               >
                 Restaurar Cálculo Automático
               </button>
@@ -1228,7 +1235,7 @@
             class="p-5 rounded-2xl bg-white border border-[#E2E8F0] hover:border-[#0066FF]/40 transition-all flex flex-col justify-between shadow-xs"
           >
             <div>
-              <div class="flex items-center gap-2 mb-2" :class="sup.color === 'rose' ? 'text-rose-400' : sup.color === 'amber' ? 'text-amber-400' : 'text-emerald-400'">
+              <div class="flex items-center gap-2 mb-2" :class="sup.color === 'rose' ? 'text-rose-700' : sup.color === 'amber' ? 'text-amber-800' : 'text-emerald-700'">
                 <span class="text-xl">{{ sup.icon }}</span>
                 <h4 class="font-bold text-[#0F172A] text-sm">{{ sup.name }}</h4>
               </div>
@@ -1900,7 +1907,7 @@ async function handleSplitCreated({ title, subtitle, color, accentBg, exercises 
     title,
     subtitle: subtitle || 'Ficha personalizada pelo atleta',
     color: color || 'amber',
-    accentBg: accentBg || 'bg-amber-500/10 border-amber-500/20 text-amber-300',
+    accentBg: accentBg || 'bg-amber-50 border-amber-200 text-amber-800',
     exercises: cleanExercises
   };
 
@@ -1978,6 +1985,17 @@ function getSplitTabLabel(title) {
   const words = title.trim().split(/\s+/);
   if (words.length <= 2) return title;
   return `${words[0]} ${words[1]}`;
+}
+
+function getSplitAccentBg(split) {
+  const raw = split?.accentBg || '';
+  if (!raw) return 'bg-amber-50 border-amber-200 text-amber-800';
+  return raw
+    .replace(/text-([a-z]+)-300/g, 'text-$1-800')
+    .replace(/text-([a-z]+)-400/g, 'text-$1-800')
+    .replace(/bg-([a-z]+)-500\/10/g, 'bg-$1-50')
+    .replace(/bg-([a-z]+)-500\/15/g, 'bg-$1-50')
+    .replace(/border-([a-z]+)-500\/20/g, 'border-$1-200');
 }
 
 // Referências
