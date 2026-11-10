@@ -6,18 +6,17 @@
     role="dialog"
     aria-modal="true"
     aria-labelledby="onboarding-title"
-    @click.self="emit('close')"
+    @click.self="isEditing && emit('close')"
   >
     <div
       ref="panelRef"
       id="onboarding-modal"
       class="relative w-full max-w-xl bg-white border border-[#E2E8F0] rounded-3xl p-6 sm:p-8 shadow-2xl overflow-hidden my-8 text-[#0F172A]"
       tabindex="-1"
-      @keydown.esc="emit('close')"
+      @keydown.esc="isEditing && emit('close')"
     >
       
-      <!-- Resumo de erros: o botão de enviar vive no passo 3, mas os campos
-           problemáticos podem estar no passo 1. -->
+      <!-- Resumo de erros: exibido caso haja campos obrigatórios pendentes -->
       <div
         v-if="errorSummary"
         id="onboarding-error-summary"
@@ -36,6 +35,7 @@
           <div class="flex items-center gap-3">
             <span>{{ stepTitle }}</span>
             <button 
+              v-if="isEditing"
               type="button"
               id="btn-close-onboarding"
               aria-label="Fechar configurações"
@@ -72,7 +72,9 @@
 
         <!-- Solicitação do Nome do Usuário -->
         <div>
-          <label for="input-user-name" class="block text-xs font-bold text-[#0F172A] mb-1">Como devemos te chamar? (Seu Nome)</label>
+          <label for="input-user-name" class="block text-xs font-bold text-[#0F172A] mb-1">
+            Como devemos te chamar? (Seu Nome) <span class="text-rose-500">*</span>
+          </label>
           <input 
             id="input-user-name"
             v-model="form.userName" 
@@ -83,13 +85,19 @@
             :aria-describedby="errors.userName ? 'error-user-name' : undefined"
             class="w-full bg-[#F8FAFC] border-2 rounded-xl px-4 py-2.5 text-[#0F172A] font-bold placeholder:text-[#94A3B8] focus:outline-none transition-colors"
             :class="errors.userName ? 'border-rose-500 bg-rose-50/20 focus:border-rose-500' : 'border-[#CBD5E1] focus:border-[#0066FF] focus:bg-white focus:ring-2 focus:ring-[#0066FF]/20'"
+            @input="clearError('userName')"
           />
           <p v-if="errors.userName" id="error-user-name" class="text-[11px] font-bold text-rose-600 mt-1">{{ errors.userName }}</p>
         </div>
 
         <!-- Escolha do Objetivo Principal -->
         <div>
-          <label class="block text-xs font-semibold text-[#64748B] mb-1">Qual é o seu objetivo principal agora?</label>
+          <div class="flex items-center justify-between mb-1">
+            <label class="block text-xs font-bold text-[#0F172A]">
+              Qual é o seu objetivo principal agora? <span class="text-rose-500">*</span>
+            </label>
+            <span v-if="errors.goal" id="error-goal" class="text-[11px] font-bold text-rose-600">{{ errors.goal }}</span>
+          </div>
           <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-1">
             <button 
               type="button"
@@ -179,47 +187,57 @@
         </div>
 
         <!-- Gênero -->
-        <div class="grid grid-cols-2 gap-4 pt-1">
-          <button 
-            type="button"
-            id="btn-gender-male"
-            @click="setGender('male')"
-            :class="form.gender === 'male' ? 'border-[#0066FF] bg-blue-50/60 text-[#0066FF] font-bold ring-1 ring-[#0066FF]/20' : 'border-[#E2E8F0] bg-[#F8FAFC] text-[#64748B] hover:border-[#CBD5E1]'"
-            class="p-3 rounded-2xl border text-center transition-all flex items-center justify-center gap-2"
-          >
-            <span class="text-xl">♂</span>
-            <span class="text-sm">Homem</span>
-          </button>
-          <button 
-            type="button"
-            id="btn-gender-female"
-            @click="setGender('female')"
-            :class="form.gender === 'female' ? 'border-rose-500 bg-rose-50/60 text-rose-600 font-bold ring-1 ring-rose-500/20' : 'border-[#E2E8F0] bg-[#F8FAFC] text-[#64748B] hover:border-[#CBD5E1]'"
-            class="p-3 rounded-2xl border text-center transition-all flex items-center justify-center gap-2"
-          >
-            <span class="text-xl">♀</span>
-            <span class="text-sm">Mulher</span>
-          </button>
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label class="block text-xs font-bold text-[#0F172A]">
+              Gênero Biológico <span class="text-rose-500">*</span>
+            </label>
+            <span v-if="errors.gender" id="error-gender" class="text-[11px] font-bold text-rose-600">{{ errors.gender }}</span>
+          </div>
+          <div class="grid grid-cols-2 gap-4 pt-1">
+            <button 
+              type="button"
+              id="btn-gender-male"
+              @click="setGender('male')"
+              :class="form.gender === 'male' ? 'border-[#0066FF] bg-blue-50/60 text-[#0066FF] font-bold ring-1 ring-[#0066FF]/20' : 'border-[#E2E8F0] bg-[#F8FAFC] text-[#64748B] hover:border-[#CBD5E1]'"
+              class="p-3 rounded-2xl border text-center transition-all flex items-center justify-center gap-2"
+            >
+              <span class="text-xl">♂</span>
+              <span class="text-sm font-bold">Homem</span>
+            </button>
+            <button 
+              type="button"
+              id="btn-gender-female"
+              @click="setGender('female')"
+              :class="form.gender === 'female' ? 'border-rose-500 bg-rose-50/60 text-rose-600 font-bold ring-1 ring-rose-500/20' : 'border-[#E2E8F0] bg-[#F8FAFC] text-[#64748B] hover:border-[#CBD5E1]'"
+              class="p-3 rounded-2xl border text-center transition-all flex items-center justify-center gap-2"
+            >
+              <span class="text-xl">♀</span>
+              <span class="text-sm font-bold">Mulher</span>
+            </button>
+          </div>
         </div>
 
         <div class="grid grid-cols-3 gap-3">
           <div>
-            <label for="input-age" class="block text-xs font-bold text-[#0F172A] mb-1">Idade (anos)</label>
+            <label for="input-age" class="block text-xs font-bold text-[#0F172A] mb-1">Idade (anos) <span class="text-rose-500">*</span></label>
             <input 
               id="input-age"
               v-model.number="form.ageYears" 
               type="number" 
               min="12" 
               max="100" 
+              placeholder="Ex: 25"
               :aria-invalid="!!errors.ageYears"
               :aria-describedby="errors.ageYears ? 'error-age' : undefined"
-              class="w-full bg-[#F8FAFC] border-2 rounded-xl px-3 py-2.5 text-[#0F172A] font-bold focus:outline-none transition-colors"
+              class="w-full bg-[#F8FAFC] border-2 rounded-xl px-3 py-2.5 text-[#0F172A] font-bold placeholder:text-[#94A3B8] focus:outline-none transition-colors"
               :class="errors.ageYears ? 'border-rose-500 bg-rose-50/20 focus:border-rose-500' : 'border-[#CBD5E1] focus:border-[#0066FF] focus:bg-white focus:ring-2 focus:ring-[#0066FF]/20'"
+              @input="clearError('ageYears')"
             />
             <p v-if="errors.ageYears" id="error-age" class="text-[11px] font-bold text-rose-600 mt-1">{{ errors.ageYears }}</p>
           </div>
           <div>
-            <label for="input-weight" class="block text-xs font-bold text-[#0F172A] mb-1">Peso (kg)</label>
+            <label for="input-weight" class="block text-xs font-bold text-[#0F172A] mb-1">Peso (kg) <span class="text-rose-500">*</span></label>
             <input 
               id="input-weight"
               v-model.number="form.weightKg" 
@@ -227,25 +245,29 @@
               step="0.5" 
               min="30" 
               max="300" 
+              placeholder="Ex: 74"
               :aria-invalid="!!errors.weightKg"
               :aria-describedby="errors.weightKg ? 'error-weight' : undefined"
-              class="w-full bg-[#F8FAFC] border-2 rounded-xl px-3 py-2.5 text-[#0F172A] font-bold focus:outline-none transition-colors"
+              class="w-full bg-[#F8FAFC] border-2 rounded-xl px-3 py-2.5 text-[#0F172A] font-bold placeholder:text-[#94A3B8] focus:outline-none transition-colors"
               :class="errors.weightKg ? 'border-rose-500 bg-rose-50/20 focus:border-rose-500' : 'border-[#CBD5E1] focus:border-[#0066FF] focus:bg-white focus:ring-2 focus:ring-[#0066FF]/20'"
+              @input="clearError('weightKg')"
             />
             <p v-if="errors.weightKg" id="error-weight" class="text-[11px] font-bold text-rose-600 mt-1">{{ errors.weightKg }}</p>
           </div>
           <div>
-            <label for="input-height" class="block text-xs font-bold text-[#0F172A] mb-1">Altura (cm)</label>
+            <label for="input-height" class="block text-xs font-bold text-[#0F172A] mb-1">Altura (cm) <span class="text-rose-500">*</span></label>
             <input 
               id="input-height"
               v-model.number="form.heightCm" 
               type="number" 
               min="120" 
               max="230" 
+              placeholder="Ex: 175"
               :aria-invalid="!!errors.heightCm"
               :aria-describedby="errors.heightCm ? 'error-height' : undefined"
-              class="w-full bg-[#F8FAFC] border-2 rounded-xl px-3 py-2.5 text-[#0F172A] font-bold focus:outline-none transition-colors"
+              class="w-full bg-[#F8FAFC] border-2 rounded-xl px-3 py-2.5 text-[#0F172A] font-bold placeholder:text-[#94A3B8] focus:outline-none transition-colors"
               :class="errors.heightCm ? 'border-rose-500 bg-rose-50/20 focus:border-rose-500' : 'border-[#CBD5E1] focus:border-[#0066FF] focus:bg-white focus:ring-2 focus:ring-[#0066FF]/20'"
+              @input="clearError('heightCm')"
             />
             <p v-if="errors.heightCm" id="error-height" class="text-[11px] font-bold text-rose-600 mt-1">{{ errors.heightCm }}</p>
           </div>
@@ -260,15 +282,18 @@
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-[#64748B] mb-2">Quantos dias você pode treinar por semana?</label>
+          <div class="flex items-center justify-between mb-2">
+            <label class="block text-xs font-bold text-[#0F172A]">Quantos dias você pode treinar por semana? <span class="text-rose-500">*</span></label>
+            <span v-if="errors.daysPerWeek" id="error-days" class="text-[11px] font-bold text-rose-600">{{ errors.daysPerWeek }}</span>
+          </div>
           <div class="grid grid-cols-4 gap-2" role="group" aria-label="Dias por semana">
             <button 
               v-for="d in [3, 4, 5, 6]" 
               :key="d" 
               :id="`btn-days-${d}`"
               type="button"
-              @click="form.daysPerWeek = d"
-              :class="form.daysPerWeek === d ? (form.goal === 'weight_loss' ? 'bg-rose-500 text-white font-bold border-rose-500' : 'bg-[#0066FF] text-white font-bold border-[#0066FF]') : 'bg-[#F8FAFC] text-[#64748B] border-[#E2E8F0] hover:border-[#CBD5E1]'"
+              @click="setDaysPerWeek(d)"
+              :class="form.daysPerWeek === d ? (form.goal === 'weight_loss' ? 'bg-rose-500 text-white font-bold border-rose-500 shadow-sm' : 'bg-[#0066FF] text-white font-bold border-[#0066FF] shadow-sm') : 'bg-[#F8FAFC] text-[#64748B] border-[#E2E8F0] hover:border-[#CBD5E1]'"
               class="p-3 rounded-xl border text-center text-sm transition-all"
             >
               {{ d }} dias
@@ -277,14 +302,17 @@
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-[#64748B] mb-2">Nível de Experiência na Musculação</label>
+          <div class="flex items-center justify-between mb-2">
+            <label class="block text-xs font-bold text-[#0F172A]">Nível de Experiência na Musculação <span class="text-rose-500">*</span></label>
+            <span v-if="errors.experienceLevel" id="error-experience" class="text-[11px] font-bold text-rose-600">{{ errors.experienceLevel }}</span>
+          </div>
           <div class="space-y-2">
             <button
               v-for="lvl in levels" 
               :key="lvl.id"
               type="button"
               :id="`btn-exp-${lvl.id}`"
-              @click="form.experienceLevel = lvl.id"
+              @click="setExperienceLevel(lvl.id)"
               :aria-pressed="form.experienceLevel === lvl.id"
               :class="form.experienceLevel === lvl.id ? (form.goal === 'weight_loss' ? 'border-rose-500 bg-rose-50/50 text-[#0F172A] ring-1 ring-rose-500/30' : 'border-[#0066FF] bg-blue-50/50 text-[#0F172A] ring-1 ring-[#0066FF]/30') : 'border-[#E2E8F0] bg-[#F8FAFC] text-[#64748B] hover:border-[#CBD5E1]'"
               class="w-full text-left p-3 rounded-xl border cursor-pointer transition-all flex items-center justify-between"
@@ -307,12 +335,15 @@
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-[#64748B] mb-2">Onde você vai treinar?</label>
+          <div class="flex items-center justify-between mb-2">
+            <label class="block text-xs font-bold text-[#0F172A]">Onde você vai treinar? <span class="text-rose-500">*</span></label>
+            <span v-if="errors.equipment" id="error-equipment" class="text-[11px] font-bold text-rose-600">{{ errors.equipment }}</span>
+          </div>
           <div class="grid grid-cols-2 gap-3" role="group" aria-label="Ambiente de treino">
             <button 
               type="button"
               id="btn-equip-gym"
-              @click="form.equipment = 'gym'"
+              @click="setEquipment('gym')"
               :class="form.equipment === 'gym' ? (form.goal === 'weight_loss' ? 'border-rose-500 bg-rose-50/60 text-rose-700 font-bold ring-1 ring-rose-500/30' : 'border-[#0066FF] bg-blue-50/60 text-[#0066FF] font-bold ring-1 ring-[#0066FF]/30') : 'border-[#E2E8F0] bg-[#F8FAFC] text-[#64748B] hover:border-[#CBD5E1]'"
               class="p-3 rounded-xl border text-center transition-all text-sm"
             >
@@ -321,7 +352,7 @@
             <button 
               type="button"
               id="btn-equip-home"
-              @click="form.equipment = 'home'"
+              @click="setEquipment('home')"
               :class="form.equipment === 'home' ? (form.goal === 'weight_loss' ? 'border-rose-500 bg-rose-50/60 text-rose-700 font-bold ring-1 ring-rose-500/30' : 'border-[#0066FF] bg-blue-50/60 text-[#0066FF] font-bold ring-1 ring-[#0066FF]/30') : 'border-[#E2E8F0] bg-[#F8FAFC] text-[#64748B] hover:border-[#CBD5E1]'"
               class="p-3 rounded-xl border text-center transition-all text-sm"
             >
@@ -331,14 +362,17 @@
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-[#64748B] mb-2">Preferência Alimentar</label>
+          <div class="flex items-center justify-between mb-2">
+            <label class="block text-xs font-bold text-[#0F172A]">Preferência Alimentar <span class="text-rose-500">*</span></label>
+            <span v-if="errors.dietaryPreference" id="error-dietary" class="text-[11px] font-bold text-rose-600">{{ errors.dietaryPreference }}</span>
+          </div>
           <div class="grid grid-cols-2 sm:grid-cols-3 gap-2" role="group" aria-label="Preferência alimentar">
             <button
               v-for="diet in dietaryList"
               :key="diet.id"
               :id="`btn-dietary-${diet.id}`"
               type="button"
-              @click="form.dietaryPreference = diet.id"
+              @click="setDietaryPreference(diet.id)"
               :class="form.dietaryPreference === diet.id ? (form.goal === 'weight_loss' ? 'border-rose-500 bg-rose-50/60 text-[#0F172A] font-bold ring-1 ring-rose-500/40' : 'border-[#0066FF] bg-blue-50/60 text-[#0F172A] font-bold ring-1 ring-[#0066FF]/40') : 'border-[#E2E8F0] bg-[#F8FAFC] text-[#64748B] hover:border-[#CBD5E1]'"
               class="p-2.5 rounded-xl border text-left text-xs transition-all flex flex-col justify-between"
             >
@@ -356,7 +390,7 @@
           <div class="grid grid-cols-3 gap-2" role="group" aria-label="Restrições articulares">
             <button 
               v-for="res in jointOptions" 
-              :key="res.id"
+              :key="res.id" 
               :id="`btn-joint-${res.id}`"
               type="button"
               @click="toggleRestriction(res.id)"
@@ -420,7 +454,7 @@
           v-if="step < TOTAL_STEPS" 
           type="button"
           id="btn-onboarding-next"
-          @click="goToStep(step + 1)"
+          @click="handleNextStep"
           :class="form.goal === 'weight_loss' ? 'bg-rose-500 hover:bg-rose-600 text-white' : 'bg-[#F59E0B] hover:bg-[#D97706] text-[#0F172A]'"
           class="px-6 py-2.5 rounded-xl font-bold text-sm shadow-sm transition-all"
         >
@@ -465,59 +499,92 @@ const TOTAL_STEPS = 3;
 
 const step = ref(1);
 const panelRef = ref(null);
-const isEditing = computed(() => !!props.initialProfile);
+const isEditing = computed(() => {
+  if (!props.initialProfile) return false;
+  return !!(props.initialProfile.isConfigured || props.initialProfile.userName);
+});
 const preserveWorkouts = ref(true);
 
-const form = ref({
-  userName: 'João',
-  goal: 'hypertrophy',
-  gender: 'male',
-  ageYears: 25,
-  weightKg: 74,
-  heightCm: 175,
-  daysPerWeek: 4,
-  experienceLevel: 'intermediate',
-  equipment: 'gym',
-  restrictions: [],
-  dietaryPreference: 'omnivore'
-});
+function getBlankProfile() {
+  return {
+    userName: '',
+    goal: '',
+    gender: '',
+    ageYears: '',
+    weightKg: '',
+    heightCm: '',
+    daysPerWeek: null,
+    experienceLevel: '',
+    equipment: '',
+    restrictions: [],
+    dietaryPreference: ''
+  };
+}
 
+const form = ref(getBlankProfile());
 const dietaryList = DIETARY_PREFERENCES;
 
-// Biometria em branco de propósito: o app não deve inventar peso, idade ou
-// altura para o usuário. Os cálculos scavem direto do que for digitado e a
-// validação no passo final impede que valores absurdos virem plano.
+const errors = ref({});
+const errorSummary = ref('');
+
+function clearError(field) {
+  if (errors.value[field]) {
+    delete errors.value[field];
+  }
+  if (Object.keys(errors.value).length === 0) {
+    errorSummary.value = '';
+  }
+}
+
 function setGender(selectedGender) {
   form.value.gender = selectedGender;
-
-  // Se o nome ainda for um dos padrões automáticos, ajusta para o gênero escolhido.
-  if (!form.value.userName || ['Atleta', 'João', 'Maria'].includes(form.value.userName.trim())) {
-    form.value.userName = selectedGender === 'female' ? 'Maria' : 'João';
-  }
+  clearError('gender');
 }
 
 function setGoal(selectedGoal) {
   form.value.goal = selectedGoal;
+  clearError('goal');
+}
+
+function setDaysPerWeek(days) {
+  form.value.daysPerWeek = days;
+  clearError('daysPerWeek');
+}
+
+function setExperienceLevel(level) {
+  form.value.experienceLevel = level;
+  clearError('experienceLevel');
+}
+
+function setEquipment(equip) {
+  form.value.equipment = equip;
+  clearError('equipment');
+}
+
+function setDietaryPreference(diet) {
+  form.value.dietaryPreference = diet;
+  clearError('dietaryPreference');
 }
 
 watch(
   () => props.initialProfile,
   (val) => {
-    if (val) {
-      const defaultName = (val.gender === 'female') ? 'Maria' : 'João';
+    if (val && (val.isConfigured || val.userName)) {
       form.value = {
-        userName: val.userName || defaultName,
-        goal: val.goal || 'hypertrophy',
-        gender: val.gender || 'male',
-        ageYears: val.ageYears || 25,
-        weightKg: val.weightKg || 74,
-        heightCm: val.heightCm || 175,
-        daysPerWeek: val.daysPerWeek || 4,
-        experienceLevel: val.experienceLevel || 'intermediate',
-        equipment: val.equipment || 'gym',
+        userName: val.userName || '',
+        goal: val.goal || '',
+        gender: val.gender || '',
+        ageYears: val.ageYears ?? '',
+        weightKg: val.weightKg ?? '',
+        heightCm: val.heightCm ?? '',
+        daysPerWeek: val.daysPerWeek ?? null,
+        experienceLevel: val.experienceLevel || '',
+        equipment: val.equipment || '',
         restrictions: val.restrictions ? [...val.restrictions] : [],
-        dietaryPreference: val.dietaryPreference || 'omnivore'
+        dietaryPreference: val.dietaryPreference || ''
       };
+    } else {
+      form.value = getBlankProfile();
     }
   },
   { immediate: true, deep: true }
@@ -530,6 +597,9 @@ watch(
       step.value = 1;
       errors.value = {};
       errorSummary.value = '';
+      if (!props.initialProfile) {
+        form.value = getBlankProfile();
+      }
       await nextTick();
       panelRef.value?.focus();
     }
@@ -572,29 +642,109 @@ function toggleRestriction(id) {
   }
 }
 
-const errors = ref({});
-const errorSummary = ref('');
-
-const ERROR_STEP = { userName: 1, ageYears: 1, weightKg: 1, heightCm: 1, daysPerWeek: 2, experienceLevel: 2, equipment: 3 };
-
-function validateProfile() {
+function validateStep1() {
   const next = {};
   const name = (form.value.userName || '').trim();
-  if (!name) next.userName = 'Informe seu nome ou apelido';
-  else if (name.length > 40) next.userName = 'Use no máximo 40 caracteres';
+  if (!name) {
+    next.userName = 'Informe seu nome ou apelido';
+  } else if (name.length > 40) {
+    next.userName = 'Use no máximo 40 caracteres';
+  }
+
+  if (!form.value.goal) {
+    next.goal = 'Selecione seu objetivo principal';
+  }
+
+  if (!form.value.gender) {
+    next.gender = 'Selecione seu gênero';
+  }
 
   const age = Number(form.value.ageYears);
-  if (!Number.isFinite(age) || age < 12 || age > 100) next.ageYears = 'Idade deve estar entre 12 e 100 anos';
+  if (form.value.ageYears === '' || form.value.ageYears === null || isNaN(age)) {
+    next.ageYears = 'Informe sua idade';
+  } else if (age < 12 || age > 100) {
+    next.ageYears = 'Idade deve estar entre 12 e 100 anos';
+  }
 
   const weight = Number(form.value.weightKg);
-  if (!Number.isFinite(weight) || weight < 30 || weight > 300) next.weightKg = 'Peso deve estar entre 30 e 300 kg';
+  if (form.value.weightKg === '' || form.value.weightKg === null || isNaN(weight)) {
+    next.weightKg = 'Informe seu peso';
+  } else if (weight < 30 || weight > 300) {
+    next.weightKg = 'Peso deve estar entre 30 e 300 kg';
+  }
 
   const height = Number(form.value.heightCm);
-  if (!Number.isFinite(height) || height < 120 || height > 230) next.heightCm = 'Altura deve estar entre 120 e 230 cm';
-
-  if (!form.value.daysPerWeek || form.value.daysPerWeek < 2 || form.value.daysPerWeek > 6) {
-    next.daysPerWeek = 'Selecione de 2 a 6 dias por semana';
+  if (form.value.heightCm === '' || form.value.heightCm === null || isNaN(height)) {
+    next.heightCm = 'Informe sua altura';
+  } else if (height < 120 || height > 230) {
+    next.heightCm = 'Altura deve estar entre 120 e 230 cm';
   }
+
+  return next;
+}
+
+function validateStep2() {
+  const next = {};
+  if (!form.value.daysPerWeek || form.value.daysPerWeek < 2 || form.value.daysPerWeek > 6) {
+    next.daysPerWeek = 'Selecione de 3 a 6 dias por semana';
+  }
+  if (!form.value.experienceLevel) {
+    next.experienceLevel = 'Selecione seu nível de experiência';
+  }
+  return next;
+}
+
+function validateStep3() {
+  const next = {};
+  if (!form.value.equipment) {
+    next.equipment = 'Selecione o local de treino';
+  }
+  if (!form.value.dietaryPreference) {
+    next.dietaryPreference = 'Selecione sua preferência alimentar';
+  }
+  return next;
+}
+
+function handleNextStep() {
+  if (step.value === 1) {
+    const errs = validateStep1();
+    if (Object.keys(errs).length > 0) {
+      errors.value = { ...errors.value, ...errs };
+      errorSummary.value = 'Preencha todos os campos obrigatórios para continuar.';
+      return;
+    }
+  } else if (step.value === 2) {
+    const errs = validateStep2();
+    if (Object.keys(errs).length > 0) {
+      errors.value = { ...errors.value, ...errs };
+      errorSummary.value = 'Preencha todos os campos obrigatórios para continuar.';
+      return;
+    }
+  }
+
+  errors.value = {};
+  errorSummary.value = '';
+  goToStep(step.value + 1);
+}
+
+const ERROR_STEP = { 
+  userName: 1, 
+  goal: 1, 
+  gender: 1, 
+  ageYears: 1, 
+  weightKg: 1, 
+  heightCm: 1, 
+  daysPerWeek: 2, 
+  experienceLevel: 2, 
+  equipment: 3, 
+  dietaryPreference: 3 
+};
+
+function validateProfile() {
+  const errs1 = validateStep1();
+  const errs2 = validateStep2();
+  const errs3 = validateStep3();
+  const next = { ...errs1, ...errs2, ...errs3 };
 
   errors.value = next;
 
@@ -604,11 +754,8 @@ function validateProfile() {
     return true;
   }
 
-  // Os campos com erro vivem no passo 1, mas o botão de enviar fica no passo 3.
-  // Sem voltar para o passo do primeiro erro, a validação bloquearia o envio
-  // sem mostrar nenhuma mensagem na tela.
   const targetStep = Math.min(...fields.map(f => ERROR_STEP[f] ?? 1));
-  errorSummary.value = `Corrija ${fields.length} ${fields.length === 1 ? 'campo' : 'campos'} para continuar.`;
+  errorSummary.value = `Corrija ${fields.length} ${fields.length === 1 ? 'campo obrigatório' : 'campos obrigatórios'} para continuar.`;
   if (step.value !== targetStep) {
     step.value = targetStep;
   }
@@ -619,6 +766,7 @@ function submitProfile() {
   if (!validateProfile()) return;
   emit('save', {
     ...form.value,
+    isConfigured: true,
     restrictions: [...form.value.restrictions],
     preserveWorkouts: isEditing.value ? preserveWorkouts.value : false
   });

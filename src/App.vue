@@ -46,10 +46,12 @@
             </div>
             <p id="app-user-subtitle" class="text-[11px] text-white/80 flex items-center gap-1.5 truncate">
               <span class="text-white font-semibold">Olá, {{ userProfile?.userName || 'Atleta' }}</span>
-              <span>•</span>
-              <span class="font-bold text-[#F59E0B]">
-                {{ userProfile?.weightKg }} kg
-              </span>
+              <template v-if="userProfile?.weightKg">
+                <span>•</span>
+                <span class="font-bold text-[#F59E0B]">
+                  {{ userProfile.weightKg }} kg
+                </span>
+              </template>
             </p>
           </div>
         </div>
@@ -1684,7 +1686,7 @@
       :is-open="isOnboardingOpen" 
       :initial-profile="isFirstAccess ? null : userProfile"
       @save="handleSaveProfile"
-      @close="isOnboardingOpen = false; isFirstAccess = false"
+      @close="handleCloseOnboarding"
     />
 
     <!-- Modal de Troca de Exercício Individual -->
@@ -2875,33 +2877,24 @@ async function loadUserData() {
 }
 
 async function hydrateFromDatabase(profileRecord) {
-  if (!profileRecord) {
+  const isProfileComplete = profileRecord && 
+    profileRecord.isConfigured === true && 
+    profileRecord.userName && 
+    profileRecord.userName.trim() !== '' &&
+    profileRecord.userName !== 'João';
+
+  if (!isProfileComplete) {
     // O registro foi lido antes das migrações terminarem: se o usuário salvou
     // o perfil nesse meio-tempo, este null está desatualizado. Aplicar o
     // default por cima reabriria o onboarding e apagaria o perfil novo.
     if (profileSavedDuringLoad) return;
 
-    // Primeiro acesso: abre o onboarding com homem/João por padrão inicial
+    // Primeiro acesso ou dados pendentes: abre o onboarding limpo para o usuário preencher
     isFirstAccess.value = true;
     isOnboardingOpen.value = true;
-    const defaultProfile = {
-      userName: 'João',
-      goal: 'hypertrophy',
-      gender: 'male',
-      ageYears: 25,
-      weightKg: 74,
-      heightCm: 175,
-      daysPerWeek: 4,
-      experienceLevel: 'intermediate',
-      equipment: 'gym',
-      restrictions: [],
-      dietaryPreference: 'omnivore'
-    };
-    userProfile.value = defaultProfile;
-    await db.user_profile.put({ id: 'current_user', ...defaultProfile });
-    if (profileSavedDuringLoad) return;
-    await applyAndSavePlan(defaultProfile, true);
+    userProfile.value = null;
   } else {
+    isFirstAccess.value = false;
     userProfile.value = profileRecord;
     const planRecord = await db.active_plan.get('current_active_plan');
 
@@ -2962,10 +2955,16 @@ async function loadLastSets() {
   }
 }
 
+function handleCloseOnboarding() {
+  if (isFirstAccess.value) return;
+  isOnboardingOpen.value = false;
+}
+
 async function handleSaveProfile(newProfile) {
   try {
     isFirstAccess.value = false;
     const rawProfile = JSON.parse(JSON.stringify(newProfile));
+    rawProfile.isConfigured = true;
     const preserveWorkouts = !!rawProfile.preserveWorkouts;
     delete rawProfile.preserveWorkouts;
 

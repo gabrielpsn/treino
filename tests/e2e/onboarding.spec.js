@@ -24,6 +24,7 @@ test('Onboarding: monta plano de emagrecimento a partir do perfil', async ({ pag
 
   await page.locator('#btn-onboarding-next').click();
   await page.locator('#btn-equip-gym').click();
+  await page.locator('#btn-dietary-omnivore').click();
   await page.locator('#btn-joint-joelho').click();
 
   await page.locator('#btn-onboarding-submit').click();
@@ -48,23 +49,26 @@ test('Onboarding: bloqueia envio com biometria inválida e volta ao passo do err
   await page.locator('#input-age').fill('39');
 
   await page.locator('#btn-onboarding-next').click();
-  await page.locator('#btn-onboarding-next').click();
-  await expect(page.locator('#btn-onboarding-submit')).toBeVisible();
 
-  await page.locator('#btn-onboarding-submit').click();
-
-  // O modal precisa continuar aberto e o usuário ser levado de volta ao passo
-  // que contém os campos inválidos, com o motivo visível.
+  // O modal precisa bloquear avanço se houver erros na biometria
   await expect(page.locator('#onboarding-modal')).toBeVisible();
   await expect(page.locator('#onboarding-error-summary')).toBeVisible();
   await expect(page.locator('#error-user-name')).toBeVisible();
   await expect(page.locator('#error-weight')).toBeVisible();
 
-  // Corrigir e reenviar deve concluir o cadastro.
+  // Corrigir e reenviar deve concluir o cadastro
   await page.locator('#input-user-name').fill('Joana');
   await page.locator('#input-weight').fill('70');
+  await page.locator('#btn-gender-female').click();
+  await page.locator('#btn-goal-hypertrophy').click();
   await page.locator('#btn-onboarding-next').click();
+
+  await page.locator('#btn-days-4').click();
+  await page.locator('#btn-exp-intermediate').click();
   await page.locator('#btn-onboarding-next').click();
+
+  await page.locator('#btn-equip-gym').click();
+  await page.locator('#btn-dietary-omnivore').click();
   await page.locator('#btn-onboarding-submit').click();
 
   await expect(page.locator('#onboarding-modal')).not.toBeVisible();
@@ -74,13 +78,17 @@ test('Onboarding: bloqueia envio com biometria inválida e volta ao passo do err
 test('Fichas: gera treino sem exercício conflitante com a restrição de joelho', async ({ page }) => {
   await page.goto('/');
   await page.locator('#input-user-name').fill('Teste Joelho');
+  await page.locator('#btn-goal-hypertrophy').click();
   await page.locator('#btn-gender-male').click();
   await page.locator('#input-age').fill('30');
   await page.locator('#input-weight').fill('90');
   await page.locator('#input-height').fill('178');
   await page.locator('#btn-onboarding-next').click();
   await page.locator('#btn-days-4').click();
+  await page.locator('#btn-exp-intermediate').click();
   await page.locator('#btn-onboarding-next').click();
+  await page.locator('#btn-equip-gym').click();
+  await page.locator('#btn-dietary-omnivore').click();
   await page.locator('#btn-joint-joelho').click();
   await page.locator('#btn-onboarding-submit').click();
   await expect(page.locator('#onboarding-modal')).not.toBeVisible();
