@@ -56,8 +56,20 @@
           </div>
         </div>
 
-        <!-- Lado Direito do Cabeçalho: Moedas de Ferro e Chama de Streak -->
+        <!-- Lado Direito do Cabeçalho: Moedas de Ferro, Chama de Streak e Avaliação -->
         <div class="flex items-center gap-2 flex-shrink-0">
+          <!-- Botão de Avaliar App & Feedback -->
+          <button
+            type="button"
+            id="header-feedback-btn"
+            @click="isFeedbackModalOpen = true"
+            class="tap-btn flex items-center gap-1 px-2.5 py-1 rounded-xl bg-amber-400/25 hover:bg-amber-400/40 border border-amber-300/50 text-amber-200 hover:text-white font-black text-xs shadow-xs transition-all"
+            title="Avaliar aplicativo e enviar feedback (+50 XP)"
+          >
+            <span>⭐</span>
+            <span class="hidden sm:inline text-[11px]">Feedback</span>
+          </button>
+
           <!-- Botão / Chip de Moedas de Ferro -->
           <button
             type="button"
@@ -1877,6 +1889,7 @@
       @open-wrapped="isWrappedModalOpen = true"
       @open-raid="isRaidModalOpen = true"
       @open-walking="isWalkingModalOpen = true"
+      @open-feedback="isFeedbackModalOpen = true"
     />
 
     <!-- Modal de Demonstração e Detalhes do Exercício -->
@@ -1984,6 +1997,14 @@
       @goal-reached="handleWalkingGoalReached"
     />
 
+    <!-- Modal de Avaliação do App e Envio de Feedback -->
+    <AppFeedbackModal
+      :is-open="isFeedbackModalOpen"
+      :user-name="userProfile?.userName"
+      @close="isFeedbackModalOpen = false"
+      @feedback-submitted="handleFeedbackSubmitted"
+    />
+
   </div>
 </template>
 
@@ -2025,6 +2046,8 @@ import YearlyHeatmapWidget from './components/YearlyHeatmapWidget.vue';
 import CommunityRaidModal from './components/CommunityRaidModal.vue';
 import PrCelebrationToast from './components/PrCelebrationToast.vue';
 import WalkingTrackerModal from './components/WalkingTrackerModal.vue';
+import AppFeedbackModal from './components/AppFeedbackModal.vue';
+import { filterSafeExercises } from './engine/generators/workoutGenerator';
 import { loadDailyWalkingData } from './engine/walkingTracker';
 import {
   calculateSessionGamification,
@@ -2041,6 +2064,7 @@ import {
   recordWeeklyDayCompletion,
   WEEKLY_DAY_COMPLETION_XP,
   awardCoins,
+  awardFeedbackReward,
   spendCoins,
   unlockAndEquipTheme,
   equipTheme,
@@ -2165,6 +2189,7 @@ const isLeagueModalOpen = ref(false);
 const isWrappedModalOpen = ref(false);
 const isRaidModalOpen = ref(false);
 const isWalkingModalOpen = ref(false);
+const isFeedbackModalOpen = ref(false);
 const todayWalkingData = ref(loadDailyWalkingData(getDayKey()));
 const prToastState = ref({
   isOpen: false,
@@ -2274,6 +2299,23 @@ function handleWalkingGoalReached({ date, steps }) {
       'finish',
       `Meta diária de passos batida com sucesso! Você deu ${Number(steps).toLocaleString('pt-BR')} passos e ganhou 30 moedas de ferro e 50 XP!`
     );
+  }
+}
+
+function handleFeedbackSubmitted(feedbackItem) {
+  try {
+    const updated = awardFeedbackReward(50, 20);
+    if (updated) {
+      gamificationState.value = updated;
+    }
+    triggerHaptic('celebrate');
+    confetti({
+      particleCount: 75,
+      spread: 70,
+      origin: { y: 0.6 }
+    });
+  } catch (err) {
+    console.warn('[feedback] Falha ao atribuir recompensa de avaliação:', err);
   }
 }
 const showSplitBodyMap = ref(false);
@@ -3076,6 +3118,54 @@ const AI_FAILURE_MESSAGES = {
 };
 
 /**
+ * Garante que fichas de padrão Push / Treino A sempre contenham exercícios de Tríceps,
+ * completando a sinergia biomecânica de empurrar caso a IA tenha sugerido apenas peito e ombros.
+ */
+function ensurePushSplitHasTriceps(workoutSplits, catalog = [], profile = {}) {
+  if (!Array.isArray(workoutSplits)) return;
+  const restrictions = profile.restrictions || [];
+  const equipment = profile.equipment || 'gym';
+
+  for (const split of workoutSplits) {
+    const isPush = split.id === 'treino-a' ||
+      /push|empurrar|peito/i.test(split.title || '') ||
+      /push|empurrar|peito/i.test(split.subtitle || '');
+
+    if (!isPush || !Array.isArray(split.exercises)) continue;
+
+    const hasTriceps = split.exercises.some(e => e.muscle === 'triceps');
+    if (!hasTriceps) {
+      const existingIds = new Set(split.exercises.map(e => e.id));
+      const safeCandidates = catalog.filter(ex =>
+        ex.muscle === 'triceps' &&
+        !existingIds.has(ex.id) &&
+        filterSafeExercises([ex], { restrictions, equipment }).length > 0
+      );
+
+      if (safeCandidates.length > 0) {
+        // Se a ficha já tiver 6 ou mais exercícios e houver 3 ou mais de peito, substitui o último exercício de peito
+        const chestExercises = split.exercises.filter(e => e.muscle === 'peito');
+        if (split.exercises.length >= 6 && chestExercises.length >= 3) {
+          const lastChestIndex = split.exercises.findLastIndex(e => e.muscle === 'peito');
+          if (lastChestIndex !== -1) {
+            split.exercises.splice(lastChestIndex, 1);
+          }
+        }
+
+        const tricepsEx = safeCandidates[0];
+        split.exercises.push({
+          ...tricepsEx,
+          defaultSeries: '3x 10-12 reps',
+          rest: '60s',
+          aiReps: '10-12',
+          aiNote: 'Exercício de tríceps adicionado para equilíbrio biomecânico do treino de empurrar'
+        });
+      }
+    }
+  }
+}
+
+/**
  * Gera a ficha e as metas com o Agente no Cloudflare Workers / Gemini.
  *
  * Regra que dá nome à função: o plano atual só é trocado depois que a gravação
@@ -3108,6 +3198,7 @@ async function generatePlanWithAi() {
     });
 
     const rawPlan = JSON.parse(JSON.stringify(aiPlan));
+    ensurePushSplitHasTriceps(rawPlan.workoutSplits, fullCatalog.value, profile);
 
     // Preserva os hábitos diários (água e creatina de hoje)
     if (activePlan.value?.dailyHabits) {

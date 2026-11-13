@@ -5,7 +5,7 @@
  * e sincronização sem fricção no dispositivo.
  */
 
-import { calculateDailyStreak } from '../engine/gamification.js';
+import { calculateDailyStreak, calculateLevelFromXp } from '../engine/gamification.js';
 
 export const GAMIFICATION_STORAGE_KEY = 'treinopro_gamification_state';
 export const WEEKLY_DAY_COMPLETION_XP = 50;
@@ -181,6 +181,24 @@ export function awardCoins(amount = 0) {
   const current = loadGamificationState();
   const nextCoins = current.ironCoins + Math.max(0, Number(amount) || 0);
   const updated = { ...current, ironCoins: nextCoins };
+  saveGamificationState(updated);
+  return updated;
+}
+
+/**
+ * Concede bônus de XP e Moedas ao usuário por avaliar o aplicativo e enviar feedback.
+ */
+export function awardFeedbackReward(xp = 50, coins = 20) {
+  const current = loadGamificationState();
+  const nextTotalXp = current.totalXp + Math.max(0, Number(xp) || 0);
+  const nextCoins = current.ironCoins + Math.max(0, Number(coins) || 0);
+  const levelInfo = calculateLevelFromXp(nextTotalXp);
+  const updated = {
+    ...current,
+    totalXp: nextTotalXp,
+    level: levelInfo.level,
+    ironCoins: nextCoins
+  };
   saveGamificationState(updated);
   return updated;
 }

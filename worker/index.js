@@ -13,6 +13,7 @@
  */
 
 const PLAN_PATH = '/api/gemini/plan';
+const FEEDBACK_PATH = '/api/feedback';
 
 // O pedido leva o perfil e o catálogo seguro do usuário. 24KB é folgado para
 // 60 exercícios e preferências nutricionais, pequeno o bastante para barrar abuso.
@@ -142,25 +143,42 @@ function buildSystemInstruction() {
     '   - LEGS & CORE (Pernas Completas e Abdômen): Quadríceps, Isquiotibiais, Glúteos, Panturrilhas + Core/Abdômen.',
     '     Por que funciona: Agachamentos e leg presses exigem grandes grupos musculares inferiores e estabilização ativa do core.',
     '',
-    '2. MODELOS DE DIVISÃO CONFORME FREQUÊNCIA E NÍVEL (respeite "fichasDisponiveis"):',
+    '2. DISTRIBUIÇÃO OBRIGATÓRIA DE EXERCÍCIOS POR GRUPO MUSCULAR (REGRA CRÍTICA INEGOCIÁVEL):',
+    '   Cada grupo muscular sinérgico associado a uma ficha DEVE OBRIGATORIAMENTE possuir exercícios dedicados no array "exercises":',
+    '   - PUSH / EMPURRAR (Treino A em ABC/PPL ou Peito e Tríceps em ABCD):',
+    '     * Peito: 2 a 3 exercícios (ex: supino reto, supino inclinado, crucifixo ou crossover)',
+    '     * Ombros: 1 a 2 exercícios (ex: desenvolvimento com halteres/militar, elevação lateral)',
+    '     * Tríceps: 1 a 2 exercícios dedicados (ex: tríceps pulley corda/barra, tríceps francês ou tríceps testa).',
+    '       ATENÇÃO ABSOLUTA: É EXPRESSAMENTE PROIBIDO GERAR TREINO PUSH / TREINO A SEM EXERCÍCIOS DE TRÍCEPS! Nunca gere apenas peito e ombros sem tríceps!',
+    '   - PULL / PUXAR (Treino B):',
+    '     * Costas: 2 a 3 exercícios (puxada vertical, remada curvada ou baixa)',
+    '     * Bíceps: 1 a 2 exercícios dedicados (rosca direta, rosca martelo). É OBRIGATÓRIO ter bíceps!',
+    '     * Posterior de Ombro: 1 exercício (crucifixo invertido ou face pull)',
+    '   - LEGS & CORE (Treino C):',
+    '     * Quadríceps / Glúteos: 2 a 3 exercícios (agachamento, leg press, extensora)',
+    '     * Posterior de Coxa: 1 a 2 exercícios (mesa/cadeira flexora, stiff)',
+    '     * Panturrilha: 1 exercício (elevação de panturrilha)',
+    '     * Core / Abdômen: 1 exercício (crunch, prancha)',
+    '',
+    '3. MODELOS DE DIVISÃO CONFORME FREQUÊNCIA E NÍVEL (respeite "fichasDisponiveis"):',
     '   - Full Body (Corpo Inteiro - 2 a 3x/semana): treina grandes grupos na mesma sessão, com intervalo de 48h de recuperação.',
     '   - Superior / Inferior (AB - 4x/semana): um dia focado em membros superiores (peito, costas, braços, ombros) e outro em membros inferiores e abdômen.',
     '   - ABC (Push / Pull / Legs - 3 a 5x/semana): Treino A (Peito, Ombros e Tríceps), Treino B (Costas, Bíceps e Posterior de Ombro), Treino C (Pernas Completas e Abdômen).',
     '   - ABCD ou ABCDE (4 a 6x/semana): voltado para intermediários e avançados que exigem maior volume por grupo muscular isolado.',
     '',
-    '3. REGRAS DE OURO PARA RECUPERAÇÃO E VOLUME:',
+    '4. REGRAS DE OURO PARA RECUPERAÇÃO E VOLUME:',
     '   - Descanso Muscular: Cada grupo muscular precisa de 48 a 72 horas de recuperação para gerar hipertrofia e supercompensação.',
     '   - Volume Semanal: Média de 10 a 20 séries semanais por grupo muscular.',
     '   - Ordem de Execução: Inicie pelos exercícios compostos multiarticulares pesados e finalize com exercícios isoladores.',
-    '   - Quantidade: Entre 4 e 7 exercícios por ficha. Séries: 3 a 4 por exercício. Descanso: 60-120s para compostos, 45-90s para isolados.',
+    '   - Quantidade: Entre 5 e 7 exercícios por ficha (assegurando que nenhum músculo do split fique com zero exercícios). Séries: 3 a 4 por exercício. Descanso: 60-120s para compostos, 45-90s para isolados.',
     '',
-    '4. REGRAS INEGOCIÁVEIS DE SEGURANÇA E CATÁLOGO:',
+    '5. REGRAS INEGOCIÁVEIS DE SEGURANÇA E CATÁLOGO:',
     '   - Escolha exercícios SOMENTE pelo "id" exato da lista "catalogo" recebida. Nunca invente, deduza ou renomeie ids.',
     '   - NUNCA selecione exercício cujo "jointStress" contenha uma restrição do usuário (ex: se restrição tem "joelho", zero estresse no joelho).',
     '   - NUNCA selecione exercício com equipamento diferente de "equipment" do perfil.',
     '   - Preencha TODAS as fichas da lista "fichasDisponiveis" respeitando o foco e os músculos sinérgicos de cada uma.',
     '',
-    '5. REGRAS INEGOCIÁVEIS DE DIETA E REFEIÇÕES:',
+    '6. REGRAS INEGOCIÁVEIS DE DIETA E REFEIÇÕES:',
     '   - Calorias e macros: calculados a partir de BMR e TDEE. Proteína entre 1.6 e 2.2 g/kg; Gordura >= 0.6 g/kg; Carboidratos equilibrados.',
     '   - Monte a lista "meals" contendo entre 3 e 5 refeições diárias respeitando RIGOROSAMENTE a "dietaryPreference" do usuário (vegan, vegetarian, lactose_free, low_carb, omnivore).',
     '   - Especifique alimentos em gramas reais e medidas práticas do dia a dia no Brasil.',
@@ -199,6 +217,11 @@ function buildUserPrompt(payload) {
     '',
     'FICHAS DISPONÍVEIS (preencha todas respeitando o foco sinérgico e os músculos indicados de cada uma):',
     JSON.stringify(splits),
+    '',
+    'EXIGÊNCIA DE COBERTURA MUSCULAR OBRIGATÓRIA:',
+    '- Em fichas Push (Treino A: Peito, Ombros e Tríceps), você DEVE incluir OBRIGATORIAMENTE exercícios de Peito (2-3), Ombros (1-2) E TRÍCEPS (1-2). Nunca gere Treino Push com 0 exercícios de tríceps!',
+    '- Em fichas Pull (Treino B: Costas, Bíceps e Posterior de Ombro), inclua Costas (2-3), BÍCEPS (1-2) e Posterior de Ombro (1).',
+    '- Em fichas Legs (Treino C), inclua Quadríceps/Glúteo, Posterior de Coxa, Panturrilha e Core.',
     '',
     'CATÁLOGO SEGURO (ids e propriedades já filtradas por equipamento e restrição):',
     JSON.stringify(safeCatalog.length > 0 ? safeCatalog : catalog)
@@ -378,6 +401,68 @@ function sanitizePlanResponse(parsed, payload) {
               sets: Number(ex.sets || ex.series || s.series || 3),
               reps: String(ex.reps || ex.repeticoes || '8-12'),
               restSeconds: Number(ex.restSeconds || ex.descanso || s.descanso || 60)
+            });
+          }
+        }
+      }
+
+      // Garantia de cobertura muscular sinérgica:
+      // Se a ficha é um Treino Push / Empurrar / Peito e Tríceps, ou se o payload especificou músculos:
+      const splitInfo = payload.splits?.[idx] || {};
+      const splitDesc = `${splitId} ${splitInfo.title || ''} ${splitInfo.subtitle || ''} ${focus}`.toLowerCase();
+      
+      const targetMuscles = new Set(
+        Array.isArray(splitInfo.muscles) && splitInfo.muscles.length > 0
+          ? splitInfo.muscles
+          : []
+      );
+
+      if (splitDesc.includes('push') || splitDesc.includes('empurrar') || (splitDesc.includes('peito') && (splitDesc.includes('ombro') || splitDesc.includes('tríceps') || splitDesc.includes('triceps')))) {
+        targetMuscles.add('peito');
+        targetMuscles.add('ombro');
+        targetMuscles.add('triceps');
+      } else if (splitDesc.includes('pull') || splitDesc.includes('puxar') || splitDesc.includes('costas')) {
+        targetMuscles.add('costas');
+        targetMuscles.add('biceps');
+      } else if (splitDesc.includes('legs') || splitDesc.includes('perna')) {
+        targetMuscles.add('quadriceps');
+        targetMuscles.add('posterior');
+        targetMuscles.add('panturrilha');
+      }
+
+      const presentMuscles = new Set(exercises.map(e => safeCatalogById.get(e.id)?.muscle).filter(Boolean));
+
+      // Para cada músculo obrigatório da sinergia que ficou com ZERO exercícios (ex: tríceps no Push):
+      for (const requiredMuscle of targetMuscles) {
+        if (!presentMuscles.has(requiredMuscle)) {
+          const safeCandidates = effectiveCatalog.filter(c => c.muscle === requiredMuscle && !seenIds.has(c.id) && isExerciseSafe(c, payload.profile));
+          if (safeCandidates.length > 0) {
+            // Se já tiver 6 ou mais exercícios e algum músculo tiver mais de 2 exercícios, substitui 1 exercício excedente
+            if (exercises.length >= 6) {
+              const muscleCounts = {};
+              exercises.forEach(e => {
+                const m = safeCatalogById.get(e.id)?.muscle;
+                if (m) muscleCounts[m] = (muscleCounts[m] || 0) + 1;
+              });
+              const overrepresented = Object.keys(muscleCounts).find(m => muscleCounts[m] > 2 && m !== requiredMuscle);
+              if (overrepresented) {
+                const removeIdx = exercises.findLastIndex(e => safeCatalogById.get(e.id)?.muscle === overrepresented);
+                if (removeIdx !== -1) {
+                  seenIds.delete(exercises[removeIdx].id);
+                  exercises.splice(removeIdx, 1);
+                }
+              }
+            }
+
+            // Adiciona o exercício seguro do músculo faltante
+            const toAdd = safeCandidates[0];
+            seenIds.add(toAdd.id);
+            presentMuscles.add(requiredMuscle);
+            exercises.push({
+              id: toAdd.id,
+              sets: 3,
+              reps: '10-12',
+              restSeconds: 60
             });
           }
         }
@@ -653,9 +738,56 @@ async function handlePlanRequest(request, env) {
   return handleGeminiRequest(payload, env, id);
 }
 
+async function handleFeedbackRequest(request, env) {
+  const id = requestId();
+  const limit = checkRateLimit(request.headers.get('cf-connecting-ip') ?? 'desconhecido');
+  if (!limit.allowed) {
+    return jsonResponse(
+      { error: 'Muitos pedidos seguidos. Tente de novo em instantes.', code: 'rate_limited' },
+      429,
+      { 'retry-after': String(limit.retryAfter) }
+    );
+  }
+
+  const body = await readJsonBody(request);
+  if (body.invalid || !body.data) {
+    return jsonResponse({ error: 'Dados de feedback inválidos.', code: 'bad_request' }, 400);
+  }
+
+  const feedback = body.data;
+  const rating = Number(feedback.rating || 5);
+  const category = String(feedback.category || 'geral').slice(0, 50);
+  const comment = String(feedback.comment || '').slice(0, 1000);
+  const userName = String(feedback.userName || 'Atleta Anônimo').slice(0, 60);
+  const contact = String(feedback.contact || '').slice(0, 100);
+  const tags = Array.isArray(feedback.tags) ? feedback.tags.slice(0, 10) : [];
+  const createdAt = feedback.createdAt || new Date().toISOString();
+
+  console.log(`[${id}][FEEDBACK] ⭐ ${rating}/5 de "${userName}": [${category}] "${comment}" (Tags: ${tags.join(', ')}) Contato: ${contact}`);
+
+  return jsonResponse({
+    success: true,
+    message: 'Avaliação recebida com sucesso! Obrigado por ajudar a evoluir o Overload AI! 🚀',
+    feedbackId: id
+  }, 200);
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+
+    if (url.pathname === FEEDBACK_PATH) {
+      if (request.method !== 'POST') {
+        return jsonResponse({ error: 'Método não permitido.', code: 'method_not_allowed' }, 405, {
+          allow: 'POST'
+        });
+      }
+      const origin = request.headers.get('origin');
+      if (origin && new URL(origin).host !== url.host) {
+        return jsonResponse({ error: 'Origem não permitida.', code: 'forbidden_origin' }, 403);
+      }
+      return handleFeedbackRequest(request, env);
+    }
 
     if (url.pathname !== PLAN_PATH) {
       // Tudo que não for a rota da IA é app estático. O binding de assets

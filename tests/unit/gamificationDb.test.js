@@ -9,6 +9,7 @@ import {
   recordRestDay,
   awardCoins,
   spendCoins,
+  awardFeedbackReward,
   unlockAndEquipTheme,
   equipTheme,
   unlockAndEquipTitle,
@@ -110,6 +111,14 @@ describe('Gamification DB State', () => {
     const failSpend = spendCoins(100);
     expect(failSpend.success).toBe(false);
     expect(failSpend.updated.ironCoins).toBe(30);
+  });
+
+  it('concede recompensa de XP e Moedas ao avaliar o app e enviar feedback', () => {
+    saveGamificationState({ totalXp: 100, level: 1, ironCoins: 50 });
+    const updated = awardFeedbackReward(50, 20);
+    expect(updated.totalXp).toBe(150);
+    expect(updated.ironCoins).toBe(70);
+    expect(updated.level).toBeGreaterThanOrEqual(1);
   });
 
   it('permite desbloquear e equipar temas cosméticos', () => {

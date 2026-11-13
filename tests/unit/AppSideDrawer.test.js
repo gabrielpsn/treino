@@ -98,4 +98,22 @@ describe('AppSideDrawer', () => {
     await wrapper.find('#btn-import-backup').trigger('click');
     expect(wrapper.emitted('import-backup')).toHaveLength(1);
   });
+
+  it('emite open-feedback ao clicar no botão de avaliação e feedback', async () => {
+    const wrapper = mount(AppSideDrawer, {
+      props: {
+        isOpen: true,
+        userProfile: dummyProfile
+      }
+    });
+
+    const btnFeedback = wrapper.find('#btn-drawer-feedback');
+    expect(btnFeedback.exists()).toBe(true);
+    expect(btnFeedback.text()).toContain('Avaliar App & Enviar Feedback');
+    expect(btnFeedback.text()).toContain('+50 XP');
+
+    await btnFeedback.trigger('click');
+    expect(wrapper.emitted('open-feedback')).toHaveLength(1);
+    expect(wrapper.emitted('close')).toHaveLength(1);
+  });
 });

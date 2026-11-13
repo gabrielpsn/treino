@@ -393,6 +393,101 @@ describe('Worker — Cloudflare Workers AI nativo (Opção 2 100% gratuita)', ()
     // E foi substituído pelo exercício seguro
     expect(splitEx.some(e => e.id === 'elevacao_lateral_halteres')).toBe(true);
   });
+
+  it('garante que a ficha Treino A (Push) receba tríceps se a IA omitir', async () => {
+    const pushCatalog = [
+      { id: 'supino_reto', name: 'Supino Reto', muscle: 'peito', pattern: 'push_horizontal', equipment: 'gym', jointStress: [] },
+      { id: 'supino_inclinado', name: 'Supino Inclinado', muscle: 'peito', pattern: 'push_incline', equipment: 'gym', jointStress: [] },
+      { id: 'crucifixo', name: 'Crucifixo', muscle: 'peito', pattern: 'fly', equipment: 'gym', jointStress: [] },
+      { id: 'elevacao_lateral', name: 'Elevação Lateral', muscle: 'ombro', pattern: 'lateral_raise', equipment: 'gym', jointStress: [] },
+      { id: 'desenvolvimento', name: 'Desenvolvimento', muscle: 'ombro', pattern: 'push_vertical', equipment: 'gym', jointStress: [] },
+      { id: 'triceps_pulley', name: 'Tríceps Pulley', muscle: 'triceps', pattern: 'triceps_extension', equipment: 'gym', jointStress: [] }
+    ];
+
+    // IA retornou apenas peito e ombro (0 tríceps)
+    const modelResponse = {
+      splits: [
+        {
+          splitId: 'treino-a',
+          focus: 'Peito e Ombros',
+          exercises: [
+            { id: 'supino_reto', sets: 4, reps: '8-10', restSeconds: 90 },
+            { id: 'supino_inclinado', sets: 3, reps: '10', restSeconds: 90 },
+            { id: 'crucifixo', sets: 3, reps: '12', restSeconds: 60 },
+            { id: 'elevacao_lateral', sets: 3, reps: '12', restSeconds: 60 },
+            { id: 'desenvolvimento', sets: 3, reps: '10', restSeconds: 90 }
+          ]
+        }
+      ]
+    };
+
+    const aiRun = vi.fn(async () => ({
+      response: JSON.stringify(modelResponse)
+    }));
+
+    const response = await worker.fetch(planRequest({
+      profile: { goal: 'hypertrophy', weightKg: 80, restrictions: [], equipment: 'gym' },
+      catalog: pushCatalog,
+      splits: [{ id: 'treino-a', title: 'Treino A (Push)', subtitle: 'Peito, ombros e tríceps' }]
+    }), {
+      AI: { run: aiRun },
+      ASSETS: env.ASSETS
+    });
+
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    const splitEx = body.plan.splits[0].exercises;
+    // O tríceps OBRIGATORIAMENTE deve estar presente
+    expect(splitEx.some(e => e.id === 'triceps_pulley')).toBe(true);
+  });
+});
+
+describe('Worker — rota de feedback e avaliação', () => {
+  const FEEDBACK_URL = 'https://treino.example/api/feedback';
+
+  it('recebe avaliação com sucesso e retorna confirmação', async () => {
+    const req = new Request(FEEDBACK_URL, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'cf-connecting-ip': nextIp() },
+      body: JSON.stringify({
+        rating: 5,
+        category: 'treino',
+        comment: 'App fantástico!',
+        userName: 'Gabriel'
+      })
+    });
+
+    const res = await worker.fetch(req, env);
+    expect(res.status).toBe(200);
+    const data = await res.json();
+    expect(data.success).toBe(true);
+    expect(data.feedbackId).toBeDefined();
+  });
+
+  it('recusa métodos não POST na rota de feedback', async () => {
+    const req = new Request(FEEDBACK_URL, {
+      method: 'GET',
+      headers: { 'cf-connecting-ip': nextIp() }
+    });
+
+    const res = await worker.fetch(req, env);
+    expect(res.status).toBe(405);
+  });
+
+  it('recusa requisições com origem não autorizada', async () => {
+    const req = new Request(FEEDBACK_URL, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'cf-connecting-ip': nextIp()
+      },
+      body: JSON.stringify({ rating: 5 })
+    });
+    req.headers.set('origin', 'https://outro-site.com');
+
+    const res = await worker.fetch(req, env);
+    expect(res.status).toBe(403);
+  });
 });
 
 describe('Worker — o resto é app estático', () => {

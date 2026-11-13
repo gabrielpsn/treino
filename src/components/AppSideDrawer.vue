@@ -285,6 +285,28 @@
           </button>
         </div>
 
+        <!-- Comunidade & Avaliação -->
+        <div class="space-y-1">
+          <p class="text-[10px] font-black uppercase tracking-widest text-[#64748B] px-2">
+            Comunidade & Avaliação
+          </p>
+
+          <button
+            type="button"
+            id="btn-drawer-feedback"
+            @click="handleAction('open-feedback')"
+            class="tap-btn w-full p-2.5 rounded-xl font-bold text-xs flex items-center justify-between text-amber-950 bg-amber-50 hover:bg-amber-100/90 transition-colors text-left border border-amber-300 shadow-xs"
+          >
+            <div class="flex items-center gap-3">
+              <span class="text-base">⭐</span>
+              <span class="font-black">Avaliar App & Enviar Feedback</span>
+            </div>
+            <span class="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 shadow-xs">
+              +50 XP
+            </span>
+          </button>
+        </div>
+
         <!-- Dados & Segurança (Backup / Importação) -->
         <div class="space-y-1">
           <p class="text-[10px] font-black uppercase tracking-widest text-[#64748B] px-2">
@@ -437,7 +459,8 @@ const emit = defineEmits([
   'open-league',
   'open-wrapped',
   'open-raid',
-  'open-walking'
+  'open-walking',
+  'open-feedback'
 ]);
 
 function handleNavigate(tab) {
