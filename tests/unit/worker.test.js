@@ -292,6 +292,57 @@ describe('Worker — Cloudflare Workers AI nativo (Opção 2 100% gratuita)', ()
     expect(body.plan.proteinGrams).toBe(165);
   });
 
+  it('repara automaticamente JSON com reps sem aspas (ex: 8-10) e unidades em números (ex: 170g)', async () => {
+    const rawMalformatted = `{
+      "rationale": "Treino sinérgico",
+      "targetCalories": 2500kcal,
+      "proteinGrams": 170g,
+      "carbsGrams": 280g,
+      "fatGrams": 70g,
+      "splits": [
+        {
+          "splitId": "treino-a",
+          "focus": "Peito",
+          "exercises": [
+            {"id": "supino_reto_halteres", "sets": 3, "reps": 8-10, "restSeconds": 90s}
+          ]
+        }
+      ]
+    }`;
+
+    const aiRun = vi.fn(async () => ({
+      response: rawMalformatted
+    }));
+
+    const response = await worker.fetch(planRequest(), {
+      AI: { run: aiRun },
+      ASSETS: env.ASSETS
+    });
+
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.plan.proteinGrams).toBe(170);
+    expect(body.plan.targetCalories).toBe(2500);
+    expect(body.plan.splits[0].exercises[0].reps).toBe('8-10');
+  });
+
+  it('recupera JSON truncado no final fechando chaves e colchetes abertos', async () => {
+    const truncated = `{"rationale": "Treino sinérgico", "targetCalories": 2400, "splits": [{"splitId": "treino-a", "exercises": [{"id": "supino_reto_halteres", "sets": 3, "reps": "8-10"`;
+
+    const aiRun = vi.fn(async () => ({
+      response: truncated
+    }));
+
+    const response = await worker.fetch(planRequest(), {
+      AI: { run: aiRun },
+      ASSETS: env.ASSETS
+    });
+
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.plan.splits[0].exercises[0].id).toBe('supino_reto_halteres');
+  });
+
   it('retorna a lista de refeições (meals) quando o Workers AI devolve o plano alimentar', async () => {
     const planWithMeals = {
       ...dummyPlan,
