@@ -7,6 +7,7 @@
  */
 
 export const FEEDBACK_STORAGE_KEY = 'overload_ai_user_feedbacks';
+export const FEEDBACK_WHATSAPP_NUMBER = '5581997758849';
 
 export const FEEDBACK_CATEGORIES = [
   { id: 'sugestao', label: '💡 Sugestão', desc: 'Ideia para melhorar o app' },
@@ -126,9 +127,9 @@ export function getFeedbackStats(feedbacks = getStoredFeedbacks()) {
 }
 
 /**
- * Gera URL de compartilhamento via WhatsApp
+ * Gera URL de compartilhamento via WhatsApp direcionado ao número configurado
  */
-export function generateWhatsAppFeedbackUrl(feedback, phoneNumber = '') {
+export function generateWhatsAppFeedbackUrl(feedback, phoneNumber = FEEDBACK_WHATSAPP_NUMBER) {
   const starsText = '⭐'.repeat(feedback.rating || 5);
   const lines = [
     `*Avaliação do Overload AI* 📱`,
@@ -141,6 +142,6 @@ export function generateWhatsAppFeedbackUrl(feedback, phoneNumber = '') {
   ].filter(Boolean);
 
   const text = encodeURIComponent(lines.join('\n'));
-  const phone = phoneNumber ? phoneNumber.replace(/\D/g, '') : '';
+  const phone = (phoneNumber || FEEDBACK_WHATSAPP_NUMBER).replace(/\D/g, '');
   return phone ? `https://wa.me/${phone}?text=${text}` : `https://wa.me/?text=${text}`;
 }

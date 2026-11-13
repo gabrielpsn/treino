@@ -243,7 +243,7 @@
               class="tap-btn w-full py-2.5 rounded-2xl border border-emerald-300 bg-emerald-50 hover:bg-emerald-100/80 text-emerald-800 font-bold text-xs transition-colors flex items-center justify-center gap-2"
             >
               <span>💬</span>
-              <span>Enviar Diretamente no WhatsApp</span>
+              <span>Enviar via WhatsApp (81 99775-8849)</span>
             </button>
           </div>
         </form>
@@ -334,6 +334,7 @@ import confetti from 'canvas-confetti';
 import {
   FEEDBACK_CATEGORIES,
   QUICK_TAGS,
+  FEEDBACK_WHATSAPP_NUMBER,
   submitAppFeedback,
   getStoredFeedbacks,
   getFeedbackStats,
@@ -452,7 +453,7 @@ function handleSendWhatsApp() {
     comment: comment.value,
     userName: userName.value,
     appVersion: '2.2'
-  });
+  }, FEEDBACK_WHATSAPP_NUMBER);
   window.open(url, '_blank');
 }
 

@@ -56,6 +56,27 @@ describe('AppFeedbackModal', () => {
     expect(tagBtn.classes()).toContain('bg-[#0066FF]');
   });
 
+  it('abre o WhatsApp com o número oficial ao clicar em enviar via WhatsApp', async () => {
+    const openSpy = vi.fn();
+    vi.stubGlobal('open', openSpy);
+
+    const wrapper = mount(AppFeedbackModal, {
+      props: {
+        isOpen: true,
+        userName: 'Gabriel'
+      }
+    });
+
+    const btnWhatsApp = wrapper.find('#btn-send-whatsapp');
+    expect(btnWhatsApp.exists()).toBe(true);
+    expect(btnWhatsApp.text()).toContain('81 99775-8849');
+
+    await btnWhatsApp.trigger('click');
+    expect(openSpy).toHaveBeenCalled();
+    const calledUrl = openSpy.mock.calls[0][0];
+    expect(calledUrl).toContain('https://wa.me/5581997758849');
+  });
+
   it('emite close ao clicar no botão fechar', async () => {
     const wrapper = mount(AppFeedbackModal, {
       props: {

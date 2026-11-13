@@ -82,16 +82,16 @@ describe('Sistema de Feedback e Avaliação', () => {
     expect(stats.breakdown[3]).toBe(0);
   });
 
-  it('gera URL de compartilhamento direto via WhatsApp', () => {
+  it('gera URL de compartilhamento direto via WhatsApp para o número oficial', () => {
     const url = generateWhatsAppFeedbackUrl({
       rating: 5,
-      category: 'treinos',
+      category: 'treino',
       tags: ['Excelente', 'Interface Limpa'],
       comment: 'Adorei a divisão Push Pull Legs!',
       userName: 'Gabriel'
-    }, '5511999999999');
+    });
 
-    expect(url).toContain('https://wa.me/5511999999999');
+    expect(url).toContain('https://wa.me/5581997758849');
     expect(url).toContain(encodeURIComponent('5/5'));
     expect(url).toContain(encodeURIComponent('Gabriel'));
   });
