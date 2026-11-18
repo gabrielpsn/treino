@@ -32,6 +32,8 @@ test('Onboarding: monta plano de emagrecimento a partir do perfil', async ({ pag
 
   await expect(page.locator('#app-user-subtitle')).toContainText('Olá, Mariana Silva');
   await expect(page.locator('#app-title')).toContainText('Emagrecimento Saudável');
+  // Metas de calorias e o cronograma de emagrecimento ficam na aba Dieta.
+  await page.locator('#tab-btn-nutrition').click();
   await expect(page.locator('#section-weight-loss-diagnosis')).toBeVisible();
 
   // 86kg / 1.56^2 = 35.3

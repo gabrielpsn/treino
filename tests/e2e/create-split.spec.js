@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { completeOnboarding, ensureOnboarded } from './helpers/onboarding.js';
+import { completeOnboarding, ensureOnboarded, enableSheetEdit } from './helpers/onboarding.js';
 
 async function onboardHome(page, name = 'Atleta Custom') {
   await page.goto('/');
@@ -38,12 +38,12 @@ test('Criação de Ficha: usuário pode criar uma nova divisão de treino person
   await expect(modal).toBeHidden();
 
   // A nova aba deve estar visível e navegável
-  const newSplitTab = page.locator('button:has-text("Treino D")');
+  const newSplitTab = page.locator('button[id^="btn-split-"]:has-text("Treino D")');
   await expect(newSplitTab).toBeVisible();
   await newSplitTab.click();
 
   // O container do treino deve exibir o título completo da nova ficha
-  await expect(page.locator('text=Treino D (Braços & Core)')).toBeVisible();
+  await expect(page.locator('[id^="container-"]:visible').getByText('Treino D (Braços & Core)').first()).toBeVisible();
 });
 
 test('Edição de Ficha: usuário pode renomear uma ficha existente e alterar foco', async ({ page }) => {
@@ -54,6 +54,7 @@ test('Edição de Ficha: usuário pode renomear uma ficha existente e alterar fo
   const splitId = (await firstSplitTab.getAttribute('id')).replace('btn-split-', '');
   await firstSplitTab.click();
 
+  await enableSheetEdit(page);
   const editBtn = page.locator(`#btn-edit-split-${splitId}`);
   await expect(editBtn).toBeVisible();
   await editBtn.click();
@@ -68,7 +69,8 @@ test('Edição de Ficha: usuário pode renomear uma ficha existente e alterar fo
   await page.locator('#btn-confirm-create-split').click();
 
   await expect(modal).toBeHidden();
-  await expect(page.locator('text=Treino A (Superiores Foco Peito)')).toBeVisible();
+  // O card "Treino de hoje" também cita a ficha: confere dentro da ficha.
+  await expect(page.locator('[id^="container-"]:visible').getByText('Treino A (Superiores Foco Peito)').first()).toBeVisible();
 });
 
 test('Exclusão de Ficha: usuário pode excluir uma ficha com confirmação de segurança', async ({ page }) => {
@@ -84,7 +86,8 @@ test('Exclusão de Ficha: usuário pode excluir uma ficha com confirmação de s
   await tempTab.click();
 
   // Localiza o botão de excluir
-  const deleteBtn = page.locator('button[id^="btn-delete-split-"]').first();
+  await enableSheetEdit(page);
+  const deleteBtn = page.locator('button[id^="btn-delete-split-"]:visible').first();
   await expect(deleteBtn).toBeVisible();
   const deleteId = (await deleteBtn.getAttribute('id')).replace('btn-delete-split-', '');
   await deleteBtn.click();

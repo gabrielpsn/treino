@@ -5,7 +5,7 @@
     role="dialog"
     aria-modal="true"
     aria-labelledby="ai-loading-title"
-    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md overflow-y-auto"
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md overflow-y-auto safe-overlay"
   >
     <div
       class="bg-white border border-[#E2E8F0] w-full max-w-md rounded-3xl p-6 sm:p-7 shadow-2xl relative my-8 text-[#0F172A] animate-in fade-in zoom-in-95 duration-200"

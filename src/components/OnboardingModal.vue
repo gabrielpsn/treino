@@ -2,7 +2,7 @@
   <div
     v-if="isOpen"
     id="onboarding-modal-overlay"
-    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto"
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto safe-overlay"
     role="dialog"
     aria-modal="true"
     aria-labelledby="onboarding-title"
@@ -67,7 +67,7 @@
       <div v-if="step === 1" class="space-y-4">
         <div>
           <h2 id="onboarding-title" class="text-2xl font-black text-[#0F172A] tracking-tight">Bem-vindo(a) ao seu Plano</h2>
-          <p class="text-sm text-[#64748B] mt-1">Informe seu nome, objetivo e biometria para calibrarmos as taxas metabólicas e fichas ideais.</p>
+          <p class="text-sm text-[#64748B] mt-1">Responda 3 passos rápidos e o app monta seu treino e sua alimentação.</p>
         </div>
 
         <!-- Solicitação do Nome do Usuário -->
@@ -112,7 +112,7 @@
               </div>
               <div>
                 <strong class="text-xs sm:text-sm text-[#0F172A] block">Hipertrofia</strong>
-                <span class="text-[10px] text-[#64748B] leading-tight block mt-0.5">Superávit limpo e massa muscular</span>
+                <span class="text-[10px] text-[#64748B] leading-tight block mt-0.5">Ganhar massa muscular</span>
               </div>
             </button>
 
@@ -129,7 +129,7 @@
               </div>
               <div>
                 <strong class="text-xs sm:text-sm text-[#0F172A] block">Emagrecimento</strong>
-                <span class="text-[10px] text-[#64748B] leading-tight block mt-0.5">Déficit calórico e queima de gordura</span>
+                <span class="text-[10px] text-[#64748B] leading-tight block mt-0.5">Perder gordura e peso</span>
               </div>
             </button>
 
@@ -146,7 +146,7 @@
               </div>
               <div>
                 <strong class="text-xs sm:text-sm text-[#0F172A] block">Força Pura</strong>
-                <span class="text-[10px] text-[#64748B] leading-tight block mt-0.5">Compostos pesados e 4-6 reps</span>
+                <span class="text-[10px] text-[#64748B] leading-tight block mt-0.5">Ficar mais forte, com cargas altas</span>
               </div>
             </button>
 
@@ -163,7 +163,7 @@
               </div>
               <div>
                 <strong class="text-xs sm:text-sm text-[#0F172A] block">Recomposição</strong>
-                <span class="text-[10px] text-[#64748B] leading-tight block mt-0.5">Massa magra + queima simultânea</span>
+                <span class="text-[10px] text-[#64748B] leading-tight block mt-0.5">Perder gordura e ganhar músculo</span>
               </div>
             </button>
 
@@ -180,7 +180,7 @@
               </div>
               <div>
                 <strong class="text-xs sm:text-sm text-[#0F172A] block">Manutenção</strong>
-                <span class="text-[10px] text-[#64748B] leading-tight block mt-0.5">Equilíbrio, tônus e longevidade</span>
+                <span class="text-[10px] text-[#64748B] leading-tight block mt-0.5">Manter a forma e a saúde</span>
               </div>
             </button>
           </div>
@@ -190,7 +190,7 @@
         <div>
           <div class="flex items-center justify-between mb-1">
             <label class="block text-xs font-bold text-[#0F172A]">
-              Gênero Biológico <span class="text-rose-500">*</span>
+              Sexo biológico <span class="text-[11px] font-normal text-[#64748B]">(usado para calcular as calorias)</span> <span class="text-rose-500">*</span>
             </label>
             <span v-if="errors.gender" id="error-gender" class="text-[11px] font-bold text-rose-600">{{ errors.gender }}</span>
           </div>
@@ -278,7 +278,7 @@
       <div v-else-if="step === 2" class="space-y-4">
         <div>
           <h2 class="text-2xl font-black text-[#0F172A] tracking-tight">Rotina & Frequência</h2>
-          <p class="text-sm text-[#64748B] mt-1">Definiremos o melhor split de treino para sua semana.</p>
+          <p class="text-sm text-[#64748B] mt-1">Vamos distribuir os treinos ao longo da sua semana.</p>
         </div>
 
         <div>
@@ -330,8 +330,8 @@
       <!-- Passo 3: Equipamento, Foco & Restrições -->
       <div v-else-if="step === TOTAL_STEPS" class="space-y-4">
         <div>
-          <h2 class="text-2xl font-black text-[#0F172A] tracking-tight">Ambiente & Segurança Articular</h2>
-          <p class="text-sm text-[#64748B] mt-1">O algoritmo ajustará exercícios para proteger suas articulações.</p>
+          <h2 class="text-2xl font-black text-[#0F172A] tracking-tight">Onde você treina e cuidados</h2>
+          <p class="text-sm text-[#64748B] mt-1">Diga onde você treina e se sente alguma dor: o app escolhe exercícios seguros para você.</p>
         </div>
 
         <div>
@@ -400,7 +400,7 @@
               {{ res.label }}
             </button>
           </div>
-          <p class="text-[11px] text-[#64748B] mt-1">Se marcado, o sistema substitui exercícios de alta compressão por variantes guiadas e seguras.</p>
+          <p class="text-[11px] text-[#64748B] mt-1">Se marcar, o app evita exercícios que forçam essa região.</p>
         </div>
 
         <!-- Opção de preservação de fichas ao editar perfil existente -->
@@ -469,7 +469,7 @@
           :class="form.goal === 'weight_loss' ? 'bg-rose-500 hover:bg-rose-600 text-white' : 'bg-[#F59E0B] hover:bg-[#D97706] text-[#0F172A]'"
           class="px-6 py-2.5 rounded-xl font-black text-sm shadow-sm transition-all flex items-center gap-2"
         >
-          <span>{{ isEditing ? (preserveWorkouts ? 'Salvar e Atualizar Metas' : 'Regerar Meu Plano') : 'Gerar Meu Plano Inteligente' }}</span>
+          <span>{{ isEditing ? (preserveWorkouts ? 'Salvar e Atualizar Metas' : 'Regerar Meu Plano') : 'Criar meu plano' }}</span>
           <span>{{ form.goal === 'weight_loss' ? '🔥' : '⚡' }}</span>
         </button>
       </div>
@@ -634,9 +634,9 @@ const stepTitle = computed(() => {
 });
 
 const levels = [
-  { id: 'beginner', title: 'Iniciante (< 6 meses)', desc: 'Foco em aprendizado motor e adaptação articular' },
-  { id: 'intermediate', title: 'Intermediário (6m a 2 anos)', desc: 'Consistente, busca evolução e aumento gradual de intensidade' },
-  { id: 'advanced', title: 'Avançado (> 2 anos)', desc: 'Necessita de maior volume e sobrecarga calculada' }
+  { id: 'beginner', title: 'Iniciante (< 6 meses)', desc: 'Nunca treinou ou começou há pouco tempo' },
+  { id: 'intermediate', title: 'Intermediário (6m a 2 anos)', desc: 'Já treina com frequência e conhece os exercícios' },
+  { id: 'advanced', title: 'Avançado (> 2 anos)', desc: 'Treina há anos e quer mais volume' }
 ];
 
 const jointOptions = [

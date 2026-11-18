@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { completeOnboarding, ensureOnboarded } from './helpers/onboarding.js';
+import { completeOnboarding, ensureOnboarded, enableSheetEdit } from './helpers/onboarding.js';
 
 async function onboardUser(page, name = 'Grupos Musculares') {
   await page.goto('/');
@@ -86,6 +86,7 @@ test('Botão "Agrupar por Músculo" reorganiza e persiste os exercícios por gru
   await tab.click();
 
   const container = page.locator(`#container-${splitId}`);
+  await enableSheetEdit(page);
   const groupBtn = container.locator(`#btn-group-by-muscle-${splitId}`);
   await expect(groupBtn).toBeVisible();
 

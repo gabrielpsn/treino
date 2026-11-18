@@ -5,7 +5,7 @@
     role="dialog"
     aria-modal="true"
     aria-labelledby="detail-exercise-name"
-    class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto"
+    class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto safe-overlay"
     @click.self="emit('close')"
   >
     <div

@@ -81,6 +81,8 @@ test.describe('Validação Visual por Tela do App de Treino', () => {
 
     // Valida banner com dados do modelo de emagrecimento
     await expect(page.locator('#app-title')).toContainText('Emagrecimento Saudável');
+    // Metas de calorias e o cronograma de emagrecimento ficam na aba Dieta.
+    await page.locator('#tab-btn-nutrition').click();
     await expect(page.locator('#section-weight-loss-diagnosis')).toBeVisible();
     await page.screenshot({ path: path.join(SCREENSHOT_DIR, '04_home_emagrecimento_com_nome.png'), fullPage: true });
   });

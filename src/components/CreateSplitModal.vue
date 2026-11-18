@@ -5,7 +5,7 @@
     role="dialog"
     aria-modal="true"
     aria-labelledby="create-split-title"
-    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto"
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto safe-overlay"
   >
     <div
       class="bg-white border border-[#E2E8F0] w-full max-w-lg rounded-3xl p-5 sm:p-6 shadow-2xl relative my-8 text-[#0F172A]"

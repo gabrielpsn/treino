@@ -1,5 +1,5 @@
 <template>
-  <div v-if="isOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+  <div v-if="isOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 safe-overlay">
     <div class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm" aria-hidden="true" @click="emit('close')"></div>
     <div
       :id="modalId"

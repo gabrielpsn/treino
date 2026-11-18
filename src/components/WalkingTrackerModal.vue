@@ -5,7 +5,7 @@
     role="dialog"
     aria-modal="true"
     aria-label="Rastreador de Caminhada e Passos"
-    class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs overflow-y-auto"
+    class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs overflow-y-auto safe-overlay"
   >
     <div
       class="w-full max-w-lg bg-white rounded-3xl border border-[#E2E8F0] shadow-2xl overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200"

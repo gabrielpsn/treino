@@ -64,3 +64,15 @@ export async function ensureOnboarded(page, options = {}) {
   }
   await completeOnboarding(page, options);
 }
+
+/**
+ * Liga o modo "Editar ficha" da ficha visível. Mover, remover, agrupar e
+ * adicionar exercício só aparecem nesse modo, para o iniciante não apagar
+ * nada sem querer durante o treino.
+ */
+export async function enableSheetEdit(page) {
+  const btn = page.locator('button[id^="btn-sheet-edit-"]:visible').first();
+  await expect(btn).toBeVisible();
+  if ((await btn.getAttribute('aria-pressed')) !== 'true') await btn.click();
+  await expect(btn).toHaveAttribute('aria-pressed', 'true');
+}

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { completeOnboarding, ensureOnboarded } from './helpers/onboarding.js';
+import { completeOnboarding, ensureOnboarded, enableSheetEdit } from './helpers/onboarding.js';
 
 /**
  * Alvos de toque e layout no celular.
@@ -26,6 +26,8 @@ async function openFirstSplit(page) {
   const tab = page.locator('button[id^="btn-split-treino-"]').first();
   const splitId = (await tab.getAttribute('id')).replace('btn-split-', '');
   await tab.click();
+  // As ações de ficha (mover/remover) ficam no modo "Editar ficha".
+  await enableSheetEdit(page);
   return { splitId, container: page.locator(`#container-${splitId}`) };
 }
 

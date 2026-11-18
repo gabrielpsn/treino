@@ -5,10 +5,10 @@
     role="dialog"
     aria-modal="true"
     aria-label="Modo Treino"
-    class="fixed inset-0 z-30 bg-[#F8FAFC] flex flex-col text-[#0F172A]"
+    class="fixed inset-0 z-[45] bg-[#F8FAFC] flex flex-col text-[#0F172A]"
   >
     <!-- Topo: saída, identificação da ficha, cronômetro da sessão e progresso -->
-    <header class="flex items-center justify-between gap-3 px-4 py-3 border-b border-[#E2E8F0] bg-white flex-shrink-0 shadow-xs">
+    <header class="flex items-center justify-between gap-3 px-4 py-3 safe-top-pad border-b border-[#E2E8F0] bg-white flex-shrink-0 shadow-xs">
       <div class="flex items-center gap-2">
         <button
           type="button"
@@ -262,7 +262,7 @@
       </p>
     </main>
 
-    <footer class="px-4 py-3 border-t border-[#E2E8F0] bg-white flex-shrink-0 shadow-xs">
+    <footer class="px-4 py-3 safe-bottom-pad border-t border-[#E2E8F0] bg-white flex-shrink-0 shadow-xs">
       <button
         type="button"
         id="btn-training-finish"

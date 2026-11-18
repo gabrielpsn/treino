@@ -83,15 +83,17 @@ test.describe('perfil sem restrição', () => {
     await onboard(page);
   });
 
-test('Após o cadastro a IA é chamada sozinha; sem servidor a ficha da fórmula continua', async ({ page }) => {
+test('Após o cadastro a IA é chamada sozinha; sem servidor a ficha do app continua, sem erro', async ({ page }) => {
   // O app tenta gerar pela IA logo após o onboarding. No dev server não há
-  // Worker, então a tentativa falha e o aviso diz que a ficha atual vale.
-  await expect(page.locator('#ai-plan-status')).toHaveText(/continua valendo/i);
+  // Worker: a tentativa automática falha em silêncio (sem aviso vermelho) e a
+  // ficha calculada pelo app continua valendo.
+  await expect(page.locator('#ai-plan-status')).toHaveText(/montada pelo app/i);
+  await expect(page.locator('#ai-plan-status')).not.toHaveClass(/text-rose/);
   await expect(page.locator('[id^="exercise-card-"]').first()).toBeVisible();
 
   await page.reload();
   await page.locator('#tab-btn-workout').click();
-  await expect(page.locator('#ai-plan-status')).toHaveText(/motor biomecânico/i);
+  await expect(page.locator('#ai-plan-status')).toHaveText(/montada pelo app/i);
 });
 
 test('Gerar com IA salva a ficha e ela continua depois do reload', async ({ page }) => {
@@ -113,7 +115,7 @@ test('Gerar com IA salva a ficha e ela continua depois do reload', async ({ page
   // Sem persistir, a sugestão viraria uma ficha que existe só na tela.
   await page.reload();
   await page.locator('#tab-btn-workout').click();
-  await expect(page.locator('#ai-plan-status')).toHaveText(/montada pelo Agente/i);
+  await expect(page.locator('#ai-plan-status')).toHaveText(/personalizada pela IA/i);
 });
 
 test('O botão mostra o progresso e trava enquanto a IA responde', async ({ page }) => {
@@ -124,7 +126,7 @@ test('O botão mostra o progresso e trava enquanto a IA responde', async ({ page
 
   await expect(button).toBeDisabled();
   await expect(button).toHaveText(/Gerando/);
-  await expect(page.locator('#ai-plan-status')).toHaveText(/Consultando/);
+  await expect(page.locator('#ai-plan-status')).toHaveText(/Personalizando/);
 
   await expect(button).toBeEnabled({ timeout: 15000 });
   await expect(page.locator('#ai-plan-status')).toHaveText(/gerado por IA com sucesso/);
@@ -185,7 +187,7 @@ test('IA que inventa exercício não troca a ficha atual', async ({ page }) => {
 
   await page.reload();
   await page.locator('#tab-btn-workout').click();
-  await expect(page.locator('#ai-plan-status')).toHaveText(/motor biomecânico/i);
+  await expect(page.locator('#ai-plan-status')).toHaveText(/montada pelo app/i);
 });
 
 test('IA que repete exercício na mesma ficha é descartada', async ({ page }) => {
@@ -260,7 +262,7 @@ test('Servidor sem chave explica o motivo e mantém a ficha', async ({ page }) =
 
   await page.reload();
   await page.locator('#tab-btn-workout').click();
-  await expect(page.locator('#ai-plan-status')).toHaveText(/motor biomecânico/i);
+  await expect(page.locator('#ai-plan-status')).toHaveText(/montada pelo app/i);
 });
 
 test('Timeout do Worker vira aviso curto, não tela quebrada', async ({ page }) => {

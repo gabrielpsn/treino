@@ -258,3 +258,38 @@ test('Deload: cargas estagnadas geram sugestão e, aceita, a ficha mostra a carg
   await page.locator('#btn-end-deload').click();
   await expect(banner).toBeHidden();
 });
+
+test.describe('celular', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test('Início: card "Treino de hoje" abre o Modo Treino, que fica acima da barra inferior', async ({ page }) => {
+    await page.goto('/');
+    await completeOnboarding(page, { name: 'Iniciante Celular' });
+
+    const card = page.locator('#today-workout-card');
+    await expect(card).toBeInViewport();
+    await expect(page.locator('#first-steps')).toBeVisible();
+    await page.locator('#btn-start-today').click();
+
+    const mode = page.getByRole('dialog', { name: 'Modo Treino' });
+    await expect(mode).toBeVisible();
+    // O botão de concluir não pode ficar coberto pela barra de navegação.
+    const finish = mode.locator('footer button').first();
+    const box = await finish.boundingBox();
+    const hit = await page.evaluate(([x, y]) => document.elementFromPoint(x, y)?.closest('footer') !== null, [box.x + box.width / 2, box.y + box.height / 2]);
+    expect(hit).toBe(true);
+    await expect(mode.getByRole('button', { name: 'Sair do modo treino' })).toBeInViewport();
+  });
+
+  test('Ficha: editar só aparece no modo de edição e termos têm explicação', async ({ page }) => {
+    await page.goto('/');
+    await completeOnboarding(page, { name: 'Iniciante Ficha' });
+    await page.locator('#mobile-nav-workout').click();
+    await expect(page.locator('[id^="btn-remove-"]')).toHaveCount(0);
+    await page.locator('button[id^="btn-sheet-edit-"]:visible').first().click();
+    await expect(page.locator('[id^="btn-remove-"]').first()).toBeVisible();
+
+    await page.locator('[id^="help-rir-"]').first().click();
+    await expect(page.getByRole('note')).toContainText('repetições a mais');
+  });
+});

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { completeOnboarding, ensureOnboarded } from './helpers/onboarding.js';
+import { completeOnboarding, ensureOnboarded, enableSheetEdit } from './helpers/onboarding.js';
 
 /**
  * Cadastro mínimo em casa, sem restrições: o editor de ficha não depende de
@@ -20,6 +20,7 @@ async function openFirstSplit(page) {
   const tab = page.locator('button[id^="btn-split-treino-"]').first();
   const splitId = (await tab.getAttribute('id')).replace('btn-split-', '');
   await tab.click();
+  await enableSheetEdit(page);
 
   const cards = page.locator(`#container-${splitId} [id^="exercise-card-"]`);
   const ids = await cards.evaluateAll(els => els.map(e => e.id.replace('exercise-card-', '')));

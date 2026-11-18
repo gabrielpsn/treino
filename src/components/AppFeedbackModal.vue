@@ -5,7 +5,7 @@
     role="dialog"
     aria-modal="true"
     aria-label="Avaliação e Feedback do App"
-    class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-xs overflow-y-auto"
+    class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-xs overflow-y-auto safe-overlay"
     @click.self="emit('close')"
   >
     <div

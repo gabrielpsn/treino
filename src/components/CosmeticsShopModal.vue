@@ -1,5 +1,5 @@
 <template>
-  <div v-if="isOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+  <div v-if="isOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 safe-overlay">
     <!-- Backdrop com Blur -->
     <div
       id="shop-backdrop"

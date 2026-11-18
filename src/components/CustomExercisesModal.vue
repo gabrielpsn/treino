@@ -2,7 +2,7 @@
   <div
     v-if="isOpen"
     id="custom-exercises-overlay"
-    class="fixed inset-0 z-50 flex justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto"
+    class="fixed inset-0 z-50 flex justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto safe-overlay"
     role="dialog"
     aria-modal="true"
     aria-labelledby="custom-exercises-title"

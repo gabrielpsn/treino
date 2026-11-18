@@ -13,7 +13,8 @@
       role="alert"
       aria-live="assertive"
       @click="emit('close')"
-      class="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-11/12 max-w-md bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 text-slate-950 p-4 rounded-2xl shadow-2xl border-2 border-amber-300 cursor-pointer select-none"
+      style="top: calc(1rem + env(safe-area-inset-top, 0px));"
+      class="fixed left-1/2 -translate-x-1/2 z-50 w-11/12 max-w-md bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 text-slate-950 p-4 rounded-2xl shadow-2xl border-2 border-amber-300 cursor-pointer select-none"
     >
       <div class="flex items-center gap-3">
         <div class="w-11 h-11 rounded-xl bg-slate-950/20 border border-slate-950/30 flex items-center justify-center text-2xl flex-shrink-0 animate-bounce">

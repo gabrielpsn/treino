@@ -14,7 +14,7 @@
       role="dialog"
       aria-modal="true"
       aria-label="Menu principal do aplicativo"
-      class="fixed inset-y-0 left-0 w-80 max-w-[85vw] bg-white border-r border-[#E2E8F0] text-[#0F172A] z-50 shadow-2xl flex flex-col justify-between overflow-y-auto animate-in slide-in-from-left duration-200"
+      class="fixed inset-y-0 left-0 w-80 max-w-[85vw] safe-top safe-bottom bg-white border-r border-[#E2E8F0] text-[#0F172A] z-50 shadow-2xl flex flex-col justify-between overflow-y-auto animate-in slide-in-from-left duration-200"
     >
       <!-- Topo / Conteúdo Superior -->
       <div class="p-4 sm:p-5 space-y-5">
@@ -151,10 +151,105 @@
           </button>
         </div>
 
-        <!-- RPG Fit & Economia -->
+        <!-- Meu progresso -->
         <div class="space-y-1">
           <p class="text-[10px] font-black uppercase tracking-widest text-[#64748B] px-2">
-            RPG Fit & Economia
+            Meu progresso
+          </p>
+          <button
+            v-for="item in PROGRESS_ITEMS"
+            :key="item.id"
+            type="button"
+            :id="`btn-drawer-${item.id}`"
+            @click="handleAction(item.action)"
+            class="tap-btn w-full p-2.5 rounded-xl font-bold text-xs flex items-center justify-between text-[#0F172A] bg-[#F8FAFC] hover:bg-[#F1F5F9] transition-colors text-left border border-[#E2E8F0]"
+          >
+            <div class="flex items-center gap-3">
+              <span class="text-base" aria-hidden="true">{{ item.icon }}</span>
+              <span>{{ item.label }}</span>
+            </div>
+            <span v-if="item.badge" class="text-[10px] font-black px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-800">{{ item.badge }}</span>
+          </button>
+
+          <button
+            type="button"
+            id="btn-drawer-walking"
+            @click="handleAction('open-walking')"
+            class="tap-btn w-full p-2.5 rounded-xl font-bold text-xs flex items-center justify-between text-[#0F172A] bg-[#F8FAFC] hover:bg-[#F1F5F9] transition-colors text-left border border-[#E2E8F0]"
+          >
+            <div class="flex items-center gap-3">
+              <span class="text-base">🚶</span>
+              <span>Caminhada & Passos</span>
+            </div>
+            <span class="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-800">
+              {{ todaySteps > 0 ? `${todaySteps.toLocaleString('pt-BR')} passos` : 'Rastrear' }}
+            </span>
+          </button>
+
+        </div>
+
+        <!-- Gestão de Fichas e Treino -->
+        <div class="space-y-1">
+          <p class="text-[10px] font-black uppercase tracking-widest text-[#64748B] px-2">
+            Montar meu treino
+          </p>
+
+          <button
+            type="button"
+            id="btn-drawer-create-split"
+            @click="handleAction('open-create-split')"
+            class="tap-btn w-full p-2.5 rounded-xl font-bold text-xs flex items-center gap-3 text-[#0F172A] bg-[#F8FAFC] hover:bg-[#F1F5F9] transition-colors text-left border border-[#E2E8F0]"
+          >
+            <span class="text-base">📋</span>
+            <span>Criar Nova Ficha</span>
+          </button>
+
+          <button
+            type="button"
+            id="btn-drawer-custom-exercises"
+            @click="handleAction('open-custom-exercises')"
+            class="tap-btn w-full p-2.5 rounded-xl font-bold text-xs flex items-center gap-3 text-[#0F172A] bg-[#F8FAFC] hover:bg-[#F1F5F9] transition-colors text-left border border-[#E2E8F0]"
+          >
+            <span class="text-base">⚡</span>
+            <span>Meus Exercícios Personalizados</span>
+          </button>
+
+          <button
+            type="button"
+            id="btn-drawer-ai-plan"
+            @click="handleAction('generate-ai-plan')"
+            class="tap-btn w-full p-2.5 rounded-xl font-bold text-xs flex items-center gap-3 text-[#0066FF] bg-[#F8FAFC] hover:bg-[#F1F5F9] transition-colors text-left border border-[#E2E8F0]"
+          >
+            <span class="text-base">🤖</span>
+            <span>Gerar Ficha com IA</span>
+          </button>
+        </div>
+
+        <!-- Com amigos e personal (precisam de internet) -->
+        <div class="space-y-1">
+          <p class="text-[10px] font-black uppercase tracking-widest text-[#64748B] px-2">
+            Com amigos e personal
+          </p>
+          <button
+            v-for="item in ONLINE_ITEMS"
+            :key="item.id"
+            type="button"
+            :id="`btn-drawer-${item.id}`"
+            @click="handleAction(item.action)"
+            class="tap-btn w-full p-2.5 rounded-xl font-bold text-xs flex items-center justify-between text-[#0F172A] bg-[#F8FAFC] hover:bg-[#F1F5F9] transition-colors text-left border border-[#E2E8F0]"
+          >
+            <div class="flex items-center gap-3">
+              <span class="text-base" aria-hidden="true">{{ item.icon }}</span>
+              <span>{{ item.label }}</span>
+            </div>
+            <span v-if="item.badge" class="text-[10px] font-black px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-800">{{ item.badge }}</span>
+          </button>
+        </div>
+
+        <!-- Conquistas e diversão (gamificação): fica abaixo do essencial -->
+        <div class="space-y-1">
+          <p class="text-[10px] font-black uppercase tracking-widest text-[#64748B] px-2">
+            Conquistas e diversão
           </p>
 
           <button
@@ -230,73 +325,6 @@
             <span class="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-800">
               Mensal
             </span>
-          </button>
-        </div>
-
-        <!-- Gestão de Fichas e Treino -->
-        <div class="space-y-1">
-          <p class="text-[10px] font-black uppercase tracking-widest text-[#64748B] px-2">
-            Gestão do Treino
-          </p>
-
-          <button
-            v-for="item in EXTRA_ITEMS"
-            :key="item.id"
-            type="button"
-            :id="`btn-drawer-${item.id}`"
-            @click="handleAction(item.action)"
-            class="tap-btn w-full p-2.5 rounded-xl font-bold text-xs flex items-center justify-between text-[#0F172A] bg-[#F8FAFC] hover:bg-[#F1F5F9] transition-colors text-left border border-[#E2E8F0]"
-          >
-            <div class="flex items-center gap-3">
-              <span class="text-base" aria-hidden="true">{{ item.icon }}</span>
-              <span>{{ item.label }}</span>
-            </div>
-            <span v-if="item.badge" class="text-[10px] font-black px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-800">{{ item.badge }}</span>
-          </button>
-
-          <button
-            type="button"
-            id="btn-drawer-walking"
-            @click="handleAction('open-walking')"
-            class="tap-btn w-full p-2.5 rounded-xl font-bold text-xs flex items-center justify-between text-[#0F172A] bg-[#F8FAFC] hover:bg-[#F1F5F9] transition-colors text-left border border-[#E2E8F0]"
-          >
-            <div class="flex items-center gap-3">
-              <span class="text-base">🚶</span>
-              <span>Caminhada & Passos</span>
-            </div>
-            <span class="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-800">
-              {{ todaySteps > 0 ? `${todaySteps.toLocaleString('pt-BR')} passos` : 'Rastrear' }}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            id="btn-drawer-create-split"
-            @click="handleAction('open-create-split')"
-            class="tap-btn w-full p-2.5 rounded-xl font-bold text-xs flex items-center gap-3 text-[#0F172A] bg-[#F8FAFC] hover:bg-[#F1F5F9] transition-colors text-left border border-[#E2E8F0]"
-          >
-            <span class="text-base">📋</span>
-            <span>Criar Nova Ficha</span>
-          </button>
-
-          <button
-            type="button"
-            id="btn-drawer-custom-exercises"
-            @click="handleAction('open-custom-exercises')"
-            class="tap-btn w-full p-2.5 rounded-xl font-bold text-xs flex items-center gap-3 text-[#0F172A] bg-[#F8FAFC] hover:bg-[#F1F5F9] transition-colors text-left border border-[#E2E8F0]"
-          >
-            <span class="text-base">⚡</span>
-            <span>Meus Exercícios Personalizados</span>
-          </button>
-
-          <button
-            type="button"
-            id="btn-drawer-ai-plan"
-            @click="handleAction('generate-ai-plan')"
-            class="tap-btn w-full p-2.5 rounded-xl font-bold text-xs flex items-center gap-3 text-[#0066FF] bg-[#F8FAFC] hover:bg-[#F1F5F9] transition-colors text-left border border-[#E2E8F0]"
-          >
-            <span class="text-base">🤖</span>
-            <span>Gerar Ficha com IA (Gemini)</span>
           </button>
         </div>
 
@@ -480,15 +508,20 @@ const emit = defineEmits([
   'open-reminders',
   'open-cloud-sync',
   'open-friends-league',
-  'open-trainer'
+  'open-trainer',
+  'open-glossary'
 ]);
 
-const EXTRA_ITEMS = [
+const PROGRESS_ITEMS = [
   { id: 'body-progress', action: 'open-body-progress', icon: '📏', label: 'Evolução Corporal (peso, medidas, fotos)' },
   { id: 'reminders', action: 'open-reminders', icon: '⏰', label: 'Lembretes de Treino' },
-  { id: 'cloud-sync', action: 'open-cloud-sync', icon: '☁️', label: 'Backup na Nuvem', badge: 'Online' },
-  { id: 'friends-league', action: 'open-friends-league', icon: '🏆', label: 'Liga com Amigos', badge: 'Online' },
-  { id: 'trainer', action: 'open-trainer', icon: '🧑‍🏫', label: 'Modo Personal Trainer', badge: 'Online' }
+  { id: 'glossary', action: 'open-glossary', icon: '📖', label: 'Termos da musculação' }
+];
+
+const ONLINE_ITEMS = [
+  { id: 'trainer', action: 'open-trainer', icon: '🧑‍🏫', label: 'Modo Personal Trainer' },
+  { id: 'friends-league', action: 'open-friends-league', icon: '🏆', label: 'Liga com Amigos' },
+  { id: 'cloud-sync', action: 'open-cloud-sync', icon: '☁️', label: 'Backup na Nuvem' }
 ];
 
 function handleNavigate(tab) {
