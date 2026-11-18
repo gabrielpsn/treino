@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
+import { ensureOnboarded } from './helpers/onboarding.js';
 
 // Screenshots vão para test-results/ (gitignored): antes eram commitados no
 // repositório, somando mais de 1 MB de artefatos gerados que ninguém revisava.
@@ -18,14 +19,8 @@ test.describe('Validação Visual por Tela do App de Treino', () => {
     // botão de fechar logo após o networkidle era corrido — o modal abria em
     // cima e os cliques seguintes nunca ficavam "estáveis". Espera o modal e
     // só então fecha; se o perfil já existir, não há modal e segue direto.
-    const modal = page.locator('#onboarding-modal');
-    try {
-      await modal.waitFor({ state: 'visible', timeout: 5000 });
-    } catch {
-      return;
-    }
-    await page.locator('#btn-close-onboarding').click();
-    await modal.waitFor({ state: 'hidden', timeout: 5000 });
+    // Primeiro acesso exige o cadastro completo (não há mais botão de fechar).
+    await ensureOnboarded(page);
   }
 
   test('Tela 1: Onboarding - Perfil, Solicitação do Nome e Objetivo de Perda de Peso', async ({ page }) => {
@@ -65,11 +60,14 @@ test.describe('Validação Visual por Tela do App de Treino', () => {
     await page.locator('#btn-onboarding-next').click();
     await expect(page.locator('#btn-days-4')).toBeVisible();
     await page.locator('#btn-days-4').click();
+    await page.locator('#btn-exp-intermediate').click();
     await page.screenshot({ path: path.join(SCREENSHOT_DIR, '02_onboarding_passo2_rotina.png') });
 
     // Avança para Passo 3 (Articulações & Equipamento)
     await page.locator('#btn-onboarding-next').click();
     await expect(page.locator('#btn-equip-gym')).toBeVisible();
+    await page.locator('#btn-equip-gym').click();
+    await page.locator('#btn-dietary-omnivore').click();
     await page.locator('#btn-joint-joelho').click(); // marca proteção de joelho
     await page.screenshot({ path: path.join(SCREENSHOT_DIR, '03_onboarding_passo3_articulacoes.png') });
 

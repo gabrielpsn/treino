@@ -474,6 +474,27 @@
         </button>
       </div>
 
+      <!-- Aparelho novo: quem já tem backup não precisa preencher um perfil do zero. -->
+      <div v-if="!isEditing && step === 1" class="mt-4 text-center">
+        <button
+          type="button"
+          id="btn-onboarding-restore-backup"
+          @click="emit('restore-backup')"
+          class="text-xs font-bold text-[#0066FF] underline underline-offset-2 hover:text-blue-700"
+        >
+          Já usa o app? Restaurar de um backup
+        </button>
+        <span class="mx-2 text-[#CBD5E1]" aria-hidden="true">·</span>
+        <button
+          type="button"
+          id="btn-onboarding-restore-cloud"
+          @click="emit('restore-cloud')"
+          class="text-xs font-bold text-[#0066FF] underline underline-offset-2 hover:text-blue-700"
+        >
+          Tenho um código da nuvem
+        </button>
+      </div>
+
     </div>
   </div>
 </template>
@@ -493,7 +514,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['save', 'close']);
+const emit = defineEmits(['save', 'close', 'restore-backup', 'restore-cloud']);
 
 const TOTAL_STEPS = 3;
 

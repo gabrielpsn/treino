@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { completeOnboarding, ensureOnboarded } from './helpers/onboarding.js';
 
 /**
  * Conclusão de Treino e Marcação de Dia com Data e XP:
@@ -9,11 +10,7 @@ import { test, expect } from '@playwright/test';
 async function prepareAppPage(page) {
   await page.goto('/');
   await page.waitForLoadState('networkidle');
-  const closeBtn = page.locator('#btn-close-onboarding');
-  if (await closeBtn.isVisible()) {
-    await closeBtn.click();
-    await expect(page.locator('#onboarding-modal')).toBeHidden();
-  }
+  await ensureOnboarded(page);
 }
 
 test('Ao concluir treino, exibe confirmação para marcar dia da semana com data e XP', async ({ page }) => {

@@ -496,23 +496,68 @@ describe('Worker — Cloudflare Workers AI nativo (Opção 2 100% gratuita)', ()
 describe('Worker — rota de feedback e avaliação', () => {
   const FEEDBACK_URL = 'https://treino.example/api/feedback';
 
-  it('recebe avaliação com sucesso e retorna confirmação', async () => {
-    const req = new Request(FEEDBACK_URL, {
+  function feedbackRequest(body) {
+    return new Request(FEEDBACK_URL, {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'cf-connecting-ip': nextIp() },
-      body: JSON.stringify({
-        rating: 5,
-        category: 'treino',
-        comment: 'App fantástico!',
-        userName: 'Gabriel'
-      })
+      body: JSON.stringify(body)
     });
+  }
 
-    const res = await worker.fetch(req, env);
+  function memoryKv() {
+    const store = new Map();
+    return { store, put: vi.fn(async (key, value) => { store.set(key, value); }) };
+  }
+
+  it('grava a avaliação no KV e retorna confirmação', async () => {
+    const kv = memoryKv();
+    const res = await worker.fetch(feedbackRequest({
+      rating: 9,
+      category: 'treino',
+      comment: 'App fantástico!',
+      userName: 'Atleta Teste',
+      contact: 'contato@exemplo.test',
+      tags: ['ok', 42]
+    }), { ...env, FEEDBACK_KV: kv });
+
     expect(res.status).toBe(200);
     const data = await res.json();
     expect(data.success).toBe(true);
     expect(data.feedbackId).toBeDefined();
+
+    expect(kv.store.size).toBe(1);
+    const [[key, value]] = [...kv.store.entries()];
+    expect(key.startsWith('fb:')).toBe(true);
+    const saved = JSON.parse(value);
+    expect(saved).toMatchObject({ rating: 5, comment: 'App fantástico!', contact: 'contato@exemplo.test', tags: ['ok'] });
+  });
+
+  it('não escreve nome nem contato no log', async () => {
+    const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    await worker.fetch(feedbackRequest({
+      rating: 4, userName: 'Atleta Teste', contact: 'contato@exemplo.test'
+    }), { ...env, FEEDBACK_KV: memoryKv() });
+    const logged = spy.mock.calls.flat().join(' ');
+    spy.mockRestore();
+    expect(logged).not.toContain('contato@exemplo.test');
+    expect(logged).not.toContain('Atleta Teste');
+  });
+
+  it('responde 503 sem KV configurado, para o app manter o item como pendente', async () => {
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const res = await worker.fetch(feedbackRequest({ rating: 5 }), env);
+    spy.mockRestore();
+    expect(res.status).toBe(503);
+    expect((await res.json()).code).toBe('storage_unavailable');
+  });
+
+  it('responde 503 quando a gravação no KV falha', async () => {
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const kv = { put: vi.fn(async () => { throw new Error('kv fora'); }) };
+    const res = await worker.fetch(feedbackRequest({ rating: 5 }), { ...env, FEEDBACK_KV: kv });
+    spy.mockRestore();
+    expect(res.status).toBe(503);
+    expect((await res.json()).code).toBe('storage_failed');
   });
 
   it('recusa métodos não POST na rota de feedback', async () => {

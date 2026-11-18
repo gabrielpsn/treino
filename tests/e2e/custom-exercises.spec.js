@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { completeOnboarding, ensureOnboarded } from './helpers/onboarding.js';
 
 /**
  * Devolve os cards de exercício visíveis em qualquer ficha. Só a aba ativa é
@@ -27,22 +28,7 @@ async function completeOnboardingHomeWithKnee(page) {
   await page.goto('/');
   await expect(page.locator('#onboarding-modal')).toBeVisible();
 
-  await page.locator('#input-user-name').fill('Teste Casa');
-  await page.locator('#btn-gender-male').click();
-  await page.locator('#input-age').fill('34');
-  await page.locator('#input-weight').fill('88');
-  await page.locator('#input-height').fill('180');
-
-  await page.locator('#btn-onboarding-next').click();
-  await page.locator('#btn-days-4').click();
-  await page.locator('#btn-exp-beginner').click();
-
-  await page.locator('#btn-onboarding-next').click();
-  await page.locator('#btn-equip-home').click();
-  await page.locator('#btn-joint-joelho').click();
-
-  await page.locator('#btn-onboarding-submit').click();
-  await expect(page.locator('#onboarding-modal')).not.toBeVisible({ timeout: 5000 });
+  await completeOnboarding(page, { name: 'Teste Casa', age: 34, weight: 88, height: 180, gender: 'male', days: 4, experience: 'beginner', equipment: 'home', joints: ['joelho'] });
 }
 
 /**
@@ -98,9 +84,7 @@ test('Ficha em casa: quadríceps aparece mesmo com dor no joelho', async ({ page
 test('CRUD: cria exercício próprio e ele entra no plano', async ({ page }) => {
   await page.goto('/');
   await page.waitForLoadState('networkidle');
-  if (await page.locator('#btn-close-onboarding').isVisible()) {
-    await page.locator('#btn-close-onboarding').click();
-  }
+  await ensureOnboarded(page);
 
   await createCustomExercise(page, { name: 'Elevação Lateral no Elástico', muscle: 'ombro' });
 
@@ -135,9 +119,7 @@ test('CRUD: exercício próprio bloqueado por restrição não entra no plano', 
 test('CRUD: bloqueia envio inválido e mostra o erro no campo', async ({ page }) => {
   await page.goto('/');
   await page.waitForLoadState('networkidle');
-  if (await page.locator('#btn-close-onboarding').isVisible()) {
-    await page.locator('#btn-close-onboarding').click();
-  }
+  await ensureOnboarded(page);
 
   await page.locator('#btn-open-custom-exercises').click();
   await page.locator('#input-custom-name').fill('ab');
@@ -153,9 +135,7 @@ test('CRUD: bloqueia envio inválido e mostra o erro no campo', async ({ page })
 test('CRUD: editar exercício próprio atualiza o nome na ficha', async ({ page }) => {
   await page.goto('/');
   await page.waitForLoadState('networkidle');
-  if (await page.locator('#btn-close-onboarding').isVisible()) {
-    await page.locator('#btn-close-onboarding').click();
-  }
+  await ensureOnboarded(page);
 
   await createCustomExercise(page, { name: 'Crucifixo no Elástico', muscle: 'peito' });
   const id = 'custom_crucifixo_no_elastico';
@@ -175,9 +155,7 @@ test('CRUD: editar exercício próprio atualiza o nome na ficha', async ({ page 
 test('CRUD: excluir pede confirmação e some da ficha', async ({ page }) => {
   await page.goto('/');
   await page.waitForLoadState('networkidle');
-  if (await page.locator('#btn-close-onboarding').isVisible()) {
-    await page.locator('#btn-close-onboarding').click();
-  }
+  await ensureOnboarded(page);
 
   await createCustomExercise(page, { name: 'Remada Unilateral', muscle: 'costas' });
   const id = 'custom_remada_unilateral';
@@ -197,9 +175,7 @@ test('CRUD: excluir pede confirmação e some da ficha', async ({ page }) => {
 test('CRUD: exercício próprio sobrevive ao recarregar a página', async ({ page }) => {
   await page.goto('/');
   await page.waitForLoadState('networkidle');
-  if (await page.locator('#btn-close-onboarding').isVisible()) {
-    await page.locator('#btn-close-onboarding').click();
-  }
+  await ensureOnboarded(page);
 
   await createCustomExercise(page, { name: 'Nordic Curl em Casa', muscle: 'posterior' });
 
@@ -212,9 +188,7 @@ test('CRUD: exercício próprio sobrevive ao recarregar a página', async ({ pag
 test('CRUD: padrão incompatível com o grupo não pode ser salvo', async ({ page }) => {
   await page.goto('/');
   await page.waitForLoadState('networkidle');
-  if (await page.locator('#btn-close-onboarding').isVisible()) {
-    await page.locator('#btn-close-onboarding').click();
-  }
+  await ensureOnboarded(page);
 
   await page.locator('#btn-open-custom-exercises').click();
   await page.locator('#input-custom-name').fill('Remada com Elástico');

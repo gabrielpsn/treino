@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { completeOnboarding, ensureOnboarded } from './helpers/onboarding.js';
 
 /**
  * Alvos de toque e layout no celular.
@@ -16,17 +17,9 @@ async function onboardHome(page, name = 'Mobile Check') {
   await page.goto('/');
   await expect(page.locator('#onboarding-modal')).toBeVisible();
 
-  await page.locator('#input-user-name').fill(name);
-  await page.locator('#input-age').fill('30');
-  await page.locator('#input-weight').fill('80');
-  await page.locator('#input-height').fill('175');
-  await page.locator('#btn-onboarding-next').click();
-  await page.locator('#btn-days-3').click();
-  await page.locator('#btn-onboarding-next').click();
-  await page.locator('#btn-equip-home').click();
-  await page.locator('#btn-onboarding-submit').click();
-  await expect(page.locator('#onboarding-modal')).not.toBeVisible({ timeout: 5000 });
-  await page.locator('#tab-btn-workout').click();
+  await completeOnboarding(page, { name: name, age: 30, weight: 80, height: 175, days: 3, equipment: 'home' });
+  // No celular as abas do topo ficam ocultas: a navegação é a barra inferior.
+  await page.locator('#mobile-nav-workout').click();
 }
 
 async function openFirstSplit(page) {
@@ -135,45 +128,27 @@ test('Celular: a confirmação de remover tem alvo grande e cabe na tela', async
   }
 });
 
-test('Celular: o menu gruda no topo sem cobrir o cabeçalho', async ({ page }) => {
+test('Celular: a barra inferior fica visível ao rolar e não cobre a ficha', async ({ page }) => {
   await onboardHome(page, 'Mobile Header');
-  await page.waitForTimeout(400);
+  const bottomNav = page.locator('#mobile-bottom-nav');
+  await expect(bottomNav).toBeInViewport();
+  // As abas do topo são só para telas largas.
+  await expect(page.locator('#tab-btn-workout')).toBeHidden();
 
-  const header = page.locator('header');
-  const nav = page.locator('nav');
-
-  const headerBox = await visibleBox(header);
-  const navBox = await visibleBox(nav);
-
-  // No topo da página o menu vem logo abaixo do cabeçalho, sem sobreposição.
-  // Antes as duas eram sticky com deslocamento fixo em pixel; se a conta errar
-  // (e ela errava assim que o título quebrava no celular), o menu fica
-  // escondido atrás do cabeçalho.
-  expect(navBox.y, 'menu começa acima do fim do cabeçalho')
-    .toBeGreaterThanOrEqual(headerBox.y + headerBox.height - 1);
-
-  // E o menu tem que estar de fato visível na primeira dobra.
-  expect(navBox.y + navBox.height).toBeLessThanOrEqual(MOBILE.height);
-  await expect(page.locator('#tab-btn-workout')).toBeInViewport();
-
-  // Rolar a página: o menu continua colado no topo e legível. O cabeçalho
-  // rola junto, então ele não rouba altura útil durante o treino.
   await page.mouse.wheel(0, 900);
   await page.waitForTimeout(400);
+  const navBox = await visibleBox(bottomNav);
+  expect(navBox.y + navBox.height).toBeLessThanOrEqual(MOBILE.height + 1);
 
-  const navScrolled = await visibleBox(nav);
-  expect(navScrolled.y, 'menu não gruda no topo depois de rolar')
-    .toBeLessThanOrEqual(1);
-  await expect(page.locator('#tab-btn-workout')).toBeInViewport();
-
-  // E o botão de concluir série continua tocável com o menu grudado: é o que
-  // trava quando o conteúdo passa por baixo dele e o toque acerta o menu.
+  // O botão de concluir série continua tocável com a barra fixa embaixo:
+  // o clique não pode cair na barra.
   const check = page.locator('[id^="btn-check-"]').first();
+  await check.scrollIntoViewIfNeeded();
   await check.click();
   await expect(check).toHaveAttribute('aria-pressed', 'true');
 });
 
-test('Celular: o banner de erro empurra o conteúdo em vez de cobrir o menu', async ({ page }) => {
+test('Celular: o banner de erro aparece inteiro e pode ser dispensado', async ({ page }) => {
   await onboardHome(page, 'Mobile Banner');
 
   // Caminho que realmente produz o banner: restaurar um arquivo inválido.
@@ -185,18 +160,11 @@ test('Celular: o banner de erro empurra o conteúdo em vez de cobrir o menu', as
 
   const banner = page.locator('#storage-error-banner');
   await expect(banner).toBeVisible();
-
-  const nav = await visibleBox(page.locator('nav'));
   const bannerBox = await visibleBox(banner);
-
-  // O banner vivia grudado em top-57px, a mesma altura do cabeçalho: ele
-  // cobria o menu e, com a conta errada, desaparecia da tela.
-  expect(bannerBox.y, 'banner cobre o menu')
-    .toBeGreaterThanOrEqual(nav.y + nav.height - 1);
   expect(bannerBox.y + bannerBox.height).toBeLessThanOrEqual(MOBILE.height);
+  expect(bannerBox.x).toBeGreaterThanOrEqual(0);
   expect(bannerBox.x + bannerBox.width).toBeLessThanOrEqual(MOBILE.width);
 
-  // E o banner ainda tem que ser legível e dispensável.
   const dismiss = page.locator('#btn-dismiss-storage-error');
   const dismissBox = await visibleBox(dismiss);
   expect(dismissBox.height).toBeGreaterThanOrEqual(24);
@@ -204,26 +172,14 @@ test('Celular: o banner de erro empurra o conteúdo em vez de cobrir o menu', as
   await expect(banner).toHaveCount(0);
 });
 
-test('Celular: a navegação por abas rola horizontalmente sem cortar opções', async ({ page }) => {
+test('Celular: todas as seções da barra inferior cabem na tela', async ({ page }) => {
   await onboardHome(page, 'Mobile Abas');
-
-  const tabs = page.locator('nav button[id^="tab-btn-"]');
-  const count = await tabs.count();
-  expect(count).toBeGreaterThanOrEqual(3);
-
-  // Todas as abas precisam ser alcançáveis: se a barra não rola e alguém
-  // espremer, a última aba fica inacessível.
-  const nav = page.locator('nav > div');
-  const canScroll = await nav.evaluate(el => el.scrollWidth > el.clientWidth);
-  const overflowsX = await nav.evaluate(el => getComputedStyle(el).overflowX);
-
-  if (canScroll) {
-    expect(overflowsX).toBe('auto');
+  const items = page.locator('#mobile-bottom-nav button');
+  const count = await items.count();
+  expect(count).toBeGreaterThanOrEqual(4);
+  for (let i = 0; i < count; i++) {
+    await expect(items.nth(i)).toBeInViewport();
   }
-
-  const lastTab = tabs.nth(count - 1);
-  await lastTab.scrollIntoViewIfNeeded();
-  await expect(lastTab).toBeInViewport();
 });
 
 test('Celular: a ficha não gera rolagem horizontal', async ({ page }) => {

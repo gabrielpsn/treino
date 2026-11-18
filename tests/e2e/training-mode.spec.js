@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { completeOnboarding, ensureOnboarded } from './helpers/onboarding.js';
 
 /**
  * Modo Treino: tela cheia com fila de exercícios, entradas de carga/reps e
@@ -8,11 +9,7 @@ import { test, expect } from '@playwright/test';
 async function prepareAppPage(page) {
   await page.goto('/');
   await page.waitForLoadState('networkidle');
-  const closeBtn = page.locator('#btn-close-onboarding');
-  if (await closeBtn.isVisible()) {
-    await closeBtn.click();
-    await expect(page.locator('#onboarding-modal')).toBeHidden();
-  }
+  await ensureOnboarded(page);
 }
 
 async function openTrainingMode(page) {

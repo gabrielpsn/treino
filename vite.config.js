@@ -12,7 +12,12 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'prompt',
-      includeAssets: ['favicon.svg', 'overload_AI.svg', 'pwa-192x192.svg', 'pwa-192x192.png', 'pwa-512x512.png', 'pwa-512x512.svg'],
+      // Lembretes de treino: o handler de push/notificationclick vive em
+      // public/push-sw.js e é importado pelo service worker do Workbox.
+      workbox: {
+        importScripts: ['push-sw.js']
+      },
+      includeAssets: ['push-sw.js', 'favicon.svg', 'overload_AI.svg', 'pwa-192x192.svg', 'pwa-192x192.png', 'pwa-512x512.png', 'pwa-512x512.svg'],
       manifest: {
         name: 'Overload AI — Treino & Dieta com Inteligência Artificial',
         short_name: 'Overload AI',

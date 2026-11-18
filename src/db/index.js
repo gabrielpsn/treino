@@ -84,6 +84,20 @@ export class TreinoDatabase extends Dexie {
       workout_sessions: '++id, dayKey, startedAt, splitId, source, [dayKey+splitId]',
       session_sets: 'id, sessionId, exerciseId, [sessionId+exerciseId]'
     });
+
+    // v5: evolução corporal. Medições (peso e medidas, uma linha por dia) e
+    // fotos de progresso (Blob). As fotos ficam só no aparelho.
+    this.version(5).stores({
+      user_profile: 'id',
+      active_plan: 'id',
+      workout_logs: 'id, date, workoutId, exerciseId',
+      weekly_checks: 'id, weekKey, [weekKey+dayId]',
+      custom_exercises: 'id, muscle, [muscle+pattern]',
+      workout_sessions: '++id, dayKey, startedAt, splitId, source, [dayKey+splitId]',
+      session_sets: 'id, sessionId, exerciseId, [sessionId+exerciseId]',
+      body_metrics: 'id, date',
+      progress_photos: '++id, date'
+    });
   }
 }
 

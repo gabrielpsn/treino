@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { completeOnboarding, ensureOnboarded } from './helpers/onboarding.js';
 import { readFile } from 'node:fs/promises';
 
 /**
@@ -12,16 +13,7 @@ async function onboardHome(page) {
   await page.goto('/');
   await expect(page.locator('#onboarding-modal')).toBeVisible();
 
-  await page.locator('#input-user-name').fill('RIR Teste');
-  await page.locator('#input-age').fill('31');
-  await page.locator('#input-weight').fill('75');
-  await page.locator('#input-height').fill('174');
-  await page.locator('#btn-onboarding-next').click();
-  await page.locator('#btn-days-3').click();
-  await page.locator('#btn-exp-beginner').click();
-  await page.locator('#btn-onboarding-next').click();
-  await page.locator('#btn-equip-home').click();
-  await page.locator('#btn-onboarding-submit').click();
+  await completeOnboarding(page, { name: 'RIR Teste', age: 31, weight: 75, height: 174, days: 3, experience: 'beginner', equipment: 'home' });
 
   await expect(page.locator('#onboarding-modal')).not.toBeVisible({ timeout: 5000 });
   await page.locator('#tab-btn-workout').click();

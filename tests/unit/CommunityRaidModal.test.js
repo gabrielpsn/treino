@@ -15,6 +15,7 @@ describe('CommunityRaidModal', () => {
     expect(wrapper.find('#modal-community-raid').exists()).toBe(true);
     expect(wrapper.text()).toContain('Raid Comunitária Mensal');
     expect(wrapper.text()).toContain('30.000 kg levantados');
+    expect(wrapper.find('#raid-simulation-note').text()).toContain('simulado');
 
     // Botão de fechar emite close
     await wrapper.find('#btn-close-raid').trigger('click');

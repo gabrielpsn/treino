@@ -165,9 +165,26 @@ export function isGeolocationSupported() {
 /**
  * Chave de armazenamento diário.
  */
+export const WALKING_STORAGE_PREFIX = 'treinopro_walking_';
+
 export function getDailyWalkingStorageKey(dateStr) {
   const date = dateStr || new Date().toISOString().slice(0, 10);
-  return `treinopro_walking_${date}`;
+  return `${WALKING_STORAGE_PREFIX}${date}`;
+}
+
+/**
+ * Saneia um dia de caminhada (localStorage ou backup) com as mesmas regras.
+ */
+export function normalizeWalkingDay(date, data) {
+  const src = data && typeof data === 'object' ? data : {};
+  return {
+    date,
+    steps: Math.max(0, Number(src.steps) || 0),
+    distanceKm: Math.max(0, Number(src.distanceKm) || 0),
+    caloriesKcal: Math.max(0, Number(src.caloriesKcal) || 0),
+    activeMinutes: Math.max(0, Number(src.activeMinutes) || 0),
+    goalSteps: Math.max(1000, Number(src.goalSteps) || DEFAULT_WALKING_GOAL_STEPS)
+  };
 }
 
 /**
@@ -191,15 +208,7 @@ export function loadDailyWalkingData(dateStr) {
   try {
     const raw = window.localStorage.getItem(getDailyWalkingStorageKey(date));
     if (!raw) return defaultData;
-    const parsed = JSON.parse(raw);
-    return {
-      date,
-      steps: Math.max(0, Number(parsed.steps) || 0),
-      distanceKm: Math.max(0, Number(parsed.distanceKm) || 0),
-      caloriesKcal: Math.max(0, Number(parsed.caloriesKcal) || 0),
-      activeMinutes: Math.max(0, Number(parsed.activeMinutes) || 0),
-      goalSteps: Math.max(1000, Number(parsed.goalSteps) || DEFAULT_WALKING_GOAL_STEPS)
-    };
+    return normalizeWalkingDay(date, JSON.parse(raw));
   } catch {
     return defaultData;
   }
@@ -214,14 +223,7 @@ export function saveDailyWalkingData(dateStr, data) {
   try {
     window.localStorage.setItem(
       getDailyWalkingStorageKey(date),
-      JSON.stringify({
-        date,
-        steps: Math.max(0, Number(data?.steps) || 0),
-        distanceKm: Math.max(0, Number(data?.distanceKm) || 0),
-        caloriesKcal: Math.max(0, Number(data?.caloriesKcal) || 0),
-        activeMinutes: Math.max(0, Number(data?.activeMinutes) || 0),
-        goalSteps: Math.max(1000, Number(data?.goalSteps) || DEFAULT_WALKING_GOAL_STEPS)
-      })
+      JSON.stringify(normalizeWalkingDay(date, data))
     );
   } catch (err) {
     console.error('Erro ao salvar dados de caminhada:', err);

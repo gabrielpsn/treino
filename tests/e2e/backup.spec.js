@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { completeOnboarding, ensureOnboarded } from './helpers/onboarding.js';
 import { readFile } from 'node:fs/promises';
 
 /**
@@ -14,16 +15,7 @@ async function onboardHome(page, name = 'Backup Teste') {
   await page.goto('/');
   await expect(page.locator('#onboarding-modal')).toBeVisible();
 
-  await page.locator('#input-user-name').fill(name);
-  await page.locator('#input-age').fill('29');
-  await page.locator('#input-weight').fill('80');
-  await page.locator('#input-height').fill('177');
-  await page.locator('#btn-onboarding-next').click();
-  await page.locator('#btn-days-3').click();
-  await page.locator('#btn-exp-beginner').click();
-  await page.locator('#btn-onboarding-next').click();
-  await page.locator('#btn-equip-home').click();
-  await page.locator('#btn-onboarding-submit').click();
+  await completeOnboarding(page, { name: name, age: 29, weight: 80, height: 177, days: 3, experience: 'beginner', equipment: 'home' });
 
   await expect(page.locator('#onboarding-modal')).not.toBeVisible({ timeout: 5000 });
   await page.locator('#tab-btn-workout').click();
@@ -152,12 +144,13 @@ test('Backup: restauração devolve o estado do arquivo após limpar o aparelho'
   await page.goto('/');
   await expect(page.locator('#onboarding-modal')).toBeVisible();
 
-  // O onboarding cobre o cabeçalho. Fechá-lo é o caminho do próprio app: o botão
-  // de fechar existe justamente para isso, e é o que libera o botão de backup.
-  await page.locator('#btn-close-onboarding').click();
-  await expect(page.locator('#onboarding-modal')).toBeHidden();
-
-  await selectBackupFile(page, backup);
+  // Aparelho novo: o onboarding é obrigatório e cobre o cabeçalho, então a
+  // restauração sai do próprio onboarding.
+  const [chooser] = await Promise.all([
+    page.waitForEvent('filechooser'),
+    page.locator('#btn-onboarding-restore-backup').click()
+  ]);
+  await chooser.setFiles({ name: BACKUP_NAME, mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(backup)) });
 
   const modal = page.locator('#backup-import-modal');
   await expect(modal).toBeVisible();

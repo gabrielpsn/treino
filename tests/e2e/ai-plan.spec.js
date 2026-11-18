@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { completeOnboarding, ensureOnboarded } from './helpers/onboarding.js';
 import { EXERCISE_CATALOG } from '../../src/engine/knowledge/exercises.js';
 import { filterSafeExercises } from '../../src/engine/generators/workoutGenerator.js';
 
@@ -16,23 +17,7 @@ async function onboard(page, { name = 'Aluno IA', restrictions = [] } = {}) {
   const modal = page.locator('#onboarding-modal');
   await expect(modal).toBeVisible({ timeout: 15000 });
 
-  await page.locator('#input-user-name').fill(name);
-  await page.locator('#input-age').fill('30');
-  await page.locator('#input-weight').fill('82');
-  await page.locator('#input-height').fill('175');
-
-  await page.locator('#btn-onboarding-next').click();
-  await page.locator('#btn-days-3').click();
-  await page.locator('#btn-exp-beginner').click();
-  await page.locator('#btn-onboarding-next').click();
-  await page.locator('#btn-equip-home').click();
-
-  for (const restriction of restrictions) {
-    await page.locator(`#btn-joint-${restriction}`).click();
-  }
-
-  await page.locator('#btn-onboarding-submit').click();
-  await expect(page.locator('#onboarding-modal')).not.toBeVisible({ timeout: 5000 });
+  await completeOnboarding(page, { name: name, age: 30, weight: 82, height: 175, days: 3, experience: 'beginner', equipment: 'home', joints: restrictions });
 
   await page.locator('#tab-btn-workout').click();
 }
@@ -98,47 +83,58 @@ test.describe('perfil sem restrição', () => {
     await onboard(page);
   });
 
-test('Antes de gerar, a tela diz que a ficha veio da fórmula', async ({ page }) => {
-  await expect(page.locator('#ai-plan-status')).toHaveText(/fórmula/i);
+test('Após o cadastro a IA é chamada sozinha; sem servidor a ficha da fórmula continua', async ({ page }) => {
+  // O app tenta gerar pela IA logo após o onboarding. No dev server não há
+  // Worker, então a tentativa falha e o aviso diz que a ficha atual vale.
+  await expect(page.locator('#ai-plan-status')).toHaveText(/continua valendo/i);
+  await expect(page.locator('[id^="exercise-card-"]').first()).toBeVisible();
+
+  await page.reload();
+  await page.locator('#tab-btn-workout').click();
+  await expect(page.locator('#ai-plan-status')).toHaveText(/motor biomecânico/i);
 });
 
 test('Gerar com IA salva a ficha e ela continua depois do reload', async ({ page }) => {
   await mockAiOk(page, { ids: safeIdsFor(HOME_PROFILE) });
 
   await page.locator('#btn-generate-ai-plan').click();
-  await expect(page.locator('#ai-plan-status')).toHaveText(/Ficha gerada por IA/);
+  await expect(page.locator('#ai-plan-status')).toHaveText(/gerado por IA com sucesso/);
   await expect(page.locator('#ai-plan-status')).toHaveText(/kcal/);
 
   const tab = page.locator('button[id^="btn-split-treino-"]').first();
   const splitId = (await tab.getAttribute('id')).replace('btn-split-', '');
   await tab.click();
-  await expect(page.locator(`#container-${splitId} [id^="exercise-card-"]`)).toHaveCount(4);
+  // Os 4 exercícios da IA entram na ficha. A contagem exata não é fixa: o app
+  // garante tríceps no treino de empurrar e pode acrescentá-lo à sugestão.
+  for (const id of safeIdsFor(HOME_PROFILE).slice(0, 4)) {
+    await expect(page.locator(`#container-${splitId} #exercise-card-${id}`)).toBeVisible();
+  }
 
   // Sem persistir, a sugestão viraria uma ficha que existe só na tela.
   await page.reload();
   await page.locator('#tab-btn-workout').click();
-  await expect(page.locator('#ai-plan-status')).toHaveText(/montada por IA/i);
+  await expect(page.locator('#ai-plan-status')).toHaveText(/montada pelo Agente/i);
 });
 
 test('O botão mostra o progresso e trava enquanto a IA responde', async ({ page }) => {
-  await mockAiOk(page, { ids: safeIdsFor(HOME_PROFILE), delayMs: 1200 });
+  await mockAiOk(page, { ids: safeIdsFor(HOME_PROFILE), delayMs: 3000 });
 
   const button = page.locator('#btn-generate-ai-plan');
   await button.click();
 
   await expect(button).toBeDisabled();
   await expect(button).toHaveText(/Gerando/);
-  await expect(page.locator('#ai-plan-status')).toHaveText(/Consultando a IA/);
+  await expect(page.locator('#ai-plan-status')).toHaveText(/Consultando/);
 
   await expect(button).toBeEnabled({ timeout: 15000 });
-  await expect(page.locator('#ai-plan-status')).toHaveText(/Ficha gerada por IA/);
+  await expect(page.locator('#ai-plan-status')).toHaveText(/gerado por IA com sucesso/);
 });
 
 test('A ficha enviada não leva o nome do usuário e leva o TDEE', async ({ page }) => {
   const requests = await mockAiOk(page, { ids: safeIdsFor(HOME_PROFILE) });
 
   await page.locator('#btn-generate-ai-plan').click();
-  await expect(page.locator('#ai-plan-status')).toHaveText(/Ficha gerada por IA/);
+  await expect(page.locator('#ai-plan-status')).toHaveText(/gerado por IA com sucesso/);
 
   expect(requests).toHaveLength(1);
   const [sent] = requests;
@@ -184,12 +180,12 @@ test('IA que inventa exercício não troca a ficha atual', async ({ page }) => {
 
   await page.locator('#btn-generate-ai-plan').click();
   await expect(page.locator('#ai-plan-status')).toHaveText(/não existe no catálogo/i);
-  await expect(page.locator('#ai-plan-status')).toHaveClass(/text-rose-300/);
+  await expect(page.locator('#ai-plan-status')).toHaveClass(/text-rose-500/);
   await expect(page.locator('[id^="exercise-card-"]')).toHaveCount(before);
 
   await page.reload();
   await page.locator('#tab-btn-workout').click();
-  await expect(page.locator('#ai-plan-status')).toHaveText(/fórmula/i);
+  await expect(page.locator('#ai-plan-status')).toHaveText(/motor biomecânico/i);
 });
 
 test('IA que repete exercício na mesma ficha é descartada', async ({ page }) => {
@@ -260,11 +256,11 @@ test('Servidor sem chave explica o motivo e mantém a ficha', async ({ page }) =
 
   await page.locator('#btn-generate-ai-plan').click();
   await expect(page.locator('#ai-plan-status')).toHaveText(/desligada no servidor/i);
-  await expect(page.locator('#ai-plan-status')).toHaveClass(/text-rose-300/);
+  await expect(page.locator('#ai-plan-status')).toHaveClass(/text-rose-500/);
 
   await page.reload();
   await page.locator('#tab-btn-workout').click();
-  await expect(page.locator('#ai-plan-status')).toHaveText(/fórmula/i);
+  await expect(page.locator('#ai-plan-status')).toHaveText(/motor biomecânico/i);
 });
 
 test('Timeout do Worker vira aviso curto, não tela quebrada', async ({ page }) => {
@@ -336,6 +332,6 @@ test.describe('com restrição articular declarada', () => {
     await mockAiOk(page, { ids: safeIdsFor({ restrictions: ['ombro'], equipment: 'home' }) });
 
     await page.locator('#btn-generate-ai-plan').click();
-    await expect(page.locator('#ai-plan-status')).toHaveText(/Ficha gerada por IA/);
+    await expect(page.locator('#ai-plan-status')).toHaveText(/gerado por IA com sucesso/);
   });
 });

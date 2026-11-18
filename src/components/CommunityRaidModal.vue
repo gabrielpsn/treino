@@ -55,7 +55,7 @@
       <div class="p-4 rounded-2xl bg-gradient-to-br from-slate-900 to-indigo-950 text-white border border-indigo-900/50 shadow-md space-y-3 relative overflow-hidden">
         <div class="flex items-center justify-between text-xs font-bold">
           <div>
-            <span class="text-[10px] uppercase text-indigo-300 block">Progresso Global</span>
+            <span class="text-[10px] uppercase text-indigo-300 block">Progresso da Raid</span>
             <span class="text-base font-black text-white">
               {{ (raidStatus.totalRaidKg / 1000).toLocaleString('pt-BR') }} <span class="text-xs text-indigo-200">/ {{ (raidStatus.totalGoalKg / 1000).toLocaleString('pt-BR') }} toneladas</span>
             </span>
@@ -65,6 +65,10 @@
             <span class="block text-[10px] text-slate-300">⏳ {{ raidStatus.daysRemaining }} dias restantes</span>
           </div>
         </div>
+
+        <p id="raid-simulation-note" class="text-[10px] text-indigo-200/90 leading-snug">
+          🤖 O avanço da comunidade é simulado conforme o mês passa. A sua tonelagem é real.
+        </p>
 
         <!-- Barra com marcadores -->
         <div class="relative w-full bg-slate-800/80 h-3 rounded-full overflow-hidden border border-slate-700">

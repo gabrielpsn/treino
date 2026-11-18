@@ -128,6 +128,40 @@
           </span>
         </div>
 
+        <!-- Vídeo de execução: busca no YouTube + link próprio (seu ou do personal) -->
+        <div id="detail-video" class="rounded-2xl border border-[#E2E8F0] p-3 space-y-2">
+          <div class="flex flex-col sm:flex-row gap-2">
+            <a
+              v-if="customVideo"
+              id="link-custom-video"
+              :href="customVideo"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="tap-btn flex-1 text-center py-2.5 rounded-xl bg-[#0066FF] text-white text-xs font-black"
+            >▶️ Ver meu vídeo</a>
+            <a
+              id="link-youtube-search"
+              :href="youtubeUrl"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="tap-btn flex-1 text-center py-2.5 rounded-xl text-xs font-black"
+              :class="customVideo ? 'border border-[#0066FF] text-[#0066FF]' : 'bg-rose-600 text-white'"
+            >▶️ Ver execução no YouTube</a>
+          </div>
+          <form class="flex gap-2" @submit.prevent="saveVideo">
+            <input
+              id="input-exercise-video"
+              v-model.trim="videoInput"
+              type="url"
+              inputmode="url"
+              placeholder="Colar link de vídeo próprio (opcional)"
+              class="flex-1 min-w-0 rounded-xl border-2 border-[#CBD5E1] px-3 py-2 text-xs"
+            />
+            <button id="btn-save-exercise-video" type="submit" class="tap-btn px-3 rounded-xl bg-[#F1F5F9] text-xs font-bold">Salvar</button>
+          </form>
+          <p v-if="videoError" id="exercise-video-error" class="text-[11px] font-bold text-rose-600">{{ videoError }}</p>
+        </div>
+
         <!-- Sugestões de Séries & Repetições -->
         <div class="grid grid-cols-2 gap-2 text-xs">
           <div class="p-2.5 rounded-xl bg-white border border-[#E2E8F0] flex items-center gap-2 shadow-xs">
@@ -241,6 +275,7 @@ import {
   PATTERN_LABELS,
   EQUIPMENT_LABELS
 } from '../db/customExercises';
+import { loadExerciseVideos, normalizeVideoUrl, saveExerciseVideo, youtubeSearchUrl } from '../engine/exerciseMedia.js';
 
 const props = defineProps({
   isOpen: Boolean,
@@ -254,6 +289,22 @@ const emit = defineEmits(['close']);
 
 const currentTab = ref('image'); // 'image' | 'muscle' | 'description'
 const imageError = ref(false);
+const videos = ref(loadExerciseVideos());
+const videoInput = ref('');
+const videoError = ref('');
+
+const customVideo = computed(() => (props.exercise ? videos.value[props.exercise.id] || props.exercise.videoUrl || '' : ''));
+const youtubeUrl = computed(() => youtubeSearchUrl(props.exercise?.name || ''));
+
+function saveVideo() {
+  const result = normalizeVideoUrl(videoInput.value);
+  if (!result.ok) {
+    videoError.value = result.error;
+    return;
+  }
+  videoError.value = '';
+  videos.value = saveExerciseVideo(props.exercise.id, result.value);
+}
 
 const muscleLabels = MUSCLE_LABELS;
 const patternLabels = PATTERN_LABELS;
@@ -264,6 +315,9 @@ watch(
   () => {
     currentTab.value = 'image';
     imageError.value = false;
+    videos.value = loadExerciseVideos();
+    videoInput.value = videos.value[props.exercise?.id] || '';
+    videoError.value = '';
   }
 );
 

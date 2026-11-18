@@ -51,7 +51,9 @@ const profile = {
   daysPerWeek: 4,
   experienceLevel: 'intermediate',
   equipment: 'gym',
-  restrictions: []
+  dietaryPreference: 'omnivore',
+  restrictions: [],
+  isConfigured: true
 };
 
 function chestExercise(id = 'supino_reto_halteres') {
@@ -548,3 +550,140 @@ describe('restoreBackup', () => {
     expect(await target.workout_sessions.count()).toBe(1);
   });
 });
+function memoryStorage(initial = {}) {
+  const map = new Map(Object.entries(initial));
+  return {
+    get length() { return map.size; },
+    key: i => [...map.keys()][i] ?? null,
+    getItem: k => (map.has(k) ? map.get(k) : null),
+    setItem: (k, v) => { map.set(k, String(v)); },
+    removeItem: k => { map.delete(k); },
+    dump: () => Object.fromEntries(map)
+  };
+}
+
+describe('backup de gamificação e caminhada (localStorage)', () => {
+  const gamification = { totalXp: 4200, ironCoins: 350, equippedTitle: 'heroi_raid', unlockedTitles: ['iniciante_ferro', 'heroi_raid'] };
+  const sourceStorage = () => memoryStorage({
+    treinopro_gamification_state: JSON.stringify(gamification),
+    'treinopro_walking_2026-03-01': JSON.stringify({ steps: 9000, goalSteps: 8000 }),
+    'treinopro_walking_2026-03-02': JSON.stringify({ steps: 4000 }),
+    treinopro_walking_lixo: '{}',
+    outra_chave: 'x'
+  });
+
+  it('exporta XP, moedas e dias de caminhada', async () => {
+    const backup = await buildBackup({ database: freshDatabase(), storage: sourceStorage() });
+    expect(backup.gamification.totalXp).toBe(4200);
+    expect(backup.gamification.ironCoins).toBe(350);
+    expect(backup.walking.map(d => d.date)).toEqual(['2026-03-01', '2026-03-02']);
+    expect(backup.walking[0].steps).toBe(9000);
+  });
+
+  it('round-trip restaura gamificação e substitui a caminhada do aparelho', async () => {
+    const source = freshDatabase();
+    await seed(source);
+    const backup = parseBackupText(JSON.stringify(
+      await buildBackup({ database: source, storage: sourceStorage() })
+    )).backup;
+
+    const targetStorage = memoryStorage({
+      treinopro_gamification_state: JSON.stringify({ totalXp: 10 }),
+      'treinopro_walking_2025-01-01': JSON.stringify({ steps: 1 })
+    });
+    const counts = await restoreBackup(backup, { database: freshDatabase(), storage: targetStorage });
+
+    expect(counts.gamification).toBe(true);
+    expect(counts.walkingDays).toBe(2);
+    expect(counts.localDataError).toBe(false);
+    const data = targetStorage.dump();
+    expect(JSON.parse(data.treinopro_gamification_state).totalXp).toBe(4200);
+    expect(data['treinopro_walking_2025-01-01']).toBeUndefined();
+    expect(JSON.parse(data['treinopro_walking_2026-03-02']).steps).toBe(4000);
+  });
+
+  it('backup antigo sem gamificação não apaga XP nem caminhada atuais', async () => {
+    const source = freshDatabase();
+    await seed(source);
+    const legacy = await buildBackup({ database: source, storage: null });
+    delete legacy.gamification;
+    delete legacy.walking;
+    const backup = parseBackupText(JSON.stringify(legacy)).backup;
+    expect(backup.gamification).toBeNull();
+    expect(backup.walking).toBeNull();
+
+    const targetStorage = memoryStorage({
+      treinopro_gamification_state: JSON.stringify({ totalXp: 777 }),
+      'treinopro_walking_2026-01-01': JSON.stringify({ steps: 5 })
+    });
+    await restoreBackup(backup, { database: freshDatabase(), storage: targetStorage });
+    const data = targetStorage.dump();
+    expect(JSON.parse(data.treinopro_gamification_state).totalXp).toBe(777);
+    expect(data['treinopro_walking_2026-01-01']).toBeDefined();
+  });
+
+  it('saneia valores adulterados no arquivo', async () => {
+    const legacy = await buildBackup({ database: freshDatabase(), storage: null });
+    legacy.gamification = { totalXp: -50, ironCoins: 'abc', unlockedBadgeIds: 'tudo' };
+    legacy.walking = [{ date: '2026-03-01', steps: -10 }, { date: 'nao-e-data', steps: 1 }, null];
+    const { backup } = parseBackupText(JSON.stringify(legacy));
+    expect(backup.gamification.totalXp).toBe(0);
+    expect(backup.gamification.ironCoins).toBe(100);
+    expect(backup.gamification.unlockedBadgeIds).toEqual([]);
+    expect(backup.walking).toEqual([expect.objectContaining({ date: '2026-03-01', steps: 0 })]);
+    expect(summarizeBackup(backup)).toMatchObject({ totalXp: 0, walkingDays: 1 });
+  });
+});
+
+describe('perfil restaurado continua configurado', () => {
+  it('backup antigo sem isConfigured não reabre o onboarding', async () => {
+    const legacy = await buildBackup({ database: freshDatabase(), storage: null });
+    legacy.userProfile = { id: PROFILE_ID, userName: 'Ana', goal: 'hypertrophy', gender: 'female', ageYears: 30, weightKg: 60, heightCm: 165, dietaryPreference: 'vegan' };
+    const { backup } = parseBackupText(JSON.stringify(legacy));
+    expect(backup.userProfile.isConfigured).toBe(true);
+    expect(backup.userProfile.dietaryPreference).toBe('vegan');
+  });
+
+  it('perfil incompleto não é marcado como configurado', async () => {
+    const legacy = await buildBackup({ database: freshDatabase(), storage: null });
+    legacy.userProfile = { id: PROFILE_ID, userName: 'Ana' };
+    const { backup } = parseBackupText(JSON.stringify(legacy));
+    expect(backup.userProfile.isConfigured).toBe(false);
+  });
+});
+
+describe('backup de medições corporais e vídeos', () => {
+  it('round-trip leva medições e links de vídeo; arquivo antigo não apaga', async () => {
+    const source = freshDatabase();
+    await source.body_metrics.put({ id: '2026-03-01', date: '2026-03-01', weightKg: 80, waistCm: 90 });
+    const storage = {
+      map: new Map([['overload_exercise_videos', JSON.stringify({ supino: 'https://youtu.be/abc', ruim: 'https://site.mal/x' })]]),
+      get length() { return this.map.size; },
+      key(i) { return [...this.map.keys()][i] ?? null; },
+      getItem(k) { return this.map.get(k) ?? null; },
+      setItem(k, v) { this.map.set(k, String(v)); },
+      removeItem(k) { this.map.delete(k); }
+    };
+    const exported = await buildBackup({ database: source, storage });
+    expect(exported.exerciseVideos).toEqual({ supino: 'https://youtu.be/abc' });
+    const { backup } = parseBackupText(JSON.stringify(exported));
+    expect(summarizeBackup(backup).bodyMetrics).toBe(1);
+
+    const target = freshDatabase();
+    await target.body_metrics.put({ id: '2025-01-01', date: '2025-01-01', weightKg: 70 });
+    const targetStorage = { ...storage, map: new Map() };
+    Object.setPrototypeOf(targetStorage, Object.getPrototypeOf(storage));
+    const counts = await restoreBackup(backup, { database: target, storage: targetStorage });
+    expect(counts.bodyMetrics).toBe(1);
+    expect((await target.body_metrics.toArray()).map(r => r.id)).toEqual(['2026-03-01']);
+    expect(JSON.parse(targetStorage.getItem('overload_exercise_videos'))).toEqual({ supino: 'https://youtu.be/abc' });
+
+    const legacy = { ...exported };
+    delete legacy.bodyMetrics;
+    const keep = freshDatabase();
+    await keep.body_metrics.put({ id: '2025-01-01', date: '2025-01-01', weightKg: 70 });
+    await restoreBackup(parseBackupText(JSON.stringify(legacy)).backup, { database: keep, storage: null });
+    expect(await keep.body_metrics.count()).toBe(1);
+  });
+});
+

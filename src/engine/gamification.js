@@ -780,7 +780,9 @@ export function calculateLeagueLeaderboard({
   const tier = LEAGUE_TIERS[currentTier] || LEAGUE_TIERS.bronze;
   const cleanScore = Math.max(0, Number(userScore) || 0);
 
-  // Rivais com pontuações dinâmicas calculadas de acordo com o elo
+  // Rivais VIRTUAIS: não existe servidor de ranking, então as pontuações são
+  // derivadas da do próprio usuário. `isBot` deixa isso explícito para a UI —
+  // apresentar bots como atletas reais quebraria a confiança no app.
   const baseOpponents = [
     { name: 'Alexandre Titan', score: Math.round(cleanScore * 1.25) + 80, avatar: '🦁' },
     { name: 'Renata Foco', score: Math.round(cleanScore * 1.1) + 40, avatar: '⚡' },
@@ -794,8 +796,8 @@ export function calculateLeagueLeaderboard({
   ];
 
   const all = [
-    ...baseOpponents,
-    { name: userName, score: cleanScore, avatar: '👑', isUser: true }
+    ...baseOpponents.map(opponent => ({ ...opponent, isBot: true })),
+    { name: userName, score: cleanScore, avatar: '👑', isUser: true, isBot: false }
   ];
 
   all.sort((a, b) => b.score - a.score);

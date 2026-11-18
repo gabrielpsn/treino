@@ -17,6 +17,10 @@ describe('WeeklyLeagueModal', () => {
     expect(wrapper.text()).toContain('Liga Prata');
     expect(wrapper.text()).toContain('Gabriel Pro');
     expect(wrapper.text()).toContain('420 pts');
+    // Rivais são virtuais e a tela precisa dizer isso: 9 bots, o usuário não.
+    expect(wrapper.text()).toContain('rivais virtuais');
+    expect(wrapper.findAll('#modal-weekly-league [id^="league-row-"]').filter(r => r.text().includes('Rival virtual'))).toHaveLength(9);
+    expect(wrapper.find('#league-user-row').text()).not.toContain('Rival virtual');
 
     await wrapper.find('#btn-close-league').trigger('click');
     expect(wrapper.emitted('close')).toHaveLength(1);
