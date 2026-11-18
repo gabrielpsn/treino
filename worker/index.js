@@ -12,6 +12,9 @@
  *    atua como proxy seguro com structured output JSON.
  */
 
+import { handleApi, isApiPath } from './api.js';
+import { runReminders } from './push.js';
+
 const PLAN_PATH = '/api/gemini/plan';
 const FEEDBACK_PATH = '/api/feedback';
 
@@ -882,15 +885,44 @@ async function handleFeedbackRequest(request, env) {
   }
 
   const feedback = body.data;
-  const rating = Number(feedback.rating || 5);
-  const category = String(feedback.category || 'geral').slice(0, 50);
-  const comment = String(feedback.comment || '').slice(0, 1000);
-  const userName = String(feedback.userName || 'Atleta Anônimo').slice(0, 60);
-  const contact = String(feedback.contact || '').slice(0, 100);
-  const tags = Array.isArray(feedback.tags) ? feedback.tags.slice(0, 10) : [];
-  const createdAt = feedback.createdAt || new Date().toISOString();
+  const record = {
+    id,
+    rating: Math.min(5, Math.max(1, Math.round(Number(feedback.rating) || 5))),
+    category: String(feedback.category || 'geral').slice(0, 50),
+    comment: String(feedback.comment || '').slice(0, 1000),
+    userName: String(feedback.userName || 'Atleta Anônimo').slice(0, 60),
+    contact: String(feedback.contact || '').slice(0, 100),
+    tags: Array.isArray(feedback.tags)
+      ? feedback.tags.filter(t => typeof t === 'string').slice(0, 10).map(t => t.slice(0, 60))
+      : [],
+    appVersion: String(feedback.appVersion || '').slice(0, 20),
+    receivedAt: new Date().toISOString()
+  };
 
-  console.log(`[${id}][FEEDBACK] ⭐ ${rating}/5 de "${userName}": [${category}] "${comment}" (Tags: ${tags.join(', ')}) Contato: ${contact}`);
+  // Sem armazenamento persistente, o feedback só existiria no log — que expira
+  // em poucos dias. Responder 503 mantém o item como "não sincronizado" no
+  // aparelho, em vez de o app achar que ele chegou a algum lugar.
+  if (!env.FEEDBACK_KV) {
+    console.error(`[${id}][FEEDBACK] FEEDBACK_KV não configurado; avaliação não foi salva.`);
+    return jsonResponse(
+      { error: 'Envio de avaliações indisponível no momento. Use o WhatsApp.', code: 'storage_unavailable' },
+      503
+    );
+  }
+
+  try {
+    // Chave ordenável por data: `wrangler kv key list --prefix fb:` lista em ordem.
+    await env.FEEDBACK_KV.put(`fb:${record.receivedAt}:${id}`, JSON.stringify(record));
+  } catch (err) {
+    console.error(`[${id}][FEEDBACK] Falha ao gravar no KV: ${err?.message ?? err}`);
+    return jsonResponse(
+      { error: 'Não foi possível salvar a avaliação agora. Tente de novo mais tarde.', code: 'storage_failed' },
+      503
+    );
+  }
+
+  // Log sem nome nem contato: logs de observabilidade não são lugar de dado pessoal.
+  console.log(`[${id}][FEEDBACK] ⭐ ${record.rating}/5 [${record.category}] salvo no KV.`);
 
   return jsonResponse({
     success: true,
@@ -900,8 +932,19 @@ async function handleFeedbackRequest(request, env) {
 }
 
 export default {
+  // Cron Trigger (wrangler.jsonc): dispara os lembretes de treino vencidos.
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(runReminders(env, { now: event?.scheduledTime ?? Date.now() }).then(r => {
+      if (r.sent || r.removed) console.log(`[push] lembretes enviados: ${r.sent}, inscrições removidas: ${r.removed}`);
+    }));
+  },
+
   async fetch(request, env) {
     const url = new URL(request.url);
+
+    if (isApiPath(url.pathname)) {
+      return handleApi(request, env);
+    }
 
     if (url.pathname === FEEDBACK_PATH) {
       if (request.method !== 'POST') {

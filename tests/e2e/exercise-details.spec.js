@@ -1,20 +1,11 @@
 import { test, expect } from '@playwright/test';
+import { completeOnboarding, ensureOnboarded } from './helpers/onboarding.js';
 
 async function onboardUser(page) {
   await page.goto('/');
   await expect(page.locator('#onboarding-modal')).toBeVisible();
 
-  await page.locator('#input-user-name').fill('Rodrigo Treino');
-  await page.locator('#input-age').fill('27');
-  await page.locator('#input-weight').fill('75');
-  await page.locator('#input-height').fill('175');
-
-  await page.locator('#btn-onboarding-next').click();
-  await page.locator('#btn-days-3').click();
-  await page.locator('#btn-exp-intermediate').click();
-  await page.locator('#btn-onboarding-next').click();
-  await page.locator('#btn-equip-gym').click();
-  await page.locator('#btn-onboarding-submit').click();
+  await completeOnboarding(page, { name: 'Rodrigo Treino', age: 27, weight: 75, height: 175, days: 3, experience: 'intermediate', equipment: 'gym' });
 
   await expect(page.locator('#onboarding-modal')).toBeHidden({ timeout: 5000 });
   await page.locator('#tab-btn-workout').click();

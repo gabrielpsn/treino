@@ -240,6 +240,21 @@
           </p>
 
           <button
+            v-for="item in EXTRA_ITEMS"
+            :key="item.id"
+            type="button"
+            :id="`btn-drawer-${item.id}`"
+            @click="handleAction(item.action)"
+            class="tap-btn w-full p-2.5 rounded-xl font-bold text-xs flex items-center justify-between text-[#0F172A] bg-[#F8FAFC] hover:bg-[#F1F5F9] transition-colors text-left border border-[#E2E8F0]"
+          >
+            <div class="flex items-center gap-3">
+              <span class="text-base" aria-hidden="true">{{ item.icon }}</span>
+              <span>{{ item.label }}</span>
+            </div>
+            <span v-if="item.badge" class="text-[10px] font-black px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-800">{{ item.badge }}</span>
+          </button>
+
+          <button
             type="button"
             id="btn-drawer-walking"
             @click="handleAction('open-walking')"
@@ -460,8 +475,21 @@ const emit = defineEmits([
   'open-wrapped',
   'open-raid',
   'open-walking',
-  'open-feedback'
+  'open-feedback',
+  'open-body-progress',
+  'open-reminders',
+  'open-cloud-sync',
+  'open-friends-league',
+  'open-trainer'
 ]);
+
+const EXTRA_ITEMS = [
+  { id: 'body-progress', action: 'open-body-progress', icon: '📏', label: 'Evolução Corporal (peso, medidas, fotos)' },
+  { id: 'reminders', action: 'open-reminders', icon: '⏰', label: 'Lembretes de Treino' },
+  { id: 'cloud-sync', action: 'open-cloud-sync', icon: '☁️', label: 'Backup na Nuvem', badge: 'Online' },
+  { id: 'friends-league', action: 'open-friends-league', icon: '🏆', label: 'Liga com Amigos', badge: 'Online' },
+  { id: 'trainer', action: 'open-trainer', icon: '🧑‍🏫', label: 'Modo Personal Trainer', badge: 'Online' }
+];
 
 function handleNavigate(tab) {
   emit('navigate', tab);

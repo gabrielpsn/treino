@@ -201,4 +201,20 @@ describe('OnboardingModal — Campos limpos e validação obrigatória', () => {
     await closeBtn.trigger('click');
     expect(wrapper.emitted('close')).toBeTruthy();
   });
+
+  it('primeiro acesso oferece restaurar backup; edição de perfil não', async () => {
+    const fresh = mount(OnboardingModal, { props: { isOpen: true, initialProfile: null } });
+    const btn = fresh.find('#btn-onboarding-restore-backup');
+    expect(btn.exists()).toBe(true);
+    await btn.trigger('click');
+    expect(fresh.emitted('restore-backup')).toHaveLength(1);
+
+    const editing = mount(OnboardingModal, {
+      props: {
+        isOpen: true,
+        initialProfile: { userName: 'Ana', isConfigured: true, goal: 'hypertrophy', gender: 'female', ageYears: 30, weightKg: 60, heightCm: 165, daysPerWeek: 3, experienceLevel: 'beginner', equipment: 'gym', dietaryPreference: 'omnivore', restrictions: [] }
+      }
+    });
+    expect(editing.find('#btn-onboarding-restore-backup').exists()).toBe(false);
+  });
 });

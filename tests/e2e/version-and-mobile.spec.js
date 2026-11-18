@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { completeOnboarding, ensureOnboarded } from './helpers/onboarding.js';
 
 const MOBILE = { width: 390, height: 844 };
 
@@ -7,11 +8,7 @@ test.use({ viewport: MOBILE });
 async function onboardApp(page) {
   await page.goto('/');
   await page.waitForLoadState('networkidle');
-  const closeBtn = page.locator('#btn-close-onboarding');
-  if (await closeBtn.isVisible()) {
-    await closeBtn.click();
-    await expect(page.locator('#onboarding-modal')).toBeHidden();
-  }
+  await ensureOnboarded(page);
 }
 
 test('Mobile: barra inferior de navegação na base permite alternar seções com o polegar', async ({ page }) => {

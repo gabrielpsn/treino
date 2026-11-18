@@ -71,7 +71,12 @@
           <div class="text-4xl">🎉🚀</div>
           <h4 class="text-base font-black text-emerald-900">Muito Obrigado pelo seu Feedback!</h4>
           <p class="text-xs text-emerald-800 leading-relaxed">
-            Sua avaliação foi registrada e recebida com sucesso. Cada sugestão ajuda a calibrar a inteligência artificial e a experiência do app!
+            <template v-if="lastSynced">
+              Sua avaliação foi registrada e recebida com sucesso. Cada sugestão ajuda a calibrar a inteligência artificial e a experiência do app!
+            </template>
+            <template v-else>
+              Sua avaliação ficou salva neste aparelho, mas não chegou ao servidor agora. Se quiser garantir que ela chegue, envie também pelo WhatsApp.
+            </template>
           </p>
           <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-100/80 text-emerald-900 text-xs font-bold border border-emerald-300">
             <span>✨</span>
@@ -361,6 +366,7 @@ const userName = ref(props.userName || 'Atleta');
 const contact = ref('');
 const isSubmitting = ref(false);
 const isSubmitted = ref(false);
+const lastSynced = ref(true);
 
 const storedFeedbacks = ref([]);
 const stats = ref({ average: 5.0, count: 0 });
@@ -428,6 +434,7 @@ async function handleSubmit() {
       contact: contact.value
     });
 
+    lastSynced.value = feedbackItem?.syncedWithServer !== false;
     isSubmitted.value = true;
     loadFeedbacks();
 

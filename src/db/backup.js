@@ -6,6 +6,10 @@ import {
   validateCustomExercise
 } from './customExercises.js';
 import { filterSafeExercises } from '../engine/generators/workoutGenerator.js';
+import { GAMIFICATION_STORAGE_KEY, normalizeGamificationState } from './gamification.js';
+import { WALKING_STORAGE_PREFIX, normalizeWalkingDay } from '../engine/walkingTracker.js';
+import { normalizeBodyEntry } from '../engine/bodyProgress.js';
+import { EXERCISE_VIDEO_KEY, normalizeVideoUrl } from '../engine/exerciseMedia.js';
 
 // Backup e restauração de todos os dados do usuário.
 //
@@ -46,6 +50,7 @@ const PROFILE_FIELDS = {
   daysPerWeek: num => clampInt(num, 1, 7),
   experienceLevel: str => str,
   equipment: str => str,
+  dietaryPreference: str => (typeof str === 'string' ? trimTo(str, 40) : 'omnivore'),
   restrictions: list => (Array.isArray(list) ? list.filter(r => typeof r === 'string') : [])
 };
 
@@ -82,17 +87,159 @@ function pickDefined(source, keys) {
 }
 
 // ---------------------------------------------------------------------------
+// Dados fora do IndexedDB (localStorage)
+// ---------------------------------------------------------------------------
+//
+// Gamificação (XP, moedas, títulos, streaks) e caminhada diária vivem no
+// localStorage, não no Dexie. Ficar fora do backup significava perder o nível
+// e as conquistas ao trocar de aparelho — exatamente quando o backup é usado.
+
+const DATE_KEY_RE = /^\d{4}-\d{2}-\d{2}$/;
+const MAX_WALKING_DAYS = 3660;
+
+function defaultStorage() {
+  try {
+    return typeof window !== 'undefined' ? window.localStorage ?? null : null;
+  } catch {
+    return null;
+  }
+}
+
+function readLocalExtras(storage) {
+  if (!storage) return { gamification: null, walking: [], exerciseVideos: {} };
+
+  let gamification = null;
+  try {
+    const raw = storage.getItem(GAMIFICATION_STORAGE_KEY);
+    if (raw) gamification = normalizeGamificationState(JSON.parse(raw));
+  } catch {
+    gamification = null;
+  }
+
+  const walking = [];
+  try {
+    for (let i = 0; i < storage.length; i++) {
+      const key = storage.key(i);
+      if (!key || !key.startsWith(WALKING_STORAGE_PREFIX)) continue;
+      const date = key.slice(WALKING_STORAGE_PREFIX.length);
+      if (!DATE_KEY_RE.test(date)) continue;
+      try {
+        walking.push(normalizeWalkingDay(date, JSON.parse(storage.getItem(key))));
+      } catch {
+        // Dia corrompido não derruba o backup inteiro.
+      }
+    }
+  } catch {
+    // Storage inacessível: segue sem caminhada.
+  }
+  walking.sort((a, b) => a.date.localeCompare(b.date));
+
+  let exerciseVideos = {};
+  try {
+    exerciseVideos = normalizeVideos(JSON.parse(storage.getItem(EXERCISE_VIDEO_KEY) || '{}')) ?? {};
+  } catch {
+    exerciseVideos = {};
+  }
+
+  return { gamification, walking, exerciseVideos };
+}
+
+function normalizeVideos(value) {
+  // `null` = arquivo antigo sem vídeos: a restauração não mexe nos atuais.
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const out = {};
+  for (const [id, url] of Object.entries(value)) {
+    if (typeof id !== 'string' || id.length > 120) continue;
+    const result = normalizeVideoUrl(url);
+    if (result.ok && result.value) out[id] = result.value;
+  }
+  return out;
+}
+
+function normalizeBodyMetrics(value) {
+  if (!Array.isArray(value)) return null;
+  const byDate = new Map();
+  for (const row of value) {
+    const entry = normalizeBodyEntry(row);
+    if (entry) byDate.set(entry.id, entry);
+  }
+  return [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date));
+}
+
+function normalizeWalking(value) {
+  // `null` = o arquivo não traz caminhada (backup antigo): a restauração não
+  // mexe no que já existe. Lista (mesmo vazia) = substituir.
+  if (!Array.isArray(value)) return null;
+  const byDate = new Map();
+  for (const row of value) {
+    if (!row || typeof row !== 'object' || typeof row.date !== 'string') continue;
+    if (!DATE_KEY_RE.test(row.date)) continue;
+    byDate.set(row.date, normalizeWalkingDay(row.date, row));
+  }
+  return [...byDate.values()]
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .slice(-MAX_WALKING_DAYS);
+}
+
+function normalizeGamification(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  return normalizeGamificationState(value);
+}
+
+/**
+ * Grava gamificação e caminhada. Roda depois da transação do Dexie: o
+ * localStorage não participa dela, e escrever antes deixaria XP do backup
+ * aplicado sobre um banco que falhou ao restaurar.
+ */
+function writeLocalExtras(backup, storage) {
+  const result = { gamification: false, walkingDays: 0, localDataError: false };
+  if (!storage) {
+    result.localDataError = Boolean(backup.gamification || backup.walking);
+    return result;
+  }
+
+  try {
+    if (backup.gamification) {
+      storage.setItem(GAMIFICATION_STORAGE_KEY, JSON.stringify(backup.gamification));
+      result.gamification = true;
+    }
+
+    if (Array.isArray(backup.walking)) {
+      const stale = [];
+      for (let i = 0; i < storage.length; i++) {
+        const key = storage.key(i);
+        if (key && key.startsWith(WALKING_STORAGE_PREFIX)) stale.push(key);
+      }
+      for (const key of stale) storage.removeItem(key);
+      for (const day of backup.walking) {
+        storage.setItem(`${WALKING_STORAGE_PREFIX}${day.date}`, JSON.stringify(day));
+        result.walkingDays++;
+      }
+    }
+
+    if (backup.exerciseVideos) {
+      storage.setItem(EXERCISE_VIDEO_KEY, JSON.stringify(backup.exerciseVideos));
+    }
+  } catch {
+    result.localDataError = true;
+  }
+
+  return result;
+}
+
+// ---------------------------------------------------------------------------
 // Export
 // ---------------------------------------------------------------------------
 
-export async function buildBackup({ database = db, now = new Date() } = {}) {
-  const [profileRow, planRow, customRows, logs, checks, sessions] = await Promise.all([
+export async function buildBackup({ database = db, now = new Date(), storage = defaultStorage() } = {}) {
+  const [profileRow, planRow, customRows, logs, checks, sessions, bodyRows] = await Promise.all([
     database.user_profile.get(PROFILE_ID),
     database.active_plan.get(PLAN_ID),
     database.custom_exercises.toArray(),
     database.workout_logs.toArray(),
     database.weekly_checks.toArray(),
-    database.workout_sessions.toArray()
+    database.workout_sessions.toArray(),
+    database.body_metrics ? database.body_metrics.toArray() : []
   ]);
 
   const sessionIds = sessions.map(s => s.id);
@@ -105,10 +252,16 @@ export async function buildBackup({ database = db, now = new Date() } = {}) {
     if (setsBySession.has(set.sessionId)) setsBySession.get(set.sessionId).push(pick(set, SET_FIELDS));
   }
 
+  const { gamification, walking, exerciseVideos } = readLocalExtras(storage);
+
   return {
     kind: BACKUP_KIND,
     version: BACKUP_VERSION,
     exportedAt: now.toISOString(),
+    gamification,
+    walking,
+    exerciseVideos,
+    bodyMetrics: bodyRows.map(row => ({ ...row })),
     userProfile: profileRow ? { ...profileRow } : null,
     activePlan: planRow ? { ...planRow } : null,
     customExercises: customRows.map(row => ({ ...row })),
@@ -141,7 +294,10 @@ export function summarizeBackup(backup) {
     ),
     customExercises: backup.customExercises.length,
     sessions: backup.sessions.length,
-    sets: backup.sessions.reduce((total, s) => total + s.sets.length, 0)
+    sets: backup.sessions.reduce((total, s) => total + s.sets.length, 0),
+    totalXp: backup.gamification?.totalXp ?? null,
+    walkingDays: Array.isArray(backup.walking) ? backup.walking.length : 0,
+    bodyMetrics: Array.isArray(backup.bodyMetrics) ? backup.bodyMetrics.length : 0
   };
 }
 
@@ -262,7 +418,11 @@ function normalizeBackup(raw, warnings) {
     // lista. Aceitar os dois formatos evita invalidar backups já baixados.
     workoutLogs: normalizeLogs(raw.workoutLogs),
     weeklyChecks: normalizeChecks(raw.weeklyChecks),
-    sessions
+    sessions,
+    gamification: normalizeGamification(raw.gamification),
+    walking: normalizeWalking(raw.walking),
+    exerciseVideos: normalizeVideos(raw.exerciseVideos),
+    bodyMetrics: normalizeBodyMetrics(raw.bodyMetrics)
   };
 }
 
@@ -336,6 +496,13 @@ function normalizeProfile(value) {
     profile[key] = sanitize(raw);
   }
   if (Object.keys(profile).length === 0) return null;
+
+  // `isConfigured` é o que o app usa para não reabrir o onboarding. Backups
+  // antigos não traziam o campo; um perfil com os dados obrigatórios veio de um
+  // cadastro concluído, então conta como configurado.
+  const REQUIRED = ['userName', 'goal', 'gender', 'ageYears', 'weightKg', 'heightCm'];
+  profile.isConfigured = value.isConfigured === true ||
+    REQUIRED.every(key => profile[key] !== undefined && profile[key] !== '');
 
   return { id: PROFILE_ID, ...profile };
 }
@@ -434,7 +601,7 @@ function normalizePlan(value, profile, warnings) {
  * perfil, sem plano ou sem histórico — justamente o que ele estava tentando
  * recuperar.
  */
-export async function restoreBackup(backup, { database = db } = {}) {
+export async function restoreBackup(backup, { database = db, storage = defaultStorage() } = {}) {
   const sets = backup.sessions.flatMap(session => session.sets);
   const logRows = backup.workoutLogs;
   const checkRows = backup.weeklyChecks;
@@ -449,6 +616,7 @@ export async function restoreBackup(backup, { database = db } = {}) {
     database.custom_exercises,
     database.workout_sessions,
     database.session_sets,
+    database.body_metrics,
     async () => {
       await database.user_profile.clear();
       await database.active_plan.clear();
@@ -467,17 +635,26 @@ export async function restoreBackup(backup, { database = db } = {}) {
         await database.workout_sessions.bulkPut(backup.sessions);
         await database.session_sets.bulkPut(sets);
       }
+      // Arquivo antigo (sem o campo) não apaga as medições atuais.
+      if (Array.isArray(backup.bodyMetrics)) {
+        await database.body_metrics.clear();
+        if (backup.bodyMetrics.length > 0) await database.body_metrics.bulkPut(backup.bodyMetrics);
+      }
     }
   );
 
+  const local = writeLocalExtras(backup, storage);
+
   return {
+    ...local,
     userProfile: Boolean(backup.userProfile),
     activePlan: Boolean(backup.activePlan),
     customExercises: customRows.length,
     workoutLogs: logRows.length,
     weeklyChecks: checkRows.length,
     sessions: backup.sessions.length,
-    sets: sets.length
+    sets: sets.length,
+    bodyMetrics: Array.isArray(backup.bodyMetrics) ? backup.bodyMetrics.length : 0
   };
 }
 
@@ -486,6 +663,9 @@ export function hasBackupData(backup) {
     backup.userProfile ||
     backup.activePlan ||
     backup.customExercises.length > 0 ||
-    backup.sessions.length > 0
+    backup.sessions.length > 0 ||
+    Boolean(backup.gamification) ||
+    (Array.isArray(backup.bodyMetrics) && backup.bodyMetrics.length > 0) ||
+    (Array.isArray(backup.walking) && backup.walking.length > 0)
   );
 }

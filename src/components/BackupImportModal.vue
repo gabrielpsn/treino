@@ -99,7 +99,7 @@ const rows = computed(() => {
   const summary = props.backup?.summary;
   if (!summary) return [];
 
-  return [
+  const rows = [
     { id: 'user', label: 'Perfil', value: summary.userName || 'sem nome' },
     {
       id: 'date',
@@ -112,6 +112,18 @@ const rows = computed(() => {
     { id: 'sessions', label: 'Treinos registrados', value: summary.sessions },
     { id: 'sets', label: 'Séries registradas', value: summary.sets }
   ];
+  // Backups antigos não têm gamificação nem caminhada: a linha só aparece
+  // quando o arquivo realmente traz esses dados.
+  if (summary.totalXp !== null && summary.totalXp !== undefined) {
+    rows.push({ id: 'xp', label: 'XP e conquistas', value: `${summary.totalXp} XP` });
+  }
+  if (summary.walkingDays > 0) {
+    rows.push({ id: 'walking', label: 'Dias de caminhada', value: summary.walkingDays });
+  }
+  if (summary.bodyMetrics > 0) {
+    rows.push({ id: 'body', label: 'Medições corporais', value: summary.bodyMetrics });
+  }
+  return rows;
 });
 
 function formatDate(iso) {

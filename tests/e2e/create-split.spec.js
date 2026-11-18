@@ -1,20 +1,11 @@
 import { test, expect } from '@playwright/test';
+import { completeOnboarding, ensureOnboarded } from './helpers/onboarding.js';
 
 async function onboardHome(page, name = 'Atleta Custom') {
   await page.goto('/');
   await expect(page.locator('#onboarding-modal')).toBeVisible();
 
-  await page.locator('#input-user-name').fill(name);
-  await page.locator('#input-age').fill('28');
-  await page.locator('#input-weight').fill('78');
-  await page.locator('#input-height').fill('178');
-
-  await page.locator('#btn-onboarding-next').click();
-  await page.locator('#btn-days-3').click();
-  await page.locator('#btn-exp-intermediate').click();
-  await page.locator('#btn-onboarding-next').click();
-  await page.locator('#btn-equip-gym').click();
-  await page.locator('#btn-onboarding-submit').click();
+  await completeOnboarding(page, { name: name, age: 28, weight: 78, height: 178, days: 3, experience: 'intermediate', equipment: 'gym' });
 
   await expect(page.locator('#onboarding-modal')).not.toBeVisible({ timeout: 5000 });
   await page.locator('#tab-btn-workout').click();
@@ -121,17 +112,40 @@ test('Contraste de campos: inputs essenciais possuem bordas reforçadas e tipogr
   const weightInput = page.locator('input[id^="input-weight-"]').first();
   await expect(weightInput).toBeVisible();
   
-  const weightContainer = weightInput.locator('xpath=..');
-  const containerClass = await weightContainer.getAttribute('class');
-  expect(containerClass).toContain('border-2');
-  expect(containerClass).toContain('border-slate-600');
+  // Mede o contraste real (WCAG) em vez de checar nomes de classe: o layout
+  // mudou de tema escuro para claro e o que importa é a legibilidade.
+  const weightStyle = await readContrast(weightInput);
+  expect(weightStyle.borderWidth).toBeGreaterThanOrEqual(1);
+  expect(weightStyle.contrast).toBeGreaterThanOrEqual(4.5);
 
-  // Verifica contraste nos campos de formulário modal
   await page.locator('#btn-open-create-split').click();
   const splitTitleInput = page.locator('#input-split-title');
   await expect(splitTitleInput).toBeVisible();
-  const titleClass = await splitTitleInput.getAttribute('class');
-  expect(titleClass).toContain('border-2');
-  expect(titleClass).toContain('border-slate-600');
-  expect(titleClass).toContain('text-white');
+  const titleStyle = await readContrast(splitTitleInput);
+  expect(titleStyle.borderWidth).toBeGreaterThanOrEqual(1);
+  expect(titleStyle.contrast).toBeGreaterThanOrEqual(4.5);
 });
+
+/** Contraste entre a cor do texto e o fundo efetivo do campo, e a espessura da borda. */
+async function readContrast(locator) {
+  return locator.evaluate(el => {
+    const parse = c => (c.match(/[\d.]+/g) || []).map(Number);
+    const lum = ([r, g, b]) => {
+      const f = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; };
+      return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
+    };
+    let node = el;
+    let bg = [255, 255, 255];
+    while (node) {
+      const c = parse(getComputedStyle(node).backgroundColor);
+      if (c.length >= 3 && (c.length < 4 || c[3] > 0.5)) { bg = c.slice(0, 3); break; }
+      node = node.parentElement;
+    }
+    const style = getComputedStyle(el);
+    const fg = parse(style.color).slice(0, 3);
+    const [l1, l2] = [lum(fg), lum(bg)].sort((a, b) => b - a);
+    const borders = [style.borderTopWidth, style.borderBottomWidth, el.parentElement ? getComputedStyle(el.parentElement).borderTopWidth : '0']
+      .map(parseFloat);
+    return { contrast: (l1 + 0.05) / (l2 + 0.05), borderWidth: Math.max(...borders) };
+  });
+}

@@ -35,7 +35,7 @@
               </span>
             </div>
             <p class="text-xs text-[#64748B]">
-              Compita com outros atletas pela zona de promoção semanal.
+              Dispute a zona de promoção semanal com rivais virtuais, cujo ritmo acompanha o seu.
             </p>
           </div>
         </div>
@@ -102,6 +102,9 @@
                 <span class="text-xs font-black truncate block" :class="athlete.isUser ? 'text-[#0066FF]' : 'text-[#0F172A]'">
                   {{ athlete.name }} {{ athlete.isUser ? '(Você)' : '' }}
                 </span>
+                <span v-if="athlete.isBot" class="text-[9px] font-bold text-[#94A3B8] block leading-none">
+                  🤖 Rival virtual
+                </span>
                 <span v-if="athlete.inPromotionZone" class="text-[9px] font-bold text-emerald-600 block leading-none">
                   Promove ao fim da semana
                 </span>
@@ -119,6 +122,15 @@
       <p class="text-[11px] text-[#64748B] leading-relaxed pt-1 text-center">
         💡 Ganhe pontos realizando séries válidas (+10), batendo recordes pessoais (+50) e mantendo dias consecutivos de treino (+20). O Top 3 sobe de divisão no domingo!
       </p>
+
+      <button
+        type="button"
+        id="btn-open-friends-league"
+        @click="emit('open-friends')"
+        class="tap-btn w-full py-2.5 px-4 rounded-xl border-2 border-[#0066FF] text-[#0066FF] font-black text-sm"
+      >
+        🏆 Competir com amigos de verdade
+      </button>
 
       <!-- Botão Fechar -->
       <div>
@@ -155,7 +167,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['close']);
+const emit = defineEmits(['close', 'open-friends']);
 
 const leagueData = computed(() => {
   return calculateLeagueLeaderboard({

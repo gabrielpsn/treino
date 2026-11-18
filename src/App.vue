@@ -356,7 +356,14 @@
         tabindex="0"
         class="space-y-6 focus:outline-none"
       >
-        
+        <!-- Sugestão / estado do deload automático -->
+        <DeloadBanner
+          :evaluation="deloadEvaluation"
+          @start="startDeload"
+          @dismiss="dismissDeload"
+          @end="endDeload"
+        />
+
         <!-- Seletor de Fichas (Sub-tabs A, B, C...) -->
         <div class="flex items-center justify-between flex-wrap gap-3 border-b border-[#E2E8F0] pb-4">
           <div>
@@ -454,6 +461,9 @@
             :class="aiPlanMessage?.tone === 'error' ? 'text-rose-500' : (aiPlanMessage ? 'text-[#0066FF]' : 'text-[#64748B]')"
           >
             <template v-if="aiPlanMessage">{{ aiPlanMessage.text }}</template>
+            <template v-else-if="activePlan?.planSource === 'trainer'">
+              🧑‍🏫 Ficha enviada pelo seu personal{{ activePlan.trainerName ? ` (${activePlan.trainerName})` : '' }}.
+            </template>
             <template v-else-if="activePlan?.planSource === 'ai'">
               🤖 Ficha montada pelo Agente Overload AI com base na sinergia muscular (Push/Pull/Legs) e restrições articulares.
             </template>
@@ -899,6 +909,13 @@
                     >
                       <span aria-hidden="true">🕘</span>
                       Último treino: <span class="text-[#0F172A] font-semibold">{{ lastSetLabel(ex.id) }}</span>
+                    </p>
+                    <p
+                      v-if="deloadHint(ex.id)"
+                      :id="`deload-load-${ex.id}`"
+                      class="text-[11px] font-bold text-emerald-700 mt-1"
+                    >
+                      🧘 Deload: use ~{{ deloadHint(ex.id) }} e metade das séries
                     </p>
                   </div>
                 </div>
@@ -1589,6 +1606,9 @@
         tabindex="0"
         class="focus:outline-none space-y-6"
       >
+        <!-- Coach da semana (texto local + análise opcional por IA) -->
+        <WeeklyCoachCard :summary="weeklySummary" />
+
         <!-- Boss Fight Mensal (Dano por Tonelagem) -->
         <MonthlyBossWidget
           :monthly-tonnage-kg="monthlyTonnageKg"
@@ -1699,6 +1719,8 @@
       :initial-profile="isFirstAccess ? null : userProfile"
       @save="handleSaveProfile"
       @close="handleCloseOnboarding"
+      @restore-backup="openBackupFilePicker"
+      @restore-cloud="isCloudSyncOpen = true"
     />
 
     <!-- Modal de Troca de Exercício Individual -->
@@ -1890,6 +1912,11 @@
       @open-raid="isRaidModalOpen = true"
       @open-walking="isWalkingModalOpen = true"
       @open-feedback="isFeedbackModalOpen = true"
+      @open-body-progress="isBodyProgressOpen = true"
+      @open-reminders="isRemindersOpen = true"
+      @open-cloud-sync="isCloudSyncOpen = true"
+      @open-friends-league="isFriendsLeagueOpen = true"
+      @open-trainer="isTrainerOpen = true"
     />
 
     <!-- Modal de Demonstração e Detalhes do Exercício -->
@@ -1956,6 +1983,7 @@
       :current-tier="gamificationState.leagueTier || 'bronze'"
       :user-name="userProfile?.userName || 'Atleta'"
       @close="isLeagueModalOpen = false"
+      @open-friends="isLeagueModalOpen = false; isFriendsLeagueOpen = true"
     />
 
     <!-- Modal da Retrospectiva da Carreira (Wrapped) -->
@@ -2005,6 +2033,43 @@
       @feedback-submitted="handleFeedbackSubmitted"
     />
 
+    <BodyProgressModal
+      :is-open="isBodyProgressOpen"
+      :goal="userProfile?.goal || 'hypertrophy'"
+      :gender="userProfile?.gender || 'male'"
+      :bmr="activePlan?.physiology?.bmr || 0"
+      :target-calories="targetCalories"
+      :macros="effectiveMacros"
+      @close="isBodyProgressOpen = false"
+      @apply-calories="handleApplyCalories"
+      @entries-changed="entries => bodyEntries = entries"
+    />
+
+    <RemindersModal :is-open="isRemindersOpen" @close="isRemindersOpen = false" />
+
+    <CloudSyncModal
+      :is-open="isCloudSyncOpen"
+      @close="isCloudSyncOpen = false"
+      @restore-backup="handleCloudRestore"
+    />
+
+    <FriendsLeagueModal
+      :is-open="isFriendsLeagueOpen"
+      :week-key="currentIsoWeekKey"
+      :my-score="userLeagueScore"
+      :default-nickname="userProfile?.userName || 'Atleta'"
+      @close="isFriendsLeagueOpen = false"
+    />
+
+    <TrainerModal
+      :is-open="isTrainerOpen"
+      :student-summary="studentSummary"
+      :my-workout-splits="trainerSplitsToSend"
+      :default-name="userProfile?.userName || ''"
+      @close="isTrainerOpen = false"
+      @accept-plan="handleAcceptTrainerPlan"
+    />
+
   </div>
 </template>
 
@@ -2047,6 +2112,20 @@ import CommunityRaidModal from './components/CommunityRaidModal.vue';
 import PrCelebrationToast from './components/PrCelebrationToast.vue';
 import WalkingTrackerModal from './components/WalkingTrackerModal.vue';
 import AppFeedbackModal from './components/AppFeedbackModal.vue';
+import BodyProgressModal from './components/BodyProgressModal.vue';
+import RemindersModal from './components/RemindersModal.vue';
+import CloudSyncModal from './components/CloudSyncModal.vue';
+import FriendsLeagueModal from './components/FriendsLeagueModal.vue';
+import TrainerModal from './components/TrainerModal.vue';
+import WeeklyCoachCard from './components/WeeklyCoachCard.vue';
+import DeloadBanner from './components/DeloadBanner.vue';
+import { evaluateDeload, deloadLoad, isoWeekKey } from './engine/deload.js';
+import { buildWeeklySummary } from './engine/weeklySummary.js';
+import { weightTrend } from './engine/bodyProgress.js';
+import { listBodyEntries } from './db/bodyProgress.js';
+import { loadCloudAccount, pushSnapshot, uploadStudentSummary } from './services/cloud.js';
+import { loadExerciseVideos, normalizeVideoUrl, saveExerciseVideo } from './engine/exerciseMedia.js';
+import { calculateWeeklyMuscleVolume } from './engine/gamification.js';
 import { filterSafeExercises } from './engine/generators/workoutGenerator';
 import { loadDailyWalkingData } from './engine/walkingTracker';
 import {
@@ -2190,6 +2269,25 @@ const isWrappedModalOpen = ref(false);
 const isRaidModalOpen = ref(false);
 const isWalkingModalOpen = ref(false);
 const isFeedbackModalOpen = ref(false);
+const isBodyProgressOpen = ref(false);
+const isRemindersOpen = ref(false);
+const isCloudSyncOpen = ref(false);
+const isFriendsLeagueOpen = ref(false);
+const isTrainerOpen = ref(false);
+const bodyEntries = ref([]);
+
+// Deload: guarda a semana em que o usuário aceitou ou dispensou a sugestão,
+// para não insistir na mesma semana.
+const DELOAD_STATE_KEY = 'overload_deload_state';
+function readDeloadState() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(DELOAD_STATE_KEY) || '{}');
+    return { lastDeloadWeekKey: parsed.lastDeloadWeekKey ?? null, dismissedWeekKey: parsed.dismissedWeekKey ?? null };
+  } catch {
+    return { lastDeloadWeekKey: null, dismissedWeekKey: null };
+  }
+}
+const deloadState = ref(readDeloadState());
 const todayWalkingData = ref(loadDailyWalkingData(getDayKey()));
 const prToastState = ref({
   isOpen: false,
@@ -2909,6 +3007,7 @@ async function loadUserData() {
     const profileRecord = await db.user_profile.get('current_user');
     await hydrateFromDatabase(profileRecord);
     await loadHistory();
+    await loadBodyEntries();
   } catch (err) {
     reportStorageError(
       'Não foi possível acessar o armazenamento local do navegador. Seu histórico pode não ser salvo. Verifique se cookies/armazenamento não estão bloqueados.',
@@ -3717,6 +3816,219 @@ const userLeagueScore = computed(() => {
 
 const dailyStreak = computed(() => gamificationState.value?.dailyStreak || 0);
 const dailyStreakFlame = computed(() => getFlameInfo(dailyStreak.value));
+
+// ---------------------------------------------------------------------------
+// Deload automático
+// ---------------------------------------------------------------------------
+
+const deloadEvaluation = computed(() => evaluateDeload(historySessions.value, {
+  now: Date.now(),
+  lastDeloadWeekKey: deloadState.value.lastDeloadWeekKey,
+  dismissedWeekKey: deloadState.value.dismissedWeekKey
+}));
+
+function persistDeloadState(next) {
+  deloadState.value = next;
+  try {
+    localStorage.setItem(DELOAD_STATE_KEY, JSON.stringify(next));
+  } catch {
+    // Sem storage a sugestão volta a aparecer, sem outro efeito.
+  }
+}
+
+function startDeload() {
+  persistDeloadState({ ...deloadState.value, lastDeloadWeekKey: deloadEvaluation.value.weekKey });
+}
+
+function dismissDeload() {
+  persistDeloadState({ ...deloadState.value, dismissedWeekKey: deloadEvaluation.value.weekKey });
+}
+
+function endDeload() {
+  persistDeloadState({ lastDeloadWeekKey: null, dismissedWeekKey: deloadEvaluation.value.weekKey });
+}
+
+function deloadHint(exerciseId) {
+  if (!deloadEvaluation.value.inDeload) return null;
+  const load = deloadLoad(lastSets.value[exerciseId]?.weight);
+  return load ? `${String(load).replace('.', ',')} kg` : null;
+}
+
+// ---------------------------------------------------------------------------
+// Evolução corporal, resumo semanal, coach, ligas reais e modo personal
+// ---------------------------------------------------------------------------
+
+async function loadBodyEntries() {
+  try {
+    bodyEntries.value = await listBodyEntries();
+  } catch (err) {
+    console.error('Não foi possível ler as medições corporais.', err);
+    bodyEntries.value = [];
+  }
+}
+
+const bodyTrend = computed(() => weightTrend(bodyEntries.value));
+const latestBodyWeight = computed(() => {
+  const withWeight = bodyEntries.value.filter(e => Number.isFinite(e.weightKg));
+  return withWeight.length ? withWeight[withWeight.length - 1].weightKg : null;
+});
+
+const currentIsoWeekKey = computed(() => isoWeekKey(Date.now()));
+
+const weeklySummary = computed(() => {
+  // Grupos "atrasados" só fazem sentido no fim da semana; na segunda-feira
+  // todos estariam abaixo da meta.
+  const weekday = new Date().getDay();
+  const lateWeek = weekday === 0 || weekday >= 5;
+  const lagging = lateWeek
+    ? calculateWeeklyMuscleVolume({
+      weeklySessions: weeklySessions.value,
+      liveWorkoutLogs: {},
+      exerciseMuscleMap: exerciseMuscleMap.value
+    }).laggingGroups.map(g => g.label)
+    : [];
+  return buildWeeklySummary({
+    sessions: historySessions.value,
+    now: Date.now(),
+    goal: userProfile.value?.goal || 'hypertrophy',
+    plannedSessions: Number(userProfile.value?.daysPerWeek) || 0,
+    exerciseName: id => exerciseNames.value[id] || id,
+    stalledExerciseIds: deloadEvaluation.value.stalledExercises,
+    weakMuscles: lagging,
+    weightTrendKgPerWeek: bodyTrend.value?.weeklyKg ?? null,
+    steps: todayWalkingData.value?.steps ?? null,
+    deloadSuggested: deloadEvaluation.value.recommended
+  });
+});
+
+// O que o personal enxerga: só agregados e a ficha atual, nada de nome real,
+// fotos ou histórico bruto.
+const studentSummary = computed(() => {
+  const profile = userProfile.value || {};
+  const recentWeeks = [3, 2, 1, 0].map(back => {
+    const key = isoWeekKey(Date.now() - back * 7 * 86_400_000);
+    const sessions = historySessions.value.filter(s => {
+      const t = Date.parse(s.startedAt || '');
+      return Number.isFinite(t) && isoWeekKey(t) === key && (s.sets || []).some(set => set?.isDone);
+    });
+    return { weekKey: key, sessions: sessions.length };
+  });
+  return {
+    goal: profile.goal,
+    daysPerWeek: profile.daysPerWeek,
+    experienceLevel: profile.experienceLevel,
+    equipment: profile.equipment,
+    restrictions: profile.restrictions || [],
+    weekly: weeklySummary.value,
+    recentWeeks,
+    latestWeightKg: latestBodyWeight.value ?? profile.weightKg ?? null,
+    weightTrendKgPerWeek: bodyTrend.value?.weeklyKg ?? null,
+    planSplits: (activePlan.value?.workoutSplits || []).map(split => ({
+      title: split.title,
+      exercises: (split.exercises || []).map(ex => ex.name)
+    }))
+  };
+});
+
+// Ficha que o personal envia: a dele, com os vídeos próprios anexados.
+const trainerSplitsToSend = computed(() => {
+  const videos = loadExerciseVideos();
+  return (activePlan.value?.workoutSplits || []).map(split => ({
+    ...JSON.parse(JSON.stringify(split)),
+    exercises: (split.exercises || []).map(ex => ({ ...JSON.parse(JSON.stringify(ex)), videoUrl: videos[ex.id] || ex.videoUrl || undefined }))
+  }));
+});
+
+async function handleApplyCalories(macros) {
+  if (!activePlan.value) return;
+  const rawPlan = JSON.parse(JSON.stringify(activePlan.value));
+  rawPlan.customNutrition = { enabled: true, ...macros };
+  const ok = await persistOrReport('Não foi possível aplicar a nova meta calórica.', () => db.active_plan.put(rawPlan));
+  if (!ok) return;
+  activePlan.value = rawPlan;
+  initCustomNutritionForm();
+  isBodyProgressOpen.value = false;
+  currentMainTab.value = 'nutrition';
+}
+
+async function handleAcceptTrainerPlan({ workoutSplits, className }) {
+  if (!activePlan.value) return;
+  const profile = userProfile.value || {};
+  let removed = 0;
+  const safeSplits = (workoutSplits || [])
+    .filter(split => split && split.id)
+    .map(split => {
+      const exercises = (split.exercises || []).filter(ex => ex && ex.id);
+      // A ficha vem de outro aparelho: passa pelo mesmo filtro articular e de
+      // equipamento do aluno, como qualquer outra origem de plano.
+      const safe = filterSafeExercises(exercises, {
+        restrictions: profile.restrictions || [],
+        equipment: profile.equipment || 'gym'
+      });
+      removed += exercises.length - safe.length;
+      return { ...split, exercises: safe };
+    })
+    .filter(split => split.exercises.length > 0);
+
+  if (safeSplits.length === 0) {
+    reportStorageError('A ficha do personal não tem exercícios compatíveis com suas restrições ou equipamento.', null);
+    return;
+  }
+
+  for (const split of safeSplits) {
+    for (const ex of split.exercises) {
+      const video = normalizeVideoUrl(ex.videoUrl);
+      if (video.ok && video.value) saveExerciseVideo(ex.id, video.value);
+    }
+  }
+
+  const rawPlan = JSON.parse(JSON.stringify(activePlan.value));
+  rawPlan.workoutSplits = JSON.parse(JSON.stringify(safeSplits));
+  rawPlan.planSource = 'trainer';
+  rawPlan.trainerName = String(className || '').slice(0, 40);
+  const ok = await persistOrReport('Não foi possível salvar a ficha do personal.', () => db.active_plan.put(rawPlan));
+  if (!ok) return;
+
+  activePlan.value = rawPlan;
+  // O aviso da última tentativa de IA não descreve mais a ficha ativa.
+  aiPlanMessage.value = null;
+  activeMuscleFilter.value = {};
+  currentSplitTab.value = rawPlan.workoutSplits[0].id;
+  await loadLastSets();
+  isTrainerOpen.value = false;
+  currentMainTab.value = 'workout';
+  if (removed > 0) {
+    reportStorageError(`${removed} exercício(s) da ficha do personal conflitavam com suas restrições ou equipamento e foram removidos.`, null);
+  }
+}
+
+function handleCloudRestore(backupObject) {
+  const parsed = parseBackupText(JSON.stringify(backupObject));
+  if (!parsed.ok) {
+    reportStorageError(`Backup da nuvem inválido: ${parsed.error}`, null);
+    return;
+  }
+  isCloudSyncOpen.value = false;
+  // Mesmo caminho do arquivo: o usuário confere o que será substituído antes.
+  pendingBackup.value = parsed.backup;
+  pendingBackupSummary.value = summarizeBackup(parsed.backup);
+  pendingBackupFileName.value = 'Backup na nuvem';
+  pendingBackupWarnings.value = parsed.warnings;
+  isBackupImportOpen.value = true;
+}
+
+// Depois de cada treino: envia o backup para a nuvem e atualiza o resumo do
+// aluno, se o usuário ativou os recursos online. Falha aqui nunca atrapalha o treino.
+async function autoCloudSync() {
+  const account = loadCloudAccount();
+  if (!account) return;
+  try {
+    await pushSnapshot(account, await buildBackup());
+  } catch (err) {
+    console.warn('Sync automático pendente:', err?.message ?? err);
+  }
+  uploadStudentSummary(account, studentSummary.value).catch(() => {});
+}
 const currentPatentTitle = computed(() => calculateLevelFromXp(gamificationState.value?.totalXp || 0).patent);
 
 const todayWorkoutProgressPercent = computed(() => {
@@ -3787,6 +4099,7 @@ async function finishCurrentSession() {
   });
 
   if (!ok) return;
+  autoCloudSync();
 
   // Gamificação: consolida impacto, tonelagem, XP, moedas e branches RPG
   const stats = calculateSessionGamification({
@@ -4336,10 +4649,14 @@ async function confirmBackupImport() {
   // preso numa tela que promete "substituir dados" enquanto isso já acontece.
   closeBackupImport();
 
-  const counts = await persistOrReport('Não foi possível restaurar o backup.', () =>
-    restoreBackup(backup)
-  );
-  if (!counts) return;
+  let counts = null;
+  const ok = await persistOrReport('Não foi possível restaurar o backup.', async () => {
+    counts = await restoreBackup(backup);
+  });
+  if (!ok) return;
+  if (counts?.localDataError) {
+    reportStorageError('Treinos restaurados, mas não foi possível restaurar XP/caminhada neste aparelho.', null);
+  }
 
   // O estado em memória era do aparelho anterior. Recarregar tudo do disco é o
   // que garante que nenhuma tela mostre resíduo do backup anterior — inclusive
@@ -4357,9 +4674,21 @@ async function rehydrateAfterRestore() {
   historySessions.value = [];
   currentMainTab.value = 'workout';
 
+  // Gamificação e caminhada vêm do localStorage, que o restore acabou de
+  // reescrever: os refs ainda guardam o estado do aparelho anterior.
+  gamificationState.value = loadGamificationState();
+  todayWalkingData.value = loadDailyWalkingData(getDayKey());
+
   await loadCustomExercises();
   const profileRecord = await db.user_profile.get('current_user');
   await hydrateFromDatabase(profileRecord);
+  // Restauração feita a partir do onboarding (aparelho novo): com perfil
+  // completo no backup, o cadastro não tem mais o que pedir.
+  if (userProfile.value) {
+    isFirstAccess.value = false;
+    isOnboardingOpen.value = false;
+  }
   await loadHistory();
+  await loadBodyEntries();
 }
 </script>

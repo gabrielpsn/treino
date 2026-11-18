@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { completeOnboarding, ensureOnboarded } from './helpers/onboarding.js';
 
 /**
  * Fecha o onboarding se estiver aberto (o app abre no primeiro acesso) e
@@ -7,11 +8,7 @@ import { test, expect } from '@playwright/test';
 async function prepareAppPage(page) {
   await page.goto('/');
   await page.waitForLoadState('networkidle');
-  const closeBtn = page.locator('#btn-close-onboarding');
-  if (await closeBtn.isVisible()) {
-    await closeBtn.click();
-    await expect(page.locator('#onboarding-modal')).toBeHidden();
-  }
+  await ensureOnboarded(page);
 }
 
 test('Fichas de treino: não repete exercício dentro da mesma ficha', async ({ page }) => {
@@ -83,17 +80,7 @@ test('Cronômetro de descanso: dispara ao marcar exercício como concluído', as
 test('Troca de exercício: só oferece alternativas seguras', async ({ page }) => {
   await page.goto('/');
 
-  await page.locator('#input-user-name').fill('Troca Segura');
-  await page.locator('#input-age').fill('30');
-  await page.locator('#input-weight').fill('90');
-  await page.locator('#input-height').fill('178');
-  await page.locator('#btn-onboarding-next').click();
-  await page.locator('#btn-days-4').click();
-  await page.locator('#btn-onboarding-next').click();
-  await page.locator('#btn-joint-joelho').click();
-  await page.locator('#btn-equip-home').click();
-  await page.locator('#btn-onboarding-submit').click();
-  await expect(page.locator('#onboarding-modal')).not.toBeVisible();
+  await completeOnboarding(page, { name: 'Troca Segura', age: 30, weight: 90, height: 178, days: 4, equipment: 'home', joints: ['joelho'] });
 
   await page.locator('#tab-btn-workout').click();
   await page.locator('button[id^="btn-split-treino-"]').first().click();

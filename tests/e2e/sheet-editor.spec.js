@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { completeOnboarding, ensureOnboarded } from './helpers/onboarding.js';
 
 /**
  * Cadastro mínimo em casa, sem restrições: o editor de ficha não depende de
@@ -8,17 +9,7 @@ async function onboardHome(page, name = 'Editor Ficha') {
   await page.goto('/');
   await expect(page.locator('#onboarding-modal')).toBeVisible();
 
-  await page.locator('#input-user-name').fill(name);
-  await page.locator('#input-age').fill('30');
-  await page.locator('#input-weight').fill('82');
-  await page.locator('#input-height').fill('175');
-
-  await page.locator('#btn-onboarding-next').click();
-  await page.locator('#btn-days-3').click();
-  await page.locator('#btn-exp-beginner').click();
-  await page.locator('#btn-onboarding-next').click();
-  await page.locator('#btn-equip-home').click();
-  await page.locator('#btn-onboarding-submit').click();
+  await completeOnboarding(page, { name: name, age: 30, weight: 82, height: 175, days: 3, experience: 'beginner', equipment: 'home' });
 
   await expect(page.locator('#onboarding-modal')).not.toBeVisible({ timeout: 5000 });
   await page.locator('#tab-btn-workout').click();
@@ -179,17 +170,7 @@ test('Adicionar: respeita restrição articular do usuário', async ({ page }) =
   await page.goto('/');
   await expect(page.locator('#onboarding-modal')).toBeVisible();
 
-  await page.locator('#input-user-name').fill('Editor Ficha Restrito');
-  await page.locator('#input-age').fill('31');
-  await page.locator('#input-weight').fill('84');
-  await page.locator('#input-height').fill('176');
-  await page.locator('#btn-onboarding-next').click();
-  await page.locator('#btn-days-3').click();
-  await page.locator('#btn-onboarding-next').click();
-  await page.locator('#btn-equip-home').click();
-  await page.locator('#btn-joint-ombro').click();
-  await page.locator('#btn-onboarding-submit').click();
-  await expect(page.locator('#onboarding-modal')).not.toBeVisible({ timeout: 5000 });
+  await completeOnboarding(page, { name: 'Editor Ficha Restrito', age: 31, weight: 84, height: 176, days: 3, equipment: 'home', joints: ['ombro'] });
 
   await page.locator('#tab-btn-workout').click();
   const { container } = await openFirstSplit(page);

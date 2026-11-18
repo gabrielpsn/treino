@@ -1,16 +1,40 @@
 {
-  "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "treino",
-  "main": "worker/index.js",
-  "compatibility_date": "2026-09-23",
-  "observability": {
-    "enabled": true
-  },
-  "ai": {
-    "binding": "AI"
-  },
-  "assets": {
-    "directory": "./dist",
-    "binding": "ASSETS"
-  }
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "treino",
+	"main": "worker/index.js",
+	"compatibility_date": "2026-09-23",
+	"observability": {
+		"enabled": true
+	},
+	"ai": {
+		"binding": "AI"
+	},
+	"kv_namespaces": [
+		{
+			"binding": "FEEDBACK_KV",
+			"id": "1dc6cfcf57d5498f9d9f8c230572a239",
+			"remote": true
+		}
+	],
+	"vars": {
+		"VAPID_PUBLIC_KEY": "BCQRoOuO0FcEsArPFgJIY7TM7Ih64VXvpULTu7JGZ2d2FMp9cHjgb8ulswTnn_7V0Cg3D-DN9Ua_gNiWMJQNC7E"
+	},
+	"triggers": {
+		"crons": [
+			"*/15 * * * *"
+		]
+	},
+	"assets": {
+		"directory": "./dist",
+		"binding": "ASSETS"
+	},
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "overload-db",
+			"migrations_dir": "migrations",
+			"database_id": "4ff5c975-75c2-4c0a-809b-82d2e18ed5e1",
+			"remote": true
+		}
+	]
 }

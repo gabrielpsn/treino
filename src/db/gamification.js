@@ -34,6 +34,47 @@ const DEFAULT_STATE = {
   claimedWalkingDates: []
 };
 
+/**
+ * Saneia um estado de gamificação vindo do localStorage ou de um backup.
+ *
+ * Um único sanitizador para leitura, escrita e restauração: assim um arquivo
+ * de backup editado à mão não consegue injetar XP negativo ou listas que não
+ * são listas.
+ */
+export function normalizeGamificationState(parsed) {
+  const src = parsed && typeof parsed === 'object' ? parsed : {};
+  return {
+    totalXp: Math.max(0, Number(src.totalXp) || 0),
+    lifetimeTonnageKg: Math.max(0, Number(src.lifetimeTonnageKg) || 0),
+    unlockedBadgeIds: Array.isArray(src.unlockedBadgeIds) ? src.unlockedBadgeIds : [],
+    weeklyStreak: Math.max(0, Number(src.weeklyStreak) || 0),
+    dailyStreak: Math.max(0, Number(src.dailyStreak) || 0),
+    lastActiveDate: src.lastActiveDate || null,
+    shieldsCount: Math.min(2, Math.max(0, Number(src.shieldsCount) || 0)),
+    lastActiveWeekKey: src.lastActiveWeekKey || null,
+    lastRestDayDate: src.lastRestDayDate || null,
+    claimedWeeklyDays: Array.isArray(src.claimedWeeklyDays) ? src.claimedWeeklyDays : [],
+    ironCoins: src.ironCoins !== undefined && src.ironCoins !== null && Number.isFinite(Number(src.ironCoins))
+      ? Math.max(0, Number(src.ironCoins))
+      : DEFAULT_STATE.ironCoins,
+    rpgBranches: {
+      push: Math.max(0, Number(src.rpgBranches?.push) || 0),
+      pull: Math.max(0, Number(src.rpgBranches?.pull) || 0),
+      legs: Math.max(0, Number(src.rpgBranches?.legs) || 0),
+      core: Math.max(0, Number(src.rpgBranches?.core) || 0)
+    },
+    unlockedThemes: Array.isArray(src.unlockedThemes) && src.unlockedThemes.length > 0 ? src.unlockedThemes : ['blue', 'orange'],
+    equippedTheme: src.equippedTheme || 'blue',
+    unlockedTitles: Array.isArray(src.unlockedTitles) && src.unlockedTitles.length > 0 ? src.unlockedTitles : ['iniciante_ferro'],
+    equippedTitle: src.equippedTitle || 'iniciante_ferro',
+    claimedBossMonths: Array.isArray(src.claimedBossMonths) ? src.claimedBossMonths : [],
+    leagueTier: src.leagueTier || 'bronze',
+    claimedRaidMilestones: Array.isArray(src.claimedRaidMilestones) ? src.claimedRaidMilestones : [],
+    claimedDietDates: Array.isArray(src.claimedDietDates) ? src.claimedDietDates : [],
+    claimedWalkingDates: Array.isArray(src.claimedWalkingDates) ? src.claimedWalkingDates : []
+  };
+}
+
 export function loadGamificationState() {
   if (typeof window === 'undefined' || !window.localStorage) {
     return { ...DEFAULT_STATE };
@@ -42,35 +83,7 @@ export function loadGamificationState() {
   try {
     const raw = window.localStorage.getItem(GAMIFICATION_STORAGE_KEY);
     if (!raw) return { ...DEFAULT_STATE };
-    const parsed = JSON.parse(raw);
-    return {
-      totalXp: Math.max(0, Number(parsed.totalXp) || 0),
-      lifetimeTonnageKg: Math.max(0, Number(parsed.lifetimeTonnageKg) || 0),
-      unlockedBadgeIds: Array.isArray(parsed.unlockedBadgeIds) ? parsed.unlockedBadgeIds : [],
-      weeklyStreak: Math.max(0, Number(parsed.weeklyStreak) || 0),
-      dailyStreak: Math.max(0, Number(parsed.dailyStreak) || 0),
-      lastActiveDate: parsed.lastActiveDate || null,
-      shieldsCount: Math.min(2, Math.max(0, Number(parsed.shieldsCount) || 0)),
-      lastActiveWeekKey: parsed.lastActiveWeekKey || null,
-      lastRestDayDate: parsed.lastRestDayDate || null,
-      claimedWeeklyDays: Array.isArray(parsed.claimedWeeklyDays) ? parsed.claimedWeeklyDays : [],
-      ironCoins: typeof parsed.ironCoins === 'number' ? Math.max(0, parsed.ironCoins) : 100,
-      rpgBranches: {
-        push: Math.max(0, Number(parsed.rpgBranches?.push) || 0),
-        pull: Math.max(0, Number(parsed.rpgBranches?.pull) || 0),
-        legs: Math.max(0, Number(parsed.rpgBranches?.legs) || 0),
-        core: Math.max(0, Number(parsed.rpgBranches?.core) || 0)
-      },
-      unlockedThemes: Array.isArray(parsed.unlockedThemes) && parsed.unlockedThemes.length > 0 ? parsed.unlockedThemes : ['blue', 'orange'],
-      equippedTheme: parsed.equippedTheme || 'blue',
-      unlockedTitles: Array.isArray(parsed.unlockedTitles) && parsed.unlockedTitles.length > 0 ? parsed.unlockedTitles : ['iniciante_ferro'],
-      equippedTitle: parsed.equippedTitle || 'iniciante_ferro',
-      claimedBossMonths: Array.isArray(parsed.claimedBossMonths) ? parsed.claimedBossMonths : [],
-      leagueTier: parsed.leagueTier || 'bronze',
-      claimedRaidMilestones: Array.isArray(parsed.claimedRaidMilestones) ? parsed.claimedRaidMilestones : [],
-      claimedDietDates: Array.isArray(parsed.claimedDietDates) ? parsed.claimedDietDates : [],
-      claimedWalkingDates: Array.isArray(parsed.claimedWalkingDates) ? parsed.claimedWalkingDates : []
-    };
+    return normalizeGamificationState(JSON.parse(raw));
   } catch {
     return { ...DEFAULT_STATE };
   }
@@ -79,35 +92,7 @@ export function loadGamificationState() {
 export function saveGamificationState(state) {
   if (typeof window === 'undefined' || !window.localStorage) return;
   try {
-    const safeState = {
-      totalXp: Math.max(0, Number(state?.totalXp) || 0),
-      lifetimeTonnageKg: Math.max(0, Number(state?.lifetimeTonnageKg) || 0),
-      unlockedBadgeIds: Array.isArray(state?.unlockedBadgeIds) ? state.unlockedBadgeIds : [],
-      weeklyStreak: Math.max(0, Number(state?.weeklyStreak) || 0),
-      dailyStreak: Math.max(0, Number(state?.dailyStreak) || 0),
-      lastActiveDate: state?.lastActiveDate || null,
-      shieldsCount: Math.min(2, Math.max(0, Number(state?.shieldsCount) || 0)),
-      lastActiveWeekKey: state?.lastActiveWeekKey || null,
-      lastRestDayDate: state?.lastRestDayDate || null,
-      claimedWeeklyDays: Array.isArray(state?.claimedWeeklyDays) ? state.claimedWeeklyDays : [],
-      ironCoins: Math.max(0, Number(state?.ironCoins) || 0),
-      rpgBranches: {
-        push: Math.max(0, Number(state?.rpgBranches?.push) || 0),
-        pull: Math.max(0, Number(state?.rpgBranches?.pull) || 0),
-        legs: Math.max(0, Number(state?.rpgBranches?.legs) || 0),
-        core: Math.max(0, Number(state?.rpgBranches?.core) || 0)
-      },
-      unlockedThemes: Array.isArray(state?.unlockedThemes) ? state.unlockedThemes : ['blue', 'orange'],
-      equippedTheme: state?.equippedTheme || 'blue',
-      unlockedTitles: Array.isArray(state?.unlockedTitles) ? state.unlockedTitles : ['iniciante_ferro'],
-      equippedTitle: state?.equippedTitle || 'iniciante_ferro',
-      claimedBossMonths: Array.isArray(state?.claimedBossMonths) ? state.claimedBossMonths : [],
-      leagueTier: state?.leagueTier || 'bronze',
-      claimedRaidMilestones: Array.isArray(state?.claimedRaidMilestones) ? state.claimedRaidMilestones : [],
-      claimedDietDates: Array.isArray(state?.claimedDietDates) ? state.claimedDietDates : [],
-      claimedWalkingDates: Array.isArray(state?.claimedWalkingDates) ? state.claimedWalkingDates : []
-    };
-    window.localStorage.setItem(GAMIFICATION_STORAGE_KEY, JSON.stringify(safeState));
+    window.localStorage.setItem(GAMIFICATION_STORAGE_KEY, JSON.stringify(normalizeGamificationState(state)));
   } catch {
     // Silêncio em caso de cota cheia
   }

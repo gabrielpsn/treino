@@ -67,7 +67,7 @@ O `engine/` é o coração do app: funções puras, sem imports de Vue, totalmen
 cobertas por testes unitários. O `App.vue` cuida só de estado, persistência e
 renderização.
 
-Suíte: **289 testes unitários** (`vitest run`) e **44 testes de navegador**
+Suíte: **591 testes unitários** (`vitest run`) e **102 testes de navegador**
 (Playwright, `npm run test:visual`). `npm run verify` roda os unitários e o
 build, que é o mesmo gate do CI.
 
@@ -144,7 +144,9 @@ mesma ficha é recusado com aviso.
 
 Os botões 💾 e 📂 no cabeçalho exportam e restauram **todos** os dados do
 usuário: perfil, plano, exercícios próprios, cargas, sessões, séries e
-calendário semanal. `src/db/backup.js` centraliza os dois lados.
+calendário semanal, além de XP/moedas/conquistas e o histórico de caminhada
+(que vivem no `localStorage`). `src/db/backup.js` centraliza os dois lados.
+Backups antigos, sem esses campos, não apagam o XP nem a caminhada atuais.
 
 A restauração é uma **substituição**, não uma fusão: um backup descreve um estado
 completo do app, e aplicar isso por cima de dados diferentes exigiria inventar
@@ -199,6 +201,100 @@ Configuração (Cloudflare Workers):
 - `GEMINI_MODEL` (padrão `gemini-3.5-flash`), `GEMINI_API_BASE` (padrão
   `https://generativelanguage.googleapis.com/v1beta`) e `REQUEST_TIMEOUT_MS`
   são opcionais.
+
+## Avaliações (feedback)
+
+`POST /api/feedback` grava cada avaliação no Workers KV (binding `FEEDBACK_KV`),
+com chave `fb:<data ISO>:<id>`. O log do Worker registra só nota e categoria,
+nunca nome nem contato. Sem o binding configurado, a rota responde `503` e o app
+mantém a avaliação como pendente no aparelho, oferecendo o envio por WhatsApp.
+
+Configuração (uma vez):
+
+```bash
+npx wrangler kv namespace create FEEDBACK_KV
+```
+
+Copie o `id` gerado para o `wrangler.jsonc`:
+
+```jsonc
+"kv_namespaces": [{ "binding": "FEEDBACK_KV", "id": "<id gerado>" }]
+```
+
+Para ler as avaliações:
+
+```bash
+npx wrangler kv key list --binding FEEDBACK_KV --remote --prefix fb:
+npx wrangler kv key get --binding FEEDBACK_KV --remote "<chave>"
+```
+
+## Evolução corporal, deload, coach e vídeos
+
+- **Evolução Corporal** (menu lateral): peso e medidas por dia (tabela
+  `body_metrics`, schema v5), gráfico com média de 7 dias e fotos de progresso
+  (`progress_photos`, comprimidas para 1080 px). As fotos **não** entram no
+  backup nem na nuvem.
+- **Ajuste automático da dieta** (`engine/bodyProgress.js`): regressão linear do
+  peso nas últimas 4 semanas comparada à faixa saudável do objetivo. Só sugere
+  com pelo menos 4 pesagens em 14 dias, muda no máximo 150 kcal por vez e nunca
+  desce abaixo do piso (1200/1500 kcal ou o BMR). Ao aplicar, o carboidrato
+  absorve a diferença.
+- **Deload automático** (`engine/deload.js`): sugere uma semana leve quando a
+  maioria dos exercícios não melhora o 1RM estimado em 3+ sessões, após 8
+  semanas seguidas de treino ou com muitas séries até a falha. Aceito, cada
+  exercício mostra ~60% da carga e metade das séries.
+- **Coach da semana** (aba Histórico): resumo local sempre disponível; a análise
+  por IA (`/api/coach/weekly`) recebe só números agregados.
+- **Ver execução**: botão de busca no YouTube e link de vídeo próprio por
+  exercício (só https de YouTube, Vimeo, Instagram, TikTok ou Drive).
+
+## Recursos online (D1)
+
+Sincronização na nuvem, ligas reais, modo personal e lembretes usam um banco
+Cloudflare D1 (binding `DB`). Não há e-mail nem senha: o app cria uma conta
+anônima (`id` + token secreto) e mostra ao usuário um **código de acesso**
+(`<id>.<token>`). O servidor guarda só o SHA-256 do token.
+
+| Rota | O que faz |
+|---|---|
+| `POST/DELETE /api/account` | cria a conta anônima / apaga tudo da conta |
+| `GET/PUT /api/sync` | baixa/envia o backup (mesmo JSON do botão de backup, sem fotos); `409` se outro aparelho enviou algo mais novo |
+| `/api/leagues…` | ligas por código de convite; ranking semanal só com apelidos |
+| `/api/trainer…` | turmas do personal, resumo do aluno (com consentimento ao entrar), envio e aceite de fichas |
+| `/api/push…` | inscrição dos lembretes (Web Push) |
+| `POST /api/coach/weekly` | comentário da IA sobre o resumo numérico da semana |
+
+Configuração (uma vez):
+
+```bash
+npx wrangler d1 create overload-db
+```
+
+Copie o `database_id` para o `wrangler.jsonc` (bloco `d1_databases`, binding `DB`) e aplique o esquema:
+
+```bash
+npx wrangler d1 migrations apply overload-db --remote
+```
+
+Lembretes por Web Push precisam de um par de chaves VAPID:
+
+```bash
+node scripts/generate-vapid.mjs
+```
+
+A chave pública vai em `vars.VAPID_PUBLIC_KEY` no `wrangler.jsonc`; a privada vira secret:
+
+```bash
+npx wrangler secret put VAPID_PRIVATE_JWK
+```
+
+O Cron Trigger (`*/15 * * * *`) dispara os lembretes vencidos. O push vai sem
+payload (só a assinatura VAPID), e o service worker mostra o texto fixo de
+`public/push-sw.js`.
+
+Integração com Google Fit / Health Connect **não** é possível num PWA: o
+Health Connect só é acessível por app Android nativo, e as APIs do Google Fit
+foram descontinuadas.
 
 ## Deploy
 
