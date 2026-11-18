@@ -74,10 +74,11 @@
           </div>
           <h2 class="text-lg font-black text-[#0F172A] leading-tight">{{ focusExercise.name }}</h2>
           <p class="text-xs text-[#64748B] mt-0.5">
-            {{ focusExercise.defaultSeries }}
+            {{ seriesLabel(focusExercise.defaultSeries) }}
             <template v-if="focusExercise.aiReps"> • {{ focusExercise.aiReps }} reps</template>
             • Descanso: {{ focusExercise.rest }}
           </p>
+          <p v-if="programHint" id="training-program-hint" class="text-[11px] font-bold text-[#0066FF] mt-1">🎓 {{ programHint }}</p>
           <p v-if="focusExercise.tips" class="text-[11px] text-[#64748B] italic mt-1">💡 {{ focusExercise.tips }}</p>
         </div>
 
@@ -286,7 +287,10 @@ const props = defineProps({
   split: { type: Object, default: null },
   logs: { type: Object, default: () => ({}) },
   lastSets: { type: Object, default: () => ({}) },
-  startedAt: { type: String, default: null }
+  startedAt: { type: String, default: null },
+  // Programa iniciante: séries da semana e orientação de esforço.
+  seriesLabel: { type: Function, default: series => series },
+  programHint: { type: String, default: '' }
 });
 
 const emit = defineEmits(['close', 'toggle', 'update', 'rest', 'finish', 'swap', 'add-set', 'update-set', 'toggle-set']);

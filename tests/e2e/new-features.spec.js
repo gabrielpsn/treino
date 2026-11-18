@@ -352,3 +352,54 @@ test.describe('caminhada em segundo plano', () => {
     await expect(page.locator('#display-total-steps')).toContainText('3.456');
   });
 });
+
+test.describe('programa iniciante', () => {
+  test('iniciante recebe a oferta, começa e vê a prescrição da semana na ficha e no Modo Treino', async ({ page }) => {
+    await page.goto('/');
+    await completeOnboarding(page, { name: 'Bia Novata', experience: 'beginner' });
+
+    await expect(page.locator('#program-offer')).toBeVisible();
+    await page.locator('#btn-start-program').click();
+    await expect(page.locator('#program-current-week')).toContainText('Semana 1: Aprender os movimentos');
+    await page.locator('#modal-program-close').click();
+
+    await expect(page.locator('#program-progress-card')).toContainText('Semana 1 de 4');
+    await page.locator('#tab-btn-workout').click();
+    await expect(page.locator('[id^="program-hint-"]').first()).toContainText('2 séries de 12-15');
+
+    await page.locator('#btn-start-today').click();
+    await expect(page.locator('#training-program-hint')).toContainText('4 repetições sobrando');
+  });
+
+  test('após 4 semanas mostra a reavaliação e concluir dá XP', async ({ page }) => {
+    await page.goto('/');
+    await completeOnboarding(page, { name: 'Bia Veterana', experience: 'beginner' });
+    await page.locator('#btn-start-program').click();
+    await page.locator('#modal-program-close').click();
+
+    // Simula início há 29 dias.
+    await page.evaluate(() => {
+      const d = new Date(Date.now() - 29 * 86_400_000);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      localStorage.setItem('overload_beginner_program', JSON.stringify({ startedOn: key }));
+    });
+    await page.reload();
+
+    await page.locator('#program-review-card').click();
+    await expect(page.locator('#program-review')).toBeVisible();
+    await page.locator('#btn-program-complete').click();
+    await expect(page.locator('#program-completed')).toBeVisible();
+    await expect(page.locator('#day-summary')).toContainText('Nível');
+    const xp = await page.evaluate(() => JSON.parse(localStorage.getItem('treinopro_gamification_state')).totalXp);
+    expect(xp).toBeGreaterThanOrEqual(300);
+  });
+
+  test('quem não é iniciante não recebe a oferta, mas acha o programa no menu', async ({ page }) => {
+    await page.goto('/');
+    await completeOnboarding(page, { name: 'Carlos Firme', experience: 'intermediate' });
+    await expect(page.locator('#program-offer')).toHaveCount(0);
+    await page.locator('#btn-open-menu').click();
+    await page.locator('#btn-drawer-program').click();
+    await expect(page.locator('#btn-program-start-modal')).toBeVisible();
+  });
+});

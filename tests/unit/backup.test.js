@@ -687,3 +687,28 @@ describe('backup de medições corporais e vídeos', () => {
   });
 });
 
+
+describe('backup do programa iniciante', () => {
+  it('leva e restaura o estado do programa; arquivo antigo não apaga', async () => {
+    const make = (entries = {}) => {
+      const map = new Map(Object.entries(entries));
+      return {
+        get length() { return map.size; }, key: i => [...map.keys()][i] ?? null,
+        getItem: k => map.get(k) ?? null, setItem: (k, v) => map.set(k, String(v)), removeItem: k => map.delete(k), map
+      };
+    };
+    const source = make({ overload_beginner_program: JSON.stringify({ startedOn: '2026-03-02' }) });
+    const exported = await buildBackup({ database: freshDatabase(), storage: source });
+    expect(exported.beginnerProgram).toEqual({ startedOn: '2026-03-02', completedOn: null, dismissed: false });
+
+    const target = make();
+    await restoreBackup(parseBackupText(JSON.stringify(exported)).backup, { database: freshDatabase(), storage: target });
+    expect(JSON.parse(target.map.get('overload_beginner_program')).startedOn).toBe('2026-03-02');
+
+    const legacy = { ...exported };
+    delete legacy.beginnerProgram;
+    const keep = make({ overload_beginner_program: JSON.stringify({ startedOn: '2026-01-01' }) });
+    await restoreBackup(parseBackupText(JSON.stringify(legacy)).backup, { database: freshDatabase(), storage: keep });
+    expect(JSON.parse(keep.map.get('overload_beginner_program')).startedOn).toBe('2026-01-01');
+  });
+});

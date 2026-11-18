@@ -101,8 +101,12 @@ test('Histórico: gráfico mostra a progressão de carga com delta desde o 1º t
   ];
   await importBackup(page, backup);
 
-  await page.locator('#tab-btn-history').click();
-  await expect(page.locator('#screen-history')).toBeVisible();
+  // A restauração termina em segundo plano e volta o app para a aba Treino;
+  // se o clique chegar antes disso, ele é desfeito. Repete até a aba ficar.
+  await expect(async () => {
+    await page.locator('#tab-btn-history').click();
+    await expect(page.locator('#screen-history')).toBeVisible({ timeout: 1000 });
+  }).toPass({ timeout: 10000 });
 
   const chart = page.locator('#history-exercise-chart');
   await expect(chart).toBeVisible();
@@ -119,8 +123,12 @@ test('Histórico: exercício com uma única sessão não vira gráfico', async (
   backup.sessions = [sessionWithSet('sess-unico', '2026-09-01', target.splitId, target.exerciseId, 40)];
   await importBackup(page, backup);
 
-  await page.locator('#tab-btn-history').click();
-  await expect(page.locator('#screen-history')).toBeVisible();
+  // A restauração termina em segundo plano e volta o app para a aba Treino;
+  // se o clique chegar antes disso, ele é desfeito. Repete até a aba ficar.
+  await expect(async () => {
+    await page.locator('#tab-btn-history').click();
+    await expect(page.locator('#screen-history')).toBeVisible({ timeout: 1000 });
+  }).toPass({ timeout: 10000 });
 
   // A sessão aparece na lista, mas sem segundo ponto não há linha a desenhar.
   await expect(page.locator('article[id^="history-session-"]')).toHaveCount(1);

@@ -203,6 +203,16 @@
         @open-body-progress="isBodyProgressOpen = true"
       />
 
+      <!-- Programa guiado para iniciantes (oferta, progresso ou reavaliação) -->
+      <ProgramCard
+        v-if="activePlan"
+        :info="programInfo"
+        :offer="shouldOfferProgram"
+        @start="startProgram"
+        @dismiss="dismissProgram"
+        @open="isProgramOpen = true"
+      />
+
       <!-- Resumo do dia e conquistas: recolhido por padrão para não esconder o treino -->
       <section id="day-summary" class="rounded-2xl border border-[#E2E8F0] bg-white shadow-xs">
         <button
@@ -301,1410 +311,16 @@
       </section>
 
       <!-- ABA 1: FICHAS DE TREINO -->
-      <section
-        v-show="currentMainTab === 'workout'"
-        id="screen-workout"
-        role="tabpanel"
-        aria-labelledby="tab-btn-workout"
-        tabindex="0"
-        class="space-y-6 focus:outline-none"
-      >
-        <!-- Sugestão / estado do deload automático -->
-        <DeloadBanner
-          :evaluation="deloadEvaluation"
-          @start="startDeload"
-          @dismiss="dismissDeload"
-          @end="endDeload"
-        />
-
-        <!-- Seletor de Fichas (Sub-tabs A, B, C...) -->
-        <div id="workout-sheet-anchor" class="flex items-center justify-between flex-wrap gap-3 border-b border-[#E2E8F0] pb-4 scroll-mt-24">
-          <div>
-            <h3 class="text-xl font-extrabold text-[#0066FF] tracking-tight flex items-center gap-2">
-              Sua ficha de treino <HelpTip term="ficha" />
-            </h3>
-            <p class="text-xs text-[#64748B]">
-              Escolha a ficha do dia, faça os exercícios e anote o peso e as repetições. O app salva sozinho.
-              <button type="button" id="btn-open-glossary-inline" class="font-bold text-[#0066FF] underline" @click="openGlossary">Termos da musculação</button>
-            </p>
-          </div>
-
-          <!-- Seletor de Fichas (Sub-tabs A, B, C...) em scroll horizontal -->
-          <div class="w-full flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full scrollbar-none" role="tablist" aria-label="Seletor de Fichas de Treino">
-            <button 
-              v-for="split in activePlan?.workoutSplits" 
-              :key="split.id"
-              :id="`btn-split-${split.id}`"
-              role="tab"
-              :aria-selected="currentSplitTab === split.id"
-              @click="currentSplitTab = split.id"
-              :class="currentSplitTab === split.id ? 'bg-[#0066FF] text-white font-bold shadow-xs' : 'text-[#64748B] hover:text-[#0066FF] bg-white border border-[#E2E8F0]'"
-              class="tap-btn px-4 py-2 rounded-xl text-xs md:text-sm font-bold transition-all flex-shrink-0"
-            >
-              {{ getSplitTabLabel(split.title) }}
-            </button>
-          </div>
-
-          <!-- Botões de Ação Principais: Grade de 12 colunas no mobile (6 colunas = 50% cada, evitando espaços vazios) -->
-          <div class="grid grid-cols-12 gap-2 w-full pt-1 sm:flex sm:flex-wrap sm:items-center">
-            <!-- Botão para o usuário criar sua própria ficha de treino -->
-            <button
-              type="button"
-              id="btn-open-create-split"
-              @click="openCreateSplitModal"
-              class="tap-btn col-span-6 sm:w-auto w-full min-h-[44px] px-3.5 py-2 rounded-xl text-xs md:text-sm font-bold bg-white text-[#0F172A] hover:bg-[#F1F5F9] border border-[#E2E8F0] transition-all flex items-center justify-center gap-1.5 shadow-xs"
-              title="Criar sua própria ficha de treino personalizada"
-            >
-              <span aria-hidden="true">➕</span>
-              <span>Criar Ficha</span>
-            </button>
-
-            <button
-              type="button"
-              id="btn-open-custom-exercises"
-              @click="openCustomExercises"
-              class="tap-btn col-span-6 sm:w-auto w-full min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-bold border border-[#E2E8F0] bg-white text-[#0F172A] hover:bg-[#F8FAFC] transition-all flex items-center justify-center shadow-xs"
-              title="Criar e gerenciar seus próprios exercícios"
-            >
-              + Meus exercícios
-            </button>
-
-            <!-- Tela cheia para executar o treino -->
-            <button
-              v-if="trainingSplit"
-              type="button"
-              id="btn-open-training-mode"
-              @click="openTrainingMode"
-              class="tap-btn col-span-6 sm:w-auto w-full min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-bold bg-[#F59E0B] text-[#0F172A] hover:bg-[#D97706] border border-[#D97706] transition-all flex items-center justify-center gap-1 shadow-xs"
-              title="Abrir o modo treino em tela cheia"
-            >
-              <span aria-hidden="true">▶</span> Modo Treino
-            </button>
-
-            <!-- Geração por IA -->
-            <button
-              v-if="userProfile"
-              type="button"
-              id="btn-generate-ai-plan"
-              @click="generatePlanWithAi"
-              :disabled="isAiPlanLoading"
-              class="tap-btn col-span-6 sm:w-auto w-full min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-bold border transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 shadow-xs"
-              :class="isAiPlanLoading
-                ? 'border-[#E2E8F0] bg-white text-[#64748B]'
-                : 'border-[#0066FF]/30 bg-white text-[#0066FF] hover:bg-[#F1F5F9]'"
-              :title="isAiPlanLoading ? 'Gerando ficha com IA...' : 'Gerar a ficha e as metas com IA (Gemini)'"
-            >
-              <span aria-hidden="true">{{ isAiPlanLoading ? '⏳' : '🤖' }}</span>
-              {{ isAiPlanLoading ? 'Gerando...' : 'Gerar com IA' }}
-            </button>
-
-            <button
-              v-if="activeSessionId"
-              type="button"
-              id="btn-finish-session"
-              @click="finishCurrentSession"
-              class="tap-btn col-span-12 sm:w-auto w-full min-h-[44px] px-4 py-2 rounded-xl text-xs font-bold bg-[#0066FF] hover:bg-[#0052cc] text-white transition-all flex items-center justify-center shadow-xs"
-              title="Encerrar este treino e registrá-lo no histórico"
-            >
-              ✓ Concluir treino
-            </button>
-          </div>
-
-          <!-- Origem do plano e retorno da IA -->
-          <p
-            id="ai-plan-status"
-            role="status"
-            aria-live="polite"
-            class="w-full text-xs leading-relaxed"
-            :class="aiPlanMessage?.tone === 'error' ? 'text-rose-500' : (aiPlanMessage ? 'text-[#0066FF]' : 'text-[#64748B]')"
-          >
-            <template v-if="aiPlanMessage">{{ aiPlanMessage.text }}</template>
-            <template v-else-if="activePlan?.planSource === 'trainer'">
-              🧑‍🏫 Ficha enviada pelo seu personal{{ activePlan.trainerName ? ` (${activePlan.trainerName})` : '' }}.
-            </template>
-            <template v-else-if="activePlan?.planSource === 'ai'">
-              🤖 Ficha personalizada pela IA para o seu objetivo e suas restrições.
-            </template>
-            <template v-else>
-              ⚡ Ficha montada pelo app para o seu objetivo. Quer outra opção? Toque em "Gerar com IA".
-            </template>
-          </p>
-        </div>
-
-        <!-- Widget de Tonelagem e PRs em Tempo Real na Sessão -->
-        <WorkoutTonnageLiveWidget v-bind="liveSessionGamification" />
-
-        <!-- Lista de Exercícios da Ficha Ativa -->
-        <div v-for="split in activePlan?.workoutSplits" :key="split.id">
-          <div v-if="currentSplitTab === split.id" :id="`container-${split.id}`" class="space-y-4">
-
-            <!-- Barra de Ações e Filtros por Grupo Muscular -->
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-              <!-- Filtros rápidos por grupo muscular -->
-              <div class="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full text-xs">
-                <span class="text-[11px] font-semibold text-[#64748B] uppercase tracking-wider hidden md:inline-block mr-1">Músculos:</span>
-                <button
-                  type="button"
-                  :id="`btn-filter-all-${split.id}`"
-                  @click="activeMuscleFilter[split.id] = 'all'"
-                  :class="(!activeMuscleFilter[split.id] || activeMuscleFilter[split.id] === 'all')
-                    ? 'bg-[#0066FF] text-white font-bold shadow-xs'
-                    : 'bg-white text-[#64748B] hover:text-[#0F172A] hover:bg-[#F1F5F9] border border-[#E2E8F0]'"
-                  class="tap-btn px-2.5 py-1 rounded-xl text-xs transition-colors flex-shrink-0"
-                >
-                  Todos ({{ split.exercises.length }})
-                </button>
-
-                <button
-                  v-for="m in getSplitMuscleGroups(split)"
-                  :key="m"
-                  :id="`btn-filter-${split.id}-${m}`"
-                  @click="toggleMuscleFilter(split.id, m)"
-                  :class="activeMuscleFilter[split.id] === m
-                    ? 'bg-[#0066FF] text-white font-bold shadow-xs'
-                    : 'bg-white text-[#64748B] hover:text-[#0F172A] hover:bg-[#F1F5F9] border border-[#E2E8F0]'"
-                  class="tap-btn px-2.5 py-1 rounded-xl text-xs transition-colors flex items-center gap-1.5 flex-shrink-0"
-                >
-                  <span class="w-1.5 h-1.5 rounded-full" :class="getMuscleDotColor(m)"></span>
-                  <span>{{ MUSCLE_LABELS[m] || m }}</span>
-                  <span class="text-[10px] opacity-75">({{ getMuscleCountInSplit(split, m) }})</span>
-                </button>
-              </div>
-
-              <!-- Fora do modo de edição, só um botão: menos opções na tela de treino. -->
-              <button
-                type="button"
-                :id="`btn-sheet-edit-${split.id}`"
-                :aria-pressed="isSheetEditMode ? 'true' : 'false'"
-                @click="isSheetEditMode = !isSheetEditMode; cancelRemoveExercise()"
-                class="tap-btn min-h-10 px-3 py-1.5 rounded-xl text-xs font-bold border transition-colors flex items-center justify-center gap-1 shadow-xs w-full sm:w-auto"
-                :class="isSheetEditMode ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-white border-[#E2E8F0] text-[#0F172A] hover:bg-[#F1F5F9]'"
-              >
-                {{ isSheetEditMode ? '✓ Terminar edição' : '✏️ Editar ficha' }}
-              </button>
-
-              <!-- Botões de ação do split (Grade de 2 colunas no mobile para preencher o espaço) -->
-              <div v-if="isSheetEditMode" class="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto self-end sm:self-auto flex-shrink-0">
-                <button
-                  type="button"
-                  :id="`btn-edit-split-${split.id}`"
-                  @click="openEditSplitModal(split)"
-                  class="tap-btn min-h-10 px-2.5 py-1.5 rounded-xl text-xs font-semibold border border-[#E2E8F0] bg-white text-[#0F172A] hover:bg-[#F1F5F9] transition-colors flex items-center justify-center gap-1 shadow-xs"
-                  title="Editar nome e cor desta ficha"
-                >
-                  <span aria-hidden="true">✏️</span>
-                  <span>Editar</span>
-                </button>
-
-                <button
-                  v-if="activePlan?.workoutSplits?.length > 1"
-                  type="button"
-                  :id="`btn-delete-split-${split.id}`"
-                  @click="askDeleteSplit(split)"
-                  class="tap-btn min-h-10 px-2.5 py-1.5 rounded-xl text-xs font-semibold border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors flex items-center justify-center gap-1 shadow-xs"
-                  title="Excluir esta ficha de treino"
-                >
-                  <span aria-hidden="true">🗑</span>
-                  <span>Excluir</span>
-                </button>
-
-                <button
-                  type="button"
-                  :id="`btn-group-by-muscle-${split.id}`"
-                  @click="sortSplitByMuscle(split.id)"
-                  class="tap-btn min-h-10 px-2.5 py-1.5 rounded-xl text-xs font-semibold border border-[#E2E8F0] bg-white text-[#64748B] hover:text-[#0F172A] hover:bg-[#F1F5F9] transition-colors flex items-center justify-center gap-1 shadow-xs"
-                  title="Organizar e agrupar exercícios por grupo muscular"
-                >
-                  <span aria-hidden="true">⚡</span>
-                  <span>Agrupar</span>
-                </button>
-
-                <button
-                  type="button"
-                  :id="`btn-add-exercise-${split.id}`"
-                  @click="openAdderFor(split.id)"
-                  :class="activePlan?.workoutSplits?.length > 1 ? 'col-span-1' : 'col-span-2 sm:col-span-1'"
-                  class="tap-btn min-h-10 px-3 py-1.5 rounded-xl text-xs font-bold border border-[#F59E0B] bg-[#F59E0B] text-[#0F172A] hover:bg-[#D97706] transition-colors flex items-center justify-center shadow-xs"
-                  title="Adicionar um exercício a esta ficha"
-                >
-                  + Adicionar exercício
-                </button>
-              </div>
-            </div>
-
-            <!-- Confirmação de Exclusão da Ficha -->
-            <div
-              v-if="pendingDeleteSplit?.id === split.id"
-              :id="`confirm-delete-split-${split.id}`"
-              class="p-4 rounded-2xl bg-rose-50 border border-rose-200 shadow-sm"
-              role="alertdialog"
-              :aria-label="`Confirmar exclusão da ficha ${split.title}`"
-            >
-              <p class="text-xs sm:text-sm font-bold text-rose-800 mb-2.5">
-                Tem certeza que deseja excluir a ficha <strong>{{ split.title }}</strong>? Os exercícios serão removidos desta rotina.
-              </p>
-              <div class="flex gap-2.5">
-                <button
-                  type="button"
-                  :id="`btn-confirm-delete-split-${split.id}`"
-                  @click="confirmDeleteSplit(split.id)"
-                  class="min-h-11 px-4 rounded-xl bg-rose-600 text-white text-xs font-bold hover:bg-rose-500 active:bg-rose-700 transition-colors shadow-xs"
-                >
-                  Sim, excluir ficha
-                </button>
-                <button
-                  type="button"
-                  :id="`btn-cancel-delete-split-${split.id}`"
-                  @click="pendingDeleteSplit = null"
-                  class="min-h-11 px-4 rounded-xl bg-white border border-[#E2E8F0] text-[#0F172A] text-xs font-bold hover:bg-[#F1F5F9] active:bg-[#E2E8F0] transition-colors shadow-xs"
-                >
-                  Cancelar
-                </button>
-              </div>
-            </div>
-            
-            <!-- Descrição / Dicas do Split -->
-            <div :class="getSplitAccentBg(split)" class="p-4 rounded-2xl border text-xs sm:text-sm flex items-start justify-between gap-3 shadow-xs">
-              <div>
-                <strong>{{ split.title }}:</strong> {{ split.subtitle }}
-              </div>
-            </div>
-
-            <!-- Resumo Métrico & Mapa Anatômico da Sessão -->
-            <div class="p-4 rounded-2xl bg-white border border-[#E2E8F0] shadow-xs space-y-3">
-              <!-- Métricas Rápidas da Sessão (Exercícios, Séries, Tempo, Calorias) -->
-              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
-                <div class="p-2.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] shadow-xs">
-                  <p class="text-[10px] uppercase font-bold text-[#64748B]">Exercícios</p>
-                  <p class="text-base font-black text-[#0F172A]">{{ split.exercises.length }}</p>
-                </div>
-                <div class="p-2.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] shadow-xs">
-                  <p class="text-[10px] uppercase font-bold text-[#64748B]">Séries Totais</p>
-                  <p class="text-base font-black text-[#0066FF]">{{ split.exercises.length * 3 }}</p>
-                </div>
-                <div class="p-2.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] shadow-xs">
-                  <p class="text-[10px] uppercase font-bold text-[#64748B]">Tempo Estimado</p>
-                  <p class="text-base font-black text-[#0F172A]">~{{ split.exercises.length * 8 }} min</p>
-                </div>
-                <div class="p-2.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] shadow-xs">
-                  <p class="text-[10px] uppercase font-bold text-[#64748B]">Gasto Estimado</p>
-                  <p class="text-base font-black text-[#F59E0B]">~{{ split.exercises.length * 45 }} kcal</p>
-                </div>
-              </div>
-
-              <!-- Botão para Alternar / Exibir Mapa Anatômico -->
-              <div class="flex items-center justify-between pt-1">
-                <div class="flex items-center gap-2">
-                  <span class="text-xs font-black text-[#0F172A] uppercase tracking-wider flex items-center gap-1.5">
-                    <span>💪</span> Músculos Ativos Deste Treino
-                  </span>
-                  <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-[#0066FF]/10 text-[#0066FF] border border-[#0066FF]/20">
-                    {{ getSplitMuscleGroups(split).length }} grupos
-                  </span>
-                </div>
-
-                <button
-                  type="button"
-                  :id="`btn-toggle-body-map-${split.id}`"
-                  @click="showSplitBodyMap = !showSplitBodyMap"
-                  class="tap-btn text-xs font-bold text-[#0066FF] hover:text-[#0052cc] flex items-center gap-1 transition-colors"
-                >
-                  <span>{{ showSplitBodyMap ? 'Ocultar Mapa' : 'Ver Mapa Anatômico' }}</span>
-                  <span class="text-[10px]">{{ showSplitBodyMap ? '▲' : '▼' }}</span>
-                </button>
-              </div>
-
-              <!-- Diagrama Anatômico Integrado -->
-              <div v-if="showSplitBodyMap" :id="`split-body-map-${split.id}`" class="p-3 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] flex justify-center shadow-xs">
-                <MuscleBodyMap
-                  :highlighted-muscles="getSplitMuscleGroups(split)"
-                  :id-prefix="`split-${split.id}-`"
-                  :show-controls="true"
-                  :show-legend="true"
-                />
-              </div>
-            </div>
-
-            <!-- Cards de Exercícios Divididos por Grupos Musculares -->
-            <div class="grid gap-3">
-              <template v-for="(ex, index) in getVisibleExercises(split)" :key="ex.id">
-                <!-- Cabeçalho de Divisão do Grupo Muscular -->
-                <div
-                  v-if="shouldShowMuscleHeader(split, ex, index)"
-                  :id="`muscle-header-${split.id}-${ex.muscle}`"
-                  class="flex items-center justify-between gap-3 pt-3 pb-1 border-b border-[#E2E8F0] mt-1"
-                >
-                  <div class="flex items-center gap-2">
-                    <span class="w-2.5 h-2.5 rounded-full" :class="getMuscleDotColor(ex.muscle)"></span>
-                    <h5 class="text-xs font-black tracking-wider uppercase text-[#0F172A]">
-                      {{ MUSCLE_LABELS[ex.muscle] || ex.muscle }}
-                    </h5>
-                    <span class="text-[11px] font-medium text-[#64748B]">
-                      • {{ getMuscleCountInSplit(split, ex.muscle) }} {{ getMuscleCountInSplit(split, ex.muscle) === 1 ? 'exercício' : 'exercícios' }}
-                    </span>
-                  </div>
-                  <span :class="getMuscleBadgeClass(ex.muscle)" class="text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider hidden sm:inline-block">
-                    Grupo Muscular
-                  </span>
-                </div>
-
-                <div 
-                  :id="`exercise-card-${ex.id}`"
-                  class="p-4 rounded-2xl border transition-all flex flex-col md:flex-row md:items-center justify-between gap-4 min-w-0"
-                  :class="workoutLogs[ex.id]?.isDone ? 'bg-[#F8FAFC] border-[#E2E8F0] opacity-80' : 'bg-white border-[#E2E8F0] hover:border-[#0066FF]/40 shadow-xs'"
-                >
-                  <!-- Lado Esquerdo: Checkbox + Miniatura + Título + Badges -->
-                  <div class="flex items-start md:items-center gap-3 flex-1 min-w-0">
-                    <div class="flex flex-col items-center gap-0.5 flex-shrink-0 mt-1 md:mt-0">
-                      <button 
-                        type="button"
-                        :id="`btn-check-${ex.id}`"
-                        @click="toggleExerciseCheck(ex.id, split.id)"
-                        :aria-pressed="!!workoutLogs[ex.id]?.isDone"
-                        :aria-label="workoutLogs[ex.id]?.isDone ? `Marcar ${ex.name} como pendente` : `Marcar ${ex.name} como concluído`"
-                        class="check-btn flex-shrink-0"
-                        :class="workoutLogs[ex.id]?.isDone ? 'bg-[#10B981] border-[#10B981] text-white font-black text-sm shadow-xs' : 'bg-white border-[#CBD5E1] hover:border-[#F59E0B] text-transparent'"
-                      >
-                        ✓
-                      </button>
-                      <span class="text-[9px] font-bold uppercase" :class="workoutLogs[ex.id]?.isDone ? 'text-emerald-600' : 'text-[#94A3B8]'" aria-hidden="true">
-                        {{ workoutLogs[ex.id]?.isDone ? 'Feito' : 'Feito?' }}
-                      </span>
-                    </div>
-
-                    <!-- Miniatura Visual do Exercício -->
-                    <button
-                      type="button"
-                      :id="`btn-thumb-${ex.id}`"
-                      @click="openExerciseDetails(ex)"
-                      class="w-12 h-12 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] overflow-hidden flex items-center justify-center flex-shrink-0 cursor-pointer hover:border-[#0066FF] transition-all shadow-xs group relative"
-                      title="Ver demonstração e músculos trabalhados"
-                    >
-                      <img
-                        v-if="ex.imageUrl"
-                        :src="ex.imageUrl"
-                        :alt="ex.name"
-                        class="w-full h-full object-cover group-hover:scale-110 transition-transform"
-                        loading="lazy"
-                      />
-                      <span v-else class="text-xl">🏋️</span>
-                      <span class="absolute inset-0 bg-[#0066FF]/10 opacity-0 group-hover:opacity-100 transition-opacity"></span>
-                    </button>
-
-                    <div class="space-y-1 min-w-0 flex-1">
-                      <!-- Badge do Grupo Muscular -->
-                      <div class="flex items-center gap-2">
-                        <span
-                          :id="`muscle-badge-${ex.id}`"
-                          :class="getMuscleBadgeClass(ex.muscle)"
-                          class="text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider inline-flex items-center gap-1"
-                        >
-                          <span class="w-1.5 h-1.5 rounded-full" :class="getMuscleDotColor(ex.muscle)"></span>
-                          {{ MUSCLE_LABELS[ex.muscle] || ex.muscle }}
-                        </span>
-                      </div>
-
-                      <div class="flex items-center gap-2 flex-wrap">
-                      <a 
-                        v-if="ex.imageUrl"
-                        :href="ex.imageUrl" 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        :id="`link-exercise-${ex.id}`"
-                        class="text-sm md:text-base font-bold transition-colors hover:underline flex items-center gap-1.5 group min-w-0"
-                        :class="workoutLogs[ex.id]?.isDone ? 'line-through text-[#64748B]' : 'text-[#0F172A] hover:text-[#0066FF]'"
-                        title="Ver demonstração do exercício (imagem externa)"
-                      >
-                        <span>{{ ex.name }}</span>
-                        <span class="text-xs opacity-60 group-hover:opacity-100 transition-opacity">↗</span>
-                      </a>
-                      <h4 
-                        v-else
-                        class="text-sm md:text-base font-bold transition-colors"
-                        :class="workoutLogs[ex.id]?.isDone ? 'line-through text-[#64748B]' : 'text-[#0F172A]'"
-                      >
-                        {{ ex.name }}
-                      </h4>
-
-                      <!-- Botão Ver Exemplo / Detalhes -->
-                      <button
-                        type="button"
-                        :id="`btn-details-${ex.id}`"
-                        @click="openExerciseDetails(ex)"
-                        class="tap-btn text-xs text-[#0066FF] hover:text-[#0052cc] font-bold inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-white border border-[#E2E8F0] transition-colors shadow-xs"
-                        title="Ver demonstração e detalhes anatômicos"
-                      >
-                        <span aria-hidden="true">▶</span>
-                        <span>Como fazer</span>
-                      </button>
-
-<button
-                    type="button"
-                    :id="`btn-swap-${ex.id}`"
-                    @click="openExercisePicker(ex, split.id)" 
-                    :aria-label="`Substituir exercício ${ex.name}`"
-                    class="action-btn text-[#64748B] hover:text-[#0066FF] border-[#E2E8F0]"
-                    style="width: auto; padding: 0 0.6rem;"
-                    title="Trocar por outro exercício (ex.: aparelho ocupado)"
-                  >
-                    <span aria-hidden="true">🔄</span>
-                    <span class="text-[10px] font-bold ml-0.5">Trocar</span>
-                  </button>
-
-                  <template v-if="isSheetEditMode">
-                  <button
-                    type="button"
-                    :id="`btn-up-${ex.id}`"
-                    @click="moveExercise(ex.id, split.id, -1)"
-                    :disabled="split.exercises[0]?.id === ex.id"
-                    :aria-label="`Mover ${ex.name} para cima`"
-                    class="action-btn text-[#64748B] hover:text-[#0066FF] disabled:opacity-30 disabled:cursor-not-allowed"
-                    title="Mover para cima"
-                  >
-                    <span aria-hidden="true">↑</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    :id="`btn-down-${ex.id}`"
-                    @click="moveExercise(ex.id, split.id, 1)"
-                    :disabled="split.exercises[split.exercises.length - 1]?.id === ex.id"
-                    :aria-label="`Mover ${ex.name} para baixo`"
-                    class="action-btn text-[#64748B] hover:text-[#0066FF] disabled:opacity-30 disabled:cursor-not-allowed"
-                    title="Mover para baixo"
-                  >
-                    <span aria-hidden="true">↓</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    :id="`btn-remove-${ex.id}`"
-                    @click="askRemoveExercise(ex, split.id)"
-                    :aria-expanded="pendingRemove?.exerciseId === ex.id ? 'true' : 'false'"
-                    :aria-label="`Remover ${ex.name} da ficha`"
-                    class="action-btn action-btn-danger"
-                    title="Remover da ficha"
-                  >
-                    <span aria-hidden="true">🗑</span>
-                  </button>
-                  </template>
-                    </div>
-
-                    <!-- Confirmação da remoção: remover apaga o log de cargas do
-                         exercício, então o botão não pode ser um toque só. Fica
-                         na própria linha do nome em vez de num modal para não
-                         cobrir a ficha num celular. -->
-                    <div
-                      v-if="pendingRemove?.exerciseId === ex.id"
-                      :id="`confirm-remove-${ex.id}`"
-                      class="mt-2 p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800"
-                      role="alertdialog"
-                      :aria-label="`Confirmar remoção de ${ex.name}`"
-                    >
-                      <p class="text-xs text-rose-800 mb-2 font-medium">
-                        Remover <strong>{{ ex.name }}</strong> da ficha?
-                        O histórico de cargas dele também é apagado.
-                      </p>
-                      <div class="flex gap-2">
-                        <button
-                          type="button"
-                          :id="`btn-confirm-remove-${ex.id}`"
-                          @click="confirmRemoveExercise(split.id)"
-                          class="flex-1 min-h-11 px-3 rounded-xl bg-rose-600 text-white text-xs font-bold hover:bg-rose-500 active:bg-rose-700 transition-colors shadow-xs"
-                        >
-                          Remover
-                        </button>
-                        <button
-                          type="button"
-                          :id="`btn-cancel-remove-${ex.id}`"
-                          @click="cancelRemoveExercise"
-                          class="flex-1 min-h-11 px-3 rounded-xl bg-white border border-[#E2E8F0] text-[#0F172A] text-xs font-bold hover:bg-[#F1F5F9] active:bg-[#E2E8F0] transition-colors shadow-xs"
-                        >
-                          Cancelar
-                        </button>
-                      </div>
-                    </div>
-
-                    <div class="flex flex-wrap items-center gap-2 text-xs text-[#64748B]">
-                      <!-- Badge de Série Estilizado -->
-                      <span class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">
-                        Série {{ workoutLogs[ex.id]?.sets?.length || 1 }}
-                      </span>
-                      <span :class="isWeightLoss ? 'text-rose-600' : 'text-[#0066FF]'" class="font-semibold">{{ ex.defaultSeries }}</span>
-                      <!-- Reps sugeridas pela IA: o app não impõe repetição, o
-                           campo continua editável e é o que vale. -->
-                      <template v-if="ex.aiReps">
-                        <span>•</span>
-                        <span>{{ ex.aiReps }} reps</span>
-                      </template>
-                      <span>•</span>
-                      <button 
-                        type="button"
-                        :id="`btn-rest-${ex.id}`"
-                        @click="triggerRestTimer(ex.rest)"
-                        :aria-label="`Iniciar descanso de ${ex.rest}`"
-                        class="tap-btn hover:text-[#0066FF] underline underline-offset-2 transition-colors flex items-center gap-1 rounded-lg hover:bg-blue-50 text-[#64748B]"
-                      >
-                        <span aria-hidden="true">⏱️</span> Descanso: {{ ex.rest }}
-                      </button>
-                      <HelpTip term="descanso" :suffix="ex.id" />
-                    </div>
-
-                    <p v-if="ex.tips" class="text-[11px] text-[#64748B] italic mt-0.5">
-                      💡 {{ ex.tips }}
-                    </p>
-
-                    <!-- PR (Personal Record) mais relevante -->
-                    <p
-                      v-if="personalRecords[ex.id]"
-                      class="text-[11px] text-[#0066FF] mt-1 flex flex-wrap items-center gap-1.5"
-                    >
-                      <span aria-hidden="true">🏆</span>
-                      PR: <span class="font-semibold">{{ personalRecords[ex.id].maxWeightKg.toString().replace('.', ',') }} kg</span>
-                      <span>•</span>
-                      {{ personalRecords[ex.id].maxReps }} reps
-                    </p>
-
-                    <!-- Sugestão de próxima carga (double progression) -->
-                    <p
-                      v-if="nextLoadSuggestions[ex.id]"
-                      :id="`suggest-next-${ex.id}`"
-                      class="text-[11px] text-emerald-600 mt-1 flex flex-wrap items-center gap-1.5"
-                    >
-                      <span aria-hidden="true">📈</span>
-                      Sugestão: <span class="font-semibold">
-                        {{ nextLoadSuggestions[ex.id].suggestedWeightKg > 0
-                          ? nextLoadSuggestions[ex.id].suggestedWeightKg.toString().replace('.', ',') + ' kg'
-                          : '' }}
-                        <template v-if="nextLoadSuggestions[ex.id].suggestedWeightKg > 0 && nextLoadSuggestions[ex.id].suggestedReps > 0"> × </template>
-                        {{ nextLoadSuggestions[ex.id].suggestedReps > 0 ? nextLoadSuggestions[ex.id].suggestedReps + ' reps' : '' }}
-                      </span>
-                    </p>
-
-                    <!-- Última carga registrada em qualquer treino anterior -->
-                    <p
-                      v-if="lastSetLabel(ex.id)"
-                      :id="`last-load-${ex.id}`"
-                      class="text-[11px] text-[#64748B] mt-1"
-                    >
-                      <span aria-hidden="true">🕘</span>
-                      Último treino: <span class="text-[#0F172A] font-semibold">{{ lastSetLabel(ex.id) }}</span>
-                    </p>
-                    <p
-                      v-if="deloadHint(ex.id)"
-                      :id="`deload-load-${ex.id}`"
-                      class="text-[11px] font-bold text-emerald-700 mt-1"
-                    >
-                      🧘 Deload: use ~{{ deloadHint(ex.id) }} e metade das séries
-                    </p>
-                  </div>
-                </div>
-
-                <!-- Lado Direito: Inputs de Carga e Reps (Ocultos se for Cardio Contínuo) -->
-                <div v-if="ex.muscle !== 'cardio'" class="flex flex-col gap-2 self-end md:self-auto w-full md:w-auto">
-                  <div class="flex flex-wrap items-center gap-2 sm:gap-3">
-                    <div
-                      class="flex items-center gap-2 bg-[#F8FAFC] px-3 py-2 rounded-xl border border-[#E2E8F0] shadow-xs flex-1 md:flex-initial transition-all focus-within:border-[#0066FF] focus-within:ring-2 focus-within:ring-[#0066FF]/20 focus-within:bg-white"
-                    >
-                      <label :for="`input-weight-${ex.id}`" class="text-xs text-[#64748B] font-bold uppercase tracking-wider">Peso:</label>
-                      <input 
-                        :id="`input-weight-${ex.id}`"
-                        type="number" 
-                        step="0.5" 
-                        min="0"
-                        inputmode="decimal"
-                        placeholder="0"
-                        :aria-label="`Carga em kg para ${ex.name}`"
-                        :value="workoutLogs[ex.id]?.weight"
-                        @input="e => updateLog(ex.id, split.id, 'weight', e.target.value)"
-                        class="log-input w-16 text-base font-extrabold text-right focus:outline-none text-[#0F172A]"
-                      />
-                      <span class="text-xs text-[#64748B] font-bold">kg</span>
-                    </div>
-
-                    <div
-                      class="flex items-center gap-2 bg-[#F8FAFC] px-3 py-2 rounded-xl border border-[#E2E8F0] shadow-xs flex-1 md:flex-initial transition-all focus-within:border-[#0066FF] focus-within:ring-2 focus-within:ring-[#0066FF]/20 focus-within:bg-white"
-                    >
-                      <label :for="`input-reps-${ex.id}`" class="text-xs text-[#64748B] font-bold uppercase tracking-wider">Reps:</label>
-                      <HelpTip term="reps" :suffix="ex.id" />
-                      <input 
-                        :id="`input-reps-${ex.id}`"
-                        type="number" 
-                        min="0"
-                        max="500"
-                        inputmode="numeric"
-                        placeholder="12"
-                        :aria-label="`Repetições para ${ex.name}`"
-                        :value="workoutLogs[ex.id]?.reps"
-                        @input="e => updateLog(ex.id, split.id, 'reps', e.target.value)"
-                        class="log-input w-12 text-base font-extrabold text-right focus:outline-none text-[#0F172A]"
-                      />
-                    </div>
-
-                    <!-- RIR: reps em reserva do último esforço. -->
-                    <div
-                      class="flex items-center gap-2 bg-[#F8FAFC] px-3 py-2 rounded-xl border border-[#E2E8F0] shadow-xs flex-1 md:flex-initial transition-all focus-within:border-[#0066FF] focus-within:ring-2 focus-within:ring-[#0066FF]/20 focus-within:bg-white"
-                    >
-                      <label :for="`input-rir-${ex.id}`" class="text-xs text-[#64748B] font-bold uppercase tracking-wider">Sobrou:</label>
-                      <HelpTip term="rir" :suffix="ex.id" />
-                      <input
-                        :id="`input-rir-${ex.id}`"
-                        type="number"
-                        min="0"
-                        max="10"
-                        inputmode="numeric"
-                        placeholder="—"
-                        :aria-label="`RIR (reps em reserva) para ${ex.name}`"
-                        :value="workoutLogs[ex.id]?.rir"
-                        @input="e => updateLog(ex.id, split.id, 'rir', e.target.value)"
-                        class="log-input w-10 text-base font-extrabold text-right focus:outline-none text-[#0F172A]"
-                      />
-                    </div>
-
-                    <button
-                      type="button"
-                      :id="`btn-add-set-${ex.id}`"
-                      @click="addExerciseSet(ex.id, split.id)"
-                      class="tap-btn px-2.5 py-2 rounded-xl text-xs font-bold border border-[#E2E8F0] bg-white hover:bg-[#F8FAFC] text-[#0F172A] hover:text-[#0066FF] transition-colors flex items-center gap-1 shadow-xs"
-                      title="Adicionar mais uma série para este exercício"
-                    >
-                      <span aria-hidden="true">+</span> Série
-                    </button>
-                  </div>
-
-                  <!-- Séries adicionais (Série 2, 3...) -->
-                  <div v-if="workoutLogs[ex.id]?.sets?.length > 1" class="space-y-1.5 pt-1 border-t border-[#E2E8F0]">
-                    <div
-                      v-for="s in workoutLogs[ex.id].sets.slice(1)"
-                      :key="s.setNumber"
-                      class="flex items-center justify-between gap-2 bg-white px-3 py-1.5 rounded-xl border border-[#E2E8F0] text-xs shadow-xs"
-                    >
-                      <div class="flex items-center gap-2">
-                        <button
-                          type="button"
-                          :id="`btn-check-set-${ex.id}-${s.setNumber}`"
-                          @click="toggleSetDone(ex.id, split.id, s.setNumber)"
-                          class="w-5 h-5 rounded-lg border flex items-center justify-center font-bold text-[10px] transition-colors"
-                          :class="s.isDone ? 'bg-[#10B981] border-[#10B981] text-white' : 'border-[#CBD5E1] text-transparent hover:border-[#F59E0B]'"
-                        >
-                          ✓
-                        </button>
-                        <span class="font-semibold text-[#0F172A]">Série {{ s.setNumber }}</span>
-                      </div>
-
-                      <div class="flex items-center gap-2">
-                        <div class="flex items-center gap-1 bg-[#F8FAFC] px-2 py-1 rounded-lg border border-[#E2E8F0]">
-                          <input
-                            :id="`input-weight-${ex.id}-${s.setNumber}`"
-                            type="number"
-                            step="0.5"
-                            placeholder="0"
-                            :value="s.weight"
-                            @input="e => updateSetField(ex.id, split.id, s.setNumber, 'weight', e.target.value)"
-                            class="w-12 text-right bg-transparent font-bold focus:outline-none text-[#0F172A]"
-                          />
-                          <span class="text-[10px] text-[#64748B]">kg</span>
-                        </div>
-
-                        <div class="flex items-center gap-1 bg-[#F8FAFC] px-2 py-1 rounded-lg border border-[#E2E8F0]">
-                          <input
-                            :id="`input-reps-${ex.id}-${s.setNumber}`"
-                            type="number"
-                            placeholder="12"
-                            :value="s.reps"
-                            @input="e => updateSetField(ex.id, split.id, s.setNumber, 'reps', e.target.value)"
-                            class="w-10 text-right bg-transparent font-bold focus:outline-none text-[#0F172A]"
-                          />
-                          <span class="text-[10px] text-[#64748B]">reps</span>
-                        </div>
-
-                        <button
-                          type="button"
-                          :id="`btn-remove-set-${ex.id}-${s.setNumber}`"
-                          @click="removeExerciseSet(ex.id, split.id, s.setNumber)"
-                          class="text-[#64748B] hover:text-rose-500 p-1 text-xs"
-                          title="Remover esta série"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div v-else class="text-xs text-[#0066FF] font-semibold bg-blue-50 px-3 py-1.5 rounded-xl border border-blue-200">
-                  Exercício Aeróbico
-                </div>
-
-              </div>
-            </template>
-            </div>
-
-          </div>
-        </div>
-
-      </section>
+      <WorkoutTab />
 
       <!-- ABA 2: NUTRIÇÃO & CREATINA / TERMOGÊNICOS -->
-      <section
-        v-show="currentMainTab === 'nutrition'"
-        id="screen-nutrition"
-        role="tabpanel"
-        aria-labelledby="tab-btn-nutrition"
-        tabindex="0"
-        class="space-y-6 focus:outline-none"
-      >
-        <!-- BANNER DE BOAS-VINDAS / RESUMO INTELIGENTE -->
-        <div v-if="activePlan?.physiology" id="banner-physiology-summary" class="bg-white border border-[#E2E8F0] rounded-2xl p-4 sm:p-5 shadow-xs flex flex-wrap items-center justify-between gap-4 text-[#0F172A]">
-          <div>
-            <div class="flex items-center gap-2">
-              <span class="text-xs font-bold uppercase tracking-wider text-[#0066FF]">
-                {{ isWeightLoss ? 'Diagnóstico & Déficit Calórico' : 'Metas Diárias Calculadas' }}
-              </span>
-              <span v-if="isCustomNutritionActive" class="text-[10px] bg-[#0066FF]/10 text-[#0066FF] border border-[#0066FF]/20 px-2 py-0.5 rounded-full font-semibold">
-                Metas Customizadas
-              </span>
-            </div>
-            <h2 class="text-base sm:text-lg font-bold text-[#0F172A] mt-0.5">
-              {{ isWeightLoss ? 'Meta Nutricional:' : 'Superávit Anabólico:' }}
-              <span class="text-[#0066FF]">{{ effectiveTargetCalories }} kcal</span> / dia
-            </h2>
-            <p class="text-xs text-[#64748B] mt-1">
-              Proteína: <strong class="text-[#0F172A]">{{ effectiveMacros.proteinGrams }}g</strong> • 
-              Carboidrato: <strong class="text-[#0F172A]">{{ effectiveMacros.carbsGrams }}g</strong> • 
-              Gorduras: <strong class="text-[#0F172A]">{{ effectiveMacros.fatGrams }}g</strong>
-              <span v-if="activePlan.physiology.imc"> • IMC: <strong class="text-[#0F172A]">{{ activePlan.physiology.imc }} ({{ activePlan.physiology.imcStatus }})</strong></span>
-            </p>
-          </div>
-
-          <div class="flex items-center gap-3">
-            <div class="bg-[#F8FAFC] px-3.5 py-2 rounded-xl border border-[#E2E8F0] text-center shadow-xs">
-              <span class="block text-[10px] text-[#64748B] uppercase font-semibold">Água / Dia</span>
-              <span class="text-sm font-bold text-[#0066FF]">{{ activePlan.physiology.water.liters }} L</span>
-            </div>
-            <div class="bg-[#F8FAFC] px-3.5 py-2 rounded-xl border border-[#E2E8F0] text-center shadow-xs">
-              <span class="block text-[10px] text-[#64748B] uppercase font-semibold">Creatina</span>
-              <span class="text-sm font-bold text-[#F59E0B]">{{ activePlan.physiology.creatine }}g</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- SEÇÃO EXCLUSIVA DE EMAGRECIMENTO: DIAGNÓSTICO E CRONOGRAMA EM FASES -->
-        <section v-if="isWeightLoss && activePlan?.physiology" id="section-weight-loss-diagnosis" class="bg-white border border-[#E2E8F0] rounded-3xl p-5 sm:p-6 shadow-xs relative overflow-hidden text-[#0F172A]">
-          <div class="border-b border-[#E2E8F0] pb-3 mb-4 flex items-center justify-between">
-            <div>
-              <span class="text-xs font-bold tracking-widest text-[#0066FF] uppercase">Cronograma de Emagrecimento Saudável</span>
-              <h3 class="text-lg font-extrabold text-[#0F172A] mt-0.5">Metas Sustentáveis (Sem Efeito Sanfona)</h3>
-            </div>
-            <span class="text-xs bg-rose-50 text-rose-600 border border-rose-200 px-3 py-1 rounded-full font-bold">
-              Ritmo: 2 a 3 kg/mês
-            </span>
-          </div>
-
-          <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-            <div class="p-3.5 rounded-2xl bg-[#F8FAFC] border border-[#E2E8F0] shadow-xs">
-              <span class="text-xs text-[#64748B] font-medium">Peso Atual</span>
-              <div class="text-xl font-black text-[#0F172A] mt-1">{{ userProfile?.weightKg }} kg</div>
-              <p class="text-[11px] text-[#F59E0B] mt-0.5">IMC: {{ activePlan.physiology.imc }}</p>
-            </div>
-            <div class="p-3.5 rounded-2xl bg-[#F8FAFC] border border-rose-200 shadow-xs">
-              <span class="text-xs text-rose-500 font-medium">Faixa Saudável (OMS)</span>
-              <div class="text-xl font-black text-[#0F172A] mt-1">{{ activePlan.physiology.healthyWeightRange }}</div>
-              <p class="text-[11px] text-[#64748B] mt-0.5">Prevenção articular e metabólica</p>
-            </div>
-            <div class="p-3.5 rounded-2xl bg-[#F8FAFC] border border-[#E2E8F0] shadow-xs">
-              <span class="text-xs text-[#64748B] font-medium">Meta Estimada</span>
-              <div class="text-xl font-black mt-1" :class="activePlan.physiology.targetWeightDiff > 0 ? 'text-rose-500' : 'text-emerald-500'">
-                {{ activePlan.physiology.targetWeightText }}
-              </div>
-              <p class="text-[11px] text-[#64748B] mt-0.5">
-                {{ activePlan.physiology.targetWeightDiff > 0 ? 'Fase 1: -5 a -7 kg de retenção' : 'Você já está na faixa saudável' }}
-              </p>
-            </div>
-            <div class="p-3.5 rounded-2xl bg-[#F8FAFC] border border-[#E2E8F0] shadow-xs">
-              <span class="text-xs text-[#64748B] font-medium">Prazo Recomendado</span>
-              <div class="text-xl font-black text-[#0F172A] mt-1">6 a 10 Meses</div>
-              <p class="text-[11px] text-emerald-600 mt-0.5">Consistência e massa magra</p>
-            </div>
-          </div>
-
-          <div class="grid sm:grid-cols-3 gap-3 text-xs">
-            <div class="p-3 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] shadow-xs">
-              <strong class="text-rose-600 block mb-1">Etapa 1: Adaptação</strong>
-              Redução rápida de inchaço, ganho de mobilidade e adaptação ao déficit sem fome severa.
-            </div>
-            <div class="p-3 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] shadow-xs">
-              <strong class="text-rose-600 block mb-1">Etapa 2: Queima Ativa</strong>
-              Perda contínua de gordura visceral, sustentada por musculação e preservação de tônus.
-            </div>
-            <div class="p-3 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] shadow-xs">
-              <strong class="text-rose-600 block mb-1">Etapa 3: Consolidação</strong>
-              Manutenção hormonal estável e ajuste de passos diários para impedir o reganho de peso.
-            </div>
-          </div>
-        </section>
-
-        <div class="border-b border-[#E2E8F0] pb-4">
-          <h3 class="text-xl font-extrabold text-[#0066FF] tracking-tight">
-            {{ isWeightLoss ? 'Plano Nutricional & Termogênicos Naturais' : 'Plano Alimentar & Suplementação Natural' }}
-          </h3>
-          <p class="text-xs text-[#64748B]">
-            {{ isWeightLoss ? 'Déficit calórico calculado para emagrecer com alta saciedade e estímulos naturais.' : 'Cardápio proporcional calibrado exatamente para seu gasto energético e meta de crescimento.' }}
-          </p>
-        </div>
-
-        <!-- Barra de Seleção de Preferência Alimentar e Agente IA -->
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 p-4 rounded-2xl bg-white border border-[#E2E8F0] shadow-xs">
-          <div>
-            <span class="text-xs font-bold uppercase tracking-wider text-[#64748B]">Estilo de Dieta</span>
-            <p class="text-xs text-[#0F172A]">Escolha o padrão para adaptar os alimentos do cardápio</p>
-          </div>
-          <div class="flex flex-wrap items-center gap-2">
-            <div class="flex flex-wrap gap-1.5" role="group" aria-label="Preferência alimentar">
-              <button
-                v-for="diet in DIETARY_PREFERENCES"
-                :key="diet.id"
-                :id="`btn-diet-switch-${diet.id}`"
-                type="button"
-                @click="setDietaryPreference(diet.id)"
-                :class="currentDietaryPreference === diet.id ? 'bg-[#0066FF] text-white font-bold shadow-xs' : 'bg-white text-[#64748B] hover:text-[#0F172A] hover:bg-[#F1F5F9] border border-[#E2E8F0]'"
-                class="tap-btn px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5"
-              >
-                <span>{{ diet.icon }}</span>
-                <span>{{ diet.label }}</span>
-              </button>
-            </div>
-
-            <!-- Botão de Sincronizar com Agente de IA -->
-            <button
-              v-if="userProfile"
-              type="button"
-              id="btn-diet-generate-ai"
-              @click="generatePlanWithAi"
-              :disabled="isAiPlanLoading"
-              class="tap-btn px-3 py-1.5 rounded-xl text-xs font-bold border transition-colors disabled:opacity-50 flex items-center gap-1.5 shadow-xs border-[#0066FF]/30 bg-white text-[#0066FF] hover:bg-[#F1F5F9]"
-              :title="isAiPlanLoading ? 'Gerando plano completo com IA...' : 'Gerar cardápio e rotina de treino com Agente Cloudflare'"
-            >
-              <span>{{ isAiPlanLoading ? '⏳' : '🤖' }}</span>
-              <span>{{ isAiPlanLoading ? 'Gerando...' : 'Personalizar Dieta & Treino com IA' }}</span>
-            </button>
-          </div>
-
-          <!-- Status da geração por IA na tela de Dieta -->
-          <p
-            v-if="aiPlanMessage"
-            id="ai-plan-diet-status"
-            role="status"
-            aria-live="polite"
-            class="w-full text-xs leading-relaxed"
-            :class="aiPlanMessage?.tone === 'error' ? 'text-rose-500 font-semibold' : 'text-[#0066FF] font-semibold'"
-          >
-            {{ aiPlanMessage.text }}
-          </p>
-        </div>
-
-        <!-- Hábitos Diários Interativos: Água e Creatina -->
-        <div id="section-daily-habits" class="bg-white border border-[#E2E8F0] rounded-3xl p-5 sm:p-6 shadow-xs space-y-4">
-          <div class="flex items-center justify-between border-b border-[#E2E8F0] pb-3">
-            <div>
-              <span class="text-xs font-bold uppercase tracking-wider text-[#0066FF]">Hábitos de Hoje</span>
-              <h4 class="text-base sm:text-lg font-bold text-[#0F172A] mt-0.5">Hidratação & Creatina Diária</h4>
-            </div>
-            <span class="text-xs text-[#64748B] font-medium capitalize">{{ todayDateFormatted }}</span>
-          </div>
-
-          <div class="grid md:grid-cols-2 gap-4">
-            <!-- Rastreador de Água -->
-            <div class="p-4 rounded-2xl bg-[#F8FAFC] border border-[#E2E8F0] space-y-3">
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                  <span class="text-xl">💧</span>
-                  <span class="text-sm font-bold text-[#0F172A]">Meta de Água</span>
-                </div>
-                <span id="water-progress-text" class="text-xs font-bold text-[#0066FF]">
-                  {{ todayWaterMl }} / {{ targetWaterMl }} ml ({{ waterPercent }}%)
-                </span>
-              </div>
-
-              <!-- Barra de Progresso de Água -->
-              <div class="w-full bg-[#E2E8F0] h-2.5 rounded-full overflow-hidden" role="progressbar" :aria-valuenow="waterPercent" aria-valuemin="0" aria-valuemax="100">
-                <div
-                  id="water-progress-bar"
-                  class="h-full bg-gradient-to-r from-[#0066FF] to-cyan-500 transition-all duration-300 rounded-full"
-                  :style="{ width: `${waterPercent}%` }"
-                ></div>
-              </div>
-
-              <!-- Botões de Ingestão de Água -->
-              <div class="flex flex-wrap gap-2 pt-1">
-                <button
-                  id="btn-water-add-250"
-                  @click="addWater(250)"
-                  type="button"
-                  class="tap-btn px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-[#0066FF] border border-blue-200 text-xs font-bold transition-all"
-                >
-                  +250 ml
-                </button>
-                <button
-                  id="btn-water-add-500"
-                  @click="addWater(500)"
-                  type="button"
-                  class="tap-btn px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-[#0066FF] border border-blue-200 text-xs font-bold transition-all"
-                >
-                  +500 ml
-                </button>
-                <button
-                  id="btn-water-add-1000"
-                  @click="addWater(1000)"
-                  type="button"
-                  class="tap-btn px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-[#0066FF] border border-blue-200 text-xs font-bold transition-all"
-                >
-                  +1 L
-                </button>
-                <button
-                  id="btn-water-sub-250"
-                  @click="addWater(-250)"
-                  type="button"
-                  class="tap-btn px-2.5 py-1.5 rounded-xl bg-white text-[#64748B] hover:text-[#0F172A] border border-[#E2E8F0] text-xs transition-all shadow-xs"
-                  title="Diminuir 250ml"
-                >
-                  -250
-                </button>
-                <button
-                  id="btn-water-reset"
-                  @click="resetWater"
-                  type="button"
-                  class="tap-btn px-2.5 py-1.5 rounded-xl bg-white text-[#64748B] hover:text-rose-500 border border-[#E2E8F0] text-xs transition-all ml-auto shadow-xs"
-                >
-                  Zerar
-                </button>
-              </div>
-            </div>
-
-            <!-- Rastreador de Creatina -->
-            <div class="p-4 rounded-2xl bg-[#F8FAFC] border border-[#E2E8F0] flex flex-col justify-between">
-              <div class="flex items-center justify-between mb-2">
-                <div class="flex items-center gap-2">
-                  <span class="text-xl">⚡</span>
-                  <span class="text-sm font-bold text-[#0F172A]">Creatina do Dia</span>
-                </div>
-                <span class="text-xs text-[#64748B] font-semibold">{{ activePlan?.physiology?.creatine }}g / dose</span>
-              </div>
-              <p class="text-xs text-[#64748B] mb-3">
-                Consumo diário contínuo, inclusive nos dias de descanso. Tome com sua principal refeição rica em carboidratos.
-              </p>
-              <button
-                id="btn-toggle-creatine-today"
-                @click="toggleCreatineToday"
-                type="button"
-                :class="isCreatineTakenToday ? 'bg-emerald-50 text-emerald-700 border-emerald-300 shadow-xs font-bold' : 'bg-white text-[#0F172A] border border-[#E2E8F0] hover:border-[#F59E0B] shadow-xs'"
-                class="tap-btn w-full p-2.5 rounded-xl border font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer"
-              >
-                <span>{{ isCreatineTakenToday ? '✓ Creatina Ingerida Hoje!' : 'Registrar Creatina de Hoje' }}</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Personalização de Calorias & Macros -->
-        <div id="section-custom-nutrition" class="bg-white border border-[#E2E8F0] rounded-3xl p-5 sm:p-6 shadow-xs space-y-4">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#E2E8F0] pb-3">
-            <div>
-              <span class="text-xs font-bold uppercase tracking-wider text-[#0066FF]">
-                Metas Nutricionais & Macros
-              </span>
-              <h4 class="text-base sm:text-lg font-bold text-[#0F172A] mt-0.5">
-                {{ isCustomNutritionActive ? 'Metas Personalizadas Manuais' : 'Metas Recomendadas para seu Perfil' }}
-              </h4>
-            </div>
-            <button
-              id="btn-toggle-custom-nutrition-form"
-              @click="isEditingCustomNutrition = !isEditingCustomNutrition"
-              type="button"
-              class="tap-btn text-xs px-3 py-1.5 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] hover:bg-[#F1F5F9] text-[#0F172A] transition-colors flex items-center gap-1.5 self-start sm:self-auto shadow-xs font-medium"
-            >
-              <span>⚙️</span>
-              <span>{{ isEditingCustomNutrition ? 'Fechar Ajuste' : 'Personalizar Metas (Nutricionista)' }}</span>
-            </button>
-          </div>
-
-          <!-- Visor dos macros atuais -->
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div class="p-3.5 rounded-2xl bg-[#F8FAFC] border border-[#E2E8F0] text-center shadow-xs">
-              <span class="block text-[10px] text-[#64748B] uppercase font-bold">Calorias / Dia</span>
-              <span id="display-calories" class="text-lg font-black text-[#0F172A]">{{ effectiveTargetCalories }} kcal</span>
-            </div>
-            <div class="p-3.5 rounded-2xl bg-[#F8FAFC] border border-[#E2E8F0] text-center shadow-xs">
-              <span class="block text-[10px] text-[#64748B] uppercase font-bold">Proteína</span>
-              <span id="display-protein" class="text-lg font-black text-emerald-600">{{ effectiveMacros.proteinGrams }}g</span>
-            </div>
-            <div class="p-3.5 rounded-2xl bg-[#F8FAFC] border border-[#E2E8F0] text-center shadow-xs">
-              <span class="block text-[10px] text-[#64748B] uppercase font-bold">Carboidratos</span>
-              <span id="display-carbs" class="text-lg font-black text-[#F59E0B]">{{ effectiveMacros.carbsGrams }}g</span>
-            </div>
-            <div class="p-3.5 rounded-2xl bg-[#F8FAFC] border border-[#E2E8F0] text-center shadow-xs">
-              <span class="block text-[10px] text-[#64748B] uppercase font-bold">Gorduras</span>
-              <span id="display-fat" class="text-lg font-black text-rose-600">{{ effectiveMacros.fatGrams }}g</span>
-            </div>
-          </div>
-
-          <!-- Formulário de personalização de metas -->
-          <div v-if="isEditingCustomNutrition" id="form-custom-nutrition" class="p-4 rounded-2xl bg-[#F8FAFC] border border-[#E2E8F0] space-y-3 pt-4">
-            <p class="text-xs text-[#64748B]">
-              Defina os alvos específicos prescritos pelo seu nutricionista ou personalize suas preferências calóricas:
-            </p>
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div>
-                <label for="input-custom-calories" class="block text-[11px] font-semibold text-[#64748B] mb-1">Calorias (kcal)</label>
-                <input
-                  id="input-custom-calories"
-                  v-model.number="customNutritionForm.targetCalories"
-                  type="number"
-                  min="1000"
-                  max="6000"
-                  class="w-full bg-white border border-[#E2E8F0] rounded-xl px-3 py-2 text-[#0F172A] font-semibold text-sm focus:outline-none focus:border-[#0066FF]"
-                />
-              </div>
-              <div>
-                <label for="input-custom-protein" class="block text-[11px] font-semibold text-[#64748B] mb-1">Proteína (g)</label>
-                <input
-                  id="input-custom-protein"
-                  v-model.number="customNutritionForm.proteinGrams"
-                  type="number"
-                  min="30"
-                  max="400"
-                  class="w-full bg-white border border-[#E2E8F0] rounded-xl px-3 py-2 text-[#0F172A] font-semibold text-sm focus:outline-none focus:border-[#0066FF]"
-                />
-              </div>
-              <div>
-                <label for="input-custom-carbs" class="block text-[11px] font-semibold text-[#64748B] mb-1">Carboidratos (g)</label>
-                <input
-                  id="input-custom-carbs"
-                  v-model.number="customNutritionForm.carbsGrams"
-                  type="number"
-                  min="20"
-                  max="700"
-                  class="w-full bg-white border border-[#E2E8F0] rounded-xl px-3 py-2 text-[#0F172A] font-semibold text-sm focus:outline-none focus:border-[#0066FF]"
-                />
-              </div>
-              <div>
-                <label for="input-custom-fat" class="block text-[11px] font-semibold text-[#64748B] mb-1">Gorduras (g)</label>
-                <input
-                  id="input-custom-fat"
-                  v-model.number="customNutritionForm.fatGrams"
-                  type="number"
-                  min="15"
-                  max="200"
-                  class="w-full bg-white border border-[#E2E8F0] rounded-xl px-3 py-2 text-[#0F172A] font-semibold text-sm focus:outline-none focus:border-[#0066FF]"
-                />
-              </div>
-            </div>
-
-            <div class="flex items-center justify-end gap-2 pt-2">
-              <button
-                v-if="isCustomNutritionActive"
-                id="btn-reset-custom-nutrition"
-                type="button"
-                @click="resetCustomNutrition"
-                class="tap-btn px-3 py-2 rounded-xl text-xs font-bold text-rose-700 hover:text-rose-800 border border-rose-200 bg-rose-50 transition-colors"
-              >
-                Restaurar Cálculo Automático
-              </button>
-              <button
-                id="btn-save-custom-nutrition"
-                type="button"
-                @click="saveCustomNutrition"
-                class="tap-btn px-4 py-2 rounded-xl text-xs font-bold bg-[#F59E0B] hover:bg-[#D97706] text-[#0F172A] transition-colors shadow-xs"
-              >
-                Salvar Metas
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Destaques Creatina e Componentes Naturais -->
-        <div v-if="isWeightLoss" class="grid md:grid-cols-3 gap-4">
-          <div 
-            v-for="sup in activePlan?.naturalSupplements" 
-            :key="sup.id"
-            :id="`card-supplement-${sup.id}`"
-            class="p-5 rounded-2xl bg-white border border-[#E2E8F0] hover:border-[#0066FF]/40 transition-all flex flex-col justify-between shadow-xs"
-          >
-            <div>
-              <div class="flex items-center gap-2 mb-2" :class="sup.color === 'rose' ? 'text-rose-700' : sup.color === 'amber' ? 'text-amber-800' : 'text-emerald-700'">
-                <span class="text-xl">{{ sup.icon }}</span>
-                <h4 class="font-bold text-[#0F172A] text-sm">{{ sup.name }}</h4>
-              </div>
-              <p class="text-xs text-[#64748B] leading-relaxed">
-                <strong>Como usar:</strong> {{ sup.dosage }}<br>
-                {{ sup.benefit }}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div v-else class="grid md:grid-cols-2 gap-4">
-          <div class="p-5 rounded-2xl bg-white border border-[#E2E8F0] shadow-xs">
-            <div class="flex items-center gap-2.5 mb-2">
-              <span class="text-xl">⚡</span>
-              <h4 class="font-bold text-[#0F172A]">Creatina Monohidratada ({{ activePlan?.physiology?.creatine }}g / dia)</h4>
-            </div>
-            <p class="text-xs sm:text-sm text-[#64748B] leading-relaxed">
-              Consumo diário contínuo, <strong>inclusive nos dias de descanso</strong>. Tome com uma refeição rica em carboidratos (almoço ou pós-treino) para elevar a captação intracelular via pico de insulina.
-            </p>
-          </div>
-
-          <div class="p-5 rounded-2xl bg-white border border-[#E2E8F0] shadow-xs">
-            <div class="flex items-center gap-2.5 mb-2">
-              <span class="text-xl">💧</span>
-              <h4 class="font-bold text-[#0F172A]">Hidratação Crítica ({{ activePlan?.physiology?.water?.liters }} Litros)</h4>
-            </div>
-            <p class="text-xs sm:text-sm text-[#64748B] leading-relaxed">
-              A creatina puxa água para o meio sarcoplasmático das fibras. Beba pelo menos {{ activePlan?.physiology?.water?.liters }}L ao longo do dia para volumização celular ideal e saúde renal.
-            </p>
-          </div>
-        </div>
-
-        <!-- Resumo de Adesão Nutricional Diária -->
-        <div id="section-diet-adherence" class="p-4 sm:p-5 rounded-2xl bg-white border border-[#E2E8F0] shadow-xs space-y-3">
-          <div class="flex items-center justify-between gap-3 flex-wrap">
-            <div class="flex items-center gap-3">
-              <div class="w-11 h-11 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-2xl shadow-xs flex-shrink-0">
-                🥗
-              </div>
-              <div>
-                <h4 class="text-sm sm:text-base font-black text-[#0F172A] uppercase tracking-tight">
-                  Adesão Nutricional Diária
-                </h4>
-                <p class="text-xs text-[#64748B]">
-                  Marque cada refeição consumida para bater seus macros e ganhar moedas de ferro.
-                </p>
-              </div>
-            </div>
-
-            <div class="flex items-center gap-2">
-              <span
-                id="diet-adherence-badge"
-                class="text-xs font-black px-3 py-1 rounded-full shadow-xs"
-                :class="dietAdherencePercent === 100
-                  ? 'bg-emerald-500/15 text-emerald-700 border border-emerald-500/30'
-                  : 'bg-[#0066FF]/10 text-[#0066FF] border border-[#0066FF]/20'"
-              >
-                {{ checkedMealsCount }}/{{ totalMealsCount }} Refeições ({{ dietAdherencePercent }}%)
-              </span>
-            </div>
-          </div>
-
-          <!-- Barra de Progresso de Adesão à Dieta -->
-          <div class="w-full bg-[#E2E8F0] h-2.5 rounded-full overflow-hidden" role="progressbar" :aria-valuenow="dietAdherencePercent" aria-valuemin="0" aria-valuemax="100">
-            <div
-              id="diet-progress-bar"
-              class="h-full bg-gradient-to-r from-emerald-400 to-emerald-600 transition-all duration-500 rounded-full"
-              :style="{ width: `${dietAdherencePercent}%` }"
-            ></div>
-          </div>
-
-          <!-- Calorias e Proteínas Consumidas Estimadas -->
-          <div class="grid grid-cols-2 gap-3 pt-1 text-xs">
-            <div class="p-2.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] flex items-center justify-between">
-              <span class="text-[#64748B] font-bold">Calorias Ingeridas:</span>
-              <span class="font-black text-[#0F172A]">
-                {{ consumedCaloriesEstimated }} / {{ targetCalories }} kcal
-              </span>
-            </div>
-            <div class="p-2.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] flex items-center justify-between">
-              <span class="text-[#64748B] font-bold">Proteína Ingerida:</span>
-              <span class="font-black text-[#0066FF]">
-                {{ consumedProteinEstimated }} / {{ targetProteinGrams }} g
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Cards de Refeições -->
-        <div class="grid md:grid-cols-2 gap-4">
-          <div
-            v-for="meal in activePlan?.meals"
-            :key="meal.id"
-            :id="`meal-card-${meal.id}`"
-            class="p-5 rounded-2xl border flex flex-col justify-between transition-all shadow-xs"
-            :class="todayMealChecks[meal.id]
-              ? 'bg-emerald-500/5 border-emerald-500/40 shadow-sm'
-              : 'bg-white border-[#E2E8F0] hover:border-[#0066FF]/40'"
-          >
-            <div>
-              <div class="flex items-center justify-between gap-2 mb-2">
-                <div class="flex items-center gap-2">
-                  <h5 class="font-bold text-[#0F172A] text-sm sm:text-base">{{ meal.title }}</h5>
-                  <span v-if="meal.timeSuggestion" class="text-[10px] font-semibold text-[#64748B] bg-[#F1F5F9] px-2 py-0.5 rounded-md">
-                    ⏰ {{ meal.timeSuggestion }}
-                  </span>
-                </div>
-                <div class="flex items-center gap-1.5">
-                  <button
-                    type="button"
-                    :id="`btn-check-meal-${meal.id}`"
-                    @click="toggleMealCheck(meal.id)"
-                    class="tap-btn px-2.5 py-1 rounded-xl text-xs font-black transition-all flex items-center gap-1"
-                    :class="todayMealChecks[meal.id]
-                      ? 'bg-emerald-600 text-white shadow-xs'
-                      : 'bg-[#F1F5F9] text-[#64748B] hover:text-[#0F172A] border border-[#CBD5E1]'"
-                  >
-                    <span>{{ todayMealChecks[meal.id] ? '✓ Feita' : 'Marcar' }}</span>
-                  </button>
-                  <span v-if="activePlan?.planSource === 'ai'" class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 uppercase tracking-wider">
-                    IA
-                  </span>
-                  <span 
-                    :class="isWeightLoss ? 'text-rose-600 bg-rose-50 border-rose-200' : 'text-[#0066FF] bg-blue-50 border-blue-200'"
-                    class="text-[11px] font-semibold px-2 py-0.5 rounded border"
-                  >
-                    {{ meal.tag }}
-                  </span>
-                </div>
-              </div>
-              <p class="text-xs sm:text-sm text-[#0F172A] leading-relaxed mt-2">{{ meal.items }}</p>
-            </div>
-            <div class="mt-4 pt-3 border-t border-[#E2E8F0] flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px] text-[#64748B]">
-              <p>
-                <strong>Objetivo Fisiológico:</strong> {{ meal.objective }}
-              </p>
-              <span v-if="meal.calories" class="font-bold text-[#0066FF] flex-shrink-0">
-                ⚡ ~{{ meal.calories }} kcal
-              </span>
-            </div>
-          </div>
-        </div>
-      </section>
+      <NutritionTab />
 
       <!-- ABA 3: QUADRO SEMANAL DE FREQUÊNCIA -->
-      <section
-        v-show="currentMainTab === 'frequency'"
-        id="screen-frequency"
-        role="tabpanel"
-        aria-labelledby="tab-btn-frequency"
-        tabindex="0"
-        class="space-y-6 focus:outline-none text-[#1E293B]"
-      >
-        <div class="bg-white border border-[#E2E8F0] rounded-3xl p-6 shadow-xs relative overflow-hidden">
-          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-            <div>
-              <h3 class="text-lg font-bold text-[#1E293B] flex items-center gap-2">
-                <span>📅</span> Quadro de Compromisso Semanal
-              </h3>
-              <p class="text-xs text-[#64748B]">Clique no dia para registrar treinos, caminhadas ou descansos concluídos.</p>
-            </div>
-            <div class="text-xs sm:text-sm bg-[#F8FAFC] px-4 py-2 rounded-xl border border-[#E2E8F0] font-semibold text-[#0F172A] shadow-xs">
-              Semana Concluída: <span id="week-progress-text" class="font-black text-[#0066FF]">{{ completedDaysCount }} / 7</span>
-            </div>
-          </div>
-
-          <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3" role="group" aria-label="Dias da semana">
-            <button
-              v-for="day in activePlan?.weekSchedule" 
-              :key="day.id"
-              type="button"
-              :id="`day-card-${day.id}`"
-              @click="toggleDayCheck(day.id)"
-              :aria-pressed="!!weeklyChecks[day.id]"
-              :aria-label="`${day.label}: ${day.workout}. ${weeklyChecks[day.id] ? 'Concluído' : 'Não concluído'}. Clique para alternar.`"
-              class="p-3.5 rounded-2xl border text-center transition-all cursor-pointer flex flex-col justify-between"
-              :class="weeklyChecks[day.id] ? 'bg-[#F59E0B] border-[#F59E0B] text-[#0F172A] shadow-xs font-bold' : 'bg-[#F8FAFC] border-[#E2E8F0] text-[#64748B] hover:border-[#0066FF]'"
-            >
-              <div>
-                <span class="text-[11px] font-bold uppercase tracking-wider block" :class="weeklyChecks[day.id] ? 'text-[#0F172A]' : 'text-[#64748B]'">
-                  {{ day.label }}
-                </span>
-                <span class="text-xs font-semibold block mt-1 line-clamp-2" :class="weeklyChecks[day.id] ? 'text-[#0F172A]' : 'text-[#64748B]'">
-                  {{ day.workout }}
-                </span>
-
-                <!-- Data de conclusão e XP quando marcado -->
-                <div v-if="weeklyChecks[day.id]" class="mt-2 space-y-1">
-                  <span
-                    :id="`day-completed-date-${day.id}`"
-                    class="text-[10px] font-black block py-0.5 px-1.5 rounded-md bg-black/10 text-[#0F172A] tabular-nums truncate"
-                  >
-                    📅 {{ weeklyChecksData[day.id]?.completedDate || 'Hoje' }}
-                  </span>
-                  <span class="text-[9px] font-black uppercase text-[#0F172A] bg-white/80 border border-amber-300 px-1.5 py-0.5 rounded-md inline-block">
-                    +50 XP
-                  </span>
-                </div>
-              </div>
-
-              <div class="mt-3 flex items-center justify-center">
-                <span 
-                  :id="`day-check-${day.id}`"
-                  aria-hidden="true"
-                  class="w-6 h-6 rounded-full flex items-center justify-center border text-xs font-bold transition-all"
-                  :class="weeklyChecks[day.id] ? 'bg-white border-[#0F172A] text-[#0F172A]' : 'border-[#CBD5E1] text-transparent'"
-                >
-                  ✓
-                </span>
-              </div>
-            </button>
-          </div>
-
-          <!-- Ação Gamificada: Descanso Ativo & Recuperação (Preserva Ofensiva e Rende XP) -->
-          <div class="mt-6 pt-4 border-t border-[#E2E8F0] flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <span class="text-xs font-black text-[#0F172A] flex items-center gap-1.5">
-                <span>🛡️</span> Descanso Ativo & Recuperação Muscular
-              </span>
-              <p class="text-[11px] text-[#64748B] mt-0.5">
-                Registrar dia de regeneração preserva sua ofensiva e rende <strong>+25 Iron XP</strong>.
-              </p>
-            </div>
-            <button
-              type="button"
-              id="btn-register-rest-day"
-              @click="handleRegisterRestDay"
-              class="tap-btn px-4 py-2 rounded-xl bg-white hover:bg-[#F8FAFC] border border-[#E2E8F0] text-[#0F172A] font-bold text-xs shadow-xs flex items-center gap-2 transition-all hover:border-[#0066FF]"
-              title="Registrar dia de descanso regenerativo"
-            >
-              <span>⚡</span>
-              <span>Registrar Descanso (+25 XP)</span>
-            </button>
-          </div>
-        </div>
-      </section>
+      <FrequencyTab />
 
       <!-- ABA 4: HISTÓRICO DE TREINOS -->
-      <section
-        v-show="currentMainTab === 'history'"
-        id="screen-history"
-        role="tabpanel"
-        aria-labelledby="tab-btn-history"
-        tabindex="0"
-        class="focus:outline-none space-y-6"
-      >
-        <!-- Coach da semana (texto local + análise opcional por IA) -->
-        <WeeklyCoachCard :summary="weeklySummary" />
-
-        <!-- Boss Fight Mensal (Dano por Tonelagem) -->
-        <MonthlyBossWidget
-          :monthly-tonnage-kg="monthlyTonnageKg"
-          :claimed-months="gamificationState.claimedBossMonths || []"
-          @claim-reward="handleClaimBossReward"
-        />
-
-        <!-- Radar de Séries Semanais por Músculo (Alvo: 10 a 20 séries) -->
-        <WeeklyVolumeRadar
-          :weekly-sessions="weeklySessions"
-          :live-workout-logs="workoutLogs"
-          :exercise-muscle-map="exerciseMuscleMap"
-        />
-
-        <!-- Mapa de Calor de Consistência Anual (20 semanas) -->
-        <YearlyHeatmapWidget :history-sessions="historySessions" />
-
-        <HistoryPanel
-          :sessions="historySessions"
-          :split-titles="splitTitles"
-          :exercise-names="exerciseNames"
-          :is-weight-loss="isWeightLoss"
-        />
-      </section>
+      <HistoryTab />
 
     </main>
 
@@ -1774,6 +390,8 @@
       :logs="workoutLogs"
       :last-sets="lastSets"
       :started-at="trainingStartedAt"
+      :series-label="programSeriesLabel"
+      :program-hint="programHint()"
       @close="isTrainingModeOpen = false"
       @toggle="onTrainingToggle"
       @update="onTrainingUpdate"
@@ -1990,6 +608,7 @@
       @open-friends-league="isFriendsLeagueOpen = true"
       @open-trainer="isTrainerOpen = true"
       @open-glossary="openGlossary"
+      @open-program="isProgramOpen = true"
     />
 
     <!-- Modal de Demonstração e Detalhes do Exercício -->
@@ -2135,6 +754,19 @@
 
     <GlossaryModal :is-open="isGlossaryOpen" @close="isGlossaryOpen = false" />
 
+    <ProgramModal
+      :is-open="isProgramOpen"
+      :info="programInfo"
+      :review="programReviewData"
+      :reward="PROGRAM_REWARD"
+      @close="isProgramOpen = false"
+      @start="startProgram"
+      @train="isProgramOpen = false; startTodayWorkout()"
+      @abandon="abandonProgram"
+      @complete="handleCompleteProgram"
+      @open-profile="isProgramOpen = false; isOnboardingOpen = true"
+    />
+
     <CloudSyncModal
       :is-open="isCloudSyncOpen"
       @close="isCloudSyncOpen = false"
@@ -2162,7 +794,7 @@
 </template>
 
 <script setup>
-import { ref, shallowRef, computed, onMounted, onBeforeUnmount, nextTick } from 'vue';
+import { ref, shallowRef, computed, onMounted, onBeforeUnmount, nextTick, provide } from 'vue';
 import confetti from 'canvas-confetti';
 import { db, buildWeekCheckId, getCurrentWeekKey, getDayKey, migrateLegacyWeeklyChecks, migrateLegacyLogsToSession } from './db';
 import { openSession, recordSet, listSessions, getLastSetsForExercises, getOpenSessionIds, closeSession, deleteSet } from './db/sessions';
@@ -2172,7 +804,6 @@ import { requestAiPlan, AiPlanError } from './engine/ai/planFromAi';
 import { parseWeight, parseReps, sessionVolume } from './engine/history';
 import { calculatePersonalRecords, suggestNextLoad, getLastSetsForExercise } from './engine/progression';
 import OnboardingModal from './components/OnboardingModal.vue';
-import HistoryPanel from './components/HistoryPanel.vue';
 import RestTimer from './components/RestTimer.vue';
 import TrainingMode from './components/TrainingMode.vue';
 import ExercisePickerModal from './components/ExercisePickerModal.vue';
@@ -2182,42 +813,38 @@ import CreateSplitModal from './components/CreateSplitModal.vue';
 import VersionUpdatePrompt from './components/VersionUpdatePrompt.vue';
 import AppSideDrawer from './components/AppSideDrawer.vue';
 import ExerciseDetailsModal from './components/ExerciseDetailsModal.vue';
-import MuscleBodyMap from './components/MuscleBodyMap.vue';
 import GamificationIronStatus from './components/GamificationIronStatus.vue';
 import DailyActivityRings from './components/DailyActivityRings.vue';
-import WorkoutTonnageLiveWidget from './components/WorkoutTonnageLiveWidget.vue';
 import WorkoutCelebrationModal from './components/WorkoutCelebrationModal.vue';
 import WorkoutDayCompletionModal from './components/WorkoutDayCompletionModal.vue';
 import AiPlanLoadingModal from './components/AiPlanLoadingModal.vue';
 import RpgSkillTreeModal from './components/RpgSkillTreeModal.vue';
 import CosmeticsShopModal from './components/CosmeticsShopModal.vue';
-import MonthlyBossWidget from './components/MonthlyBossWidget.vue';
-import WeeklyVolumeRadar from './components/WeeklyVolumeRadar.vue';
 import WeeklyLeagueModal from './components/WeeklyLeagueModal.vue';
 import CareerWrappedModal from './components/CareerWrappedModal.vue';
-import YearlyHeatmapWidget from './components/YearlyHeatmapWidget.vue';
 import CommunityRaidModal from './components/CommunityRaidModal.vue';
 import PrCelebrationToast from './components/PrCelebrationToast.vue';
 import WalkingTrackerModal from './components/WalkingTrackerModal.vue';
 import AppFeedbackModal from './components/AppFeedbackModal.vue';
+import { useUiPrefs } from './composables/useUiPrefs.js';
+import { useDeload } from './composables/useDeload.js';
+import { useWeeklyInsights } from './composables/useWeeklyInsights.js';
+import { useTodayWorkout } from './composables/useTodayWorkout.js';
+import { useOnlineActions } from './composables/useOnlineActions.js';
+import { useBeginnerProgram, PROGRAM_REWARD } from './composables/useBeginnerProgram.js';
+import ProgramCard from './components/ProgramCard.vue';
+import ProgramModal from './components/ProgramModal.vue';
+import HistoryTab from './components/tabs/HistoryTab.vue';
+import FrequencyTab from './components/tabs/FrequencyTab.vue';
+import NutritionTab from './components/tabs/NutritionTab.vue';
+import WorkoutTab from './components/tabs/WorkoutTab.vue';
 import BodyProgressModal from './components/BodyProgressModal.vue';
 import RemindersModal from './components/RemindersModal.vue';
 import CloudSyncModal from './components/CloudSyncModal.vue';
 import FriendsLeagueModal from './components/FriendsLeagueModal.vue';
 import TrainerModal from './components/TrainerModal.vue';
-import WeeklyCoachCard from './components/WeeklyCoachCard.vue';
-import DeloadBanner from './components/DeloadBanner.vue';
 import TodayWorkoutCard from './components/TodayWorkoutCard.vue';
 import GlossaryModal from './components/GlossaryModal.vue';
-import HelpTip from './components/HelpTip.vue';
-import { pickTodaySplit, estimateMinutes } from './engine/todayPlan.js';
-import { evaluateDeload, deloadLoad, isoWeekKey } from './engine/deload.js';
-import { buildWeeklySummary } from './engine/weeklySummary.js';
-import { weightTrend } from './engine/bodyProgress.js';
-import { listBodyEntries } from './db/bodyProgress.js';
-import { loadCloudAccount, pushSnapshot, uploadStudentSummary } from './services/cloud.js';
-import { loadExerciseVideos, normalizeVideoUrl, saveExerciseVideo } from './engine/exerciseMedia.js';
-import { calculateWeeklyMuscleVolume } from './engine/gamification.js';
 import { filterSafeExercises } from './engine/generators/workoutGenerator';
 import { loadDailyWalkingData } from './engine/walkingTracker';
 import {
@@ -2367,57 +994,7 @@ const isRemindersOpen = ref(false);
 const isCloudSyncOpen = ref(false);
 const isFriendsLeagueOpen = ref(false);
 const isTrainerOpen = ref(false);
-const bodyEntries = ref([]);
 
-// Deload: guarda a semana em que o usuário aceitou ou dispensou a sugestão,
-// para não insistir na mesma semana.
-const DELOAD_STATE_KEY = 'overload_deload_state';
-function readDeloadState() {
-  try {
-    const parsed = JSON.parse(localStorage.getItem(DELOAD_STATE_KEY) || '{}');
-    return { lastDeloadWeekKey: parsed.lastDeloadWeekKey ?? null, dismissedWeekKey: parsed.dismissedWeekKey ?? null };
-  } catch {
-    return { lastDeloadWeekKey: null, dismissedWeekKey: null };
-  }
-}
-const deloadState = ref(readDeloadState());
-
-// ---------------------------------------------------------------------------
-// Experiência para iniciantes: treino de hoje, primeiros passos, glossário
-// ---------------------------------------------------------------------------
-
-const UI_PREFS_KEY = 'overload_ui_prefs';
-function readUiPrefs() {
-  try {
-    return JSON.parse(localStorage.getItem(UI_PREFS_KEY) || '{}') || {};
-  } catch {
-    return {};
-  }
-}
-const uiPrefs = ref(readUiPrefs());
-function saveUiPrefs(patch) {
-  uiPrefs.value = { ...uiPrefs.value, ...patch };
-  try {
-    localStorage.setItem(UI_PREFS_KEY, JSON.stringify(uiPrefs.value));
-  } catch {
-    // Preferência visual: sem storage, só não é lembrada.
-  }
-}
-
-const isDaySummaryOpen = computed(() => uiPrefs.value.daySummaryOpen === true);
-function toggleDaySummary() {
-  saveUiPrefs({ daySummaryOpen: !isDaySummaryOpen.value });
-}
-
-const isGlossaryOpen = ref(false);
-function openGlossary() {
-  isGlossaryOpen.value = true;
-  saveUiPrefs({ seenGlossary: true });
-}
-
-// Modo de edição da ficha: mover/remover ficam escondidos no dia a dia para
-// o iniciante não apagar um exercício sem querer no meio do treino.
-const isSheetEditMode = ref(false);
 const todayWalkingData = ref(loadDailyWalkingData(getDayKey()));
 const prToastState = ref({
   isOpen: false,
@@ -3955,252 +2532,6 @@ const dailyStreakFlame = computed(() => getFlameInfo(dailyStreak.value));
 
 const levelInfo = computed(() => calculateLevelFromXp(gamificationState.value?.totalXp || 0));
 
-const todayPlan = computed(() => pickTodaySplit(activePlan.value?.workoutSplits || [], historySessions.value, getDayKey()));
-const todayMinutes = computed(() => estimateMinutes(todayPlan.value.split));
-const todayMuscles = computed(() =>
-  getSplitMuscleGroups(todayPlan.value.split).slice(0, 4).map(m => MUSCLE_LABELS[m] || m).join(', ')
-);
-
-const firstStepsDone = computed(() => ({
-  glossary: !!uiPrefs.value.seenGlossary,
-  workout: historySessions.value.some(s => (s.sets || []).some(set => set?.isDone)),
-  weight: bodyEntries.value.length > 0
-}));
-const showFirstSteps = computed(() =>
-  !uiPrefs.value.firstStepsDismissed && !Object.values(firstStepsDone.value).every(Boolean)
-);
-function dismissFirstSteps() {
-  saveUiPrefs({ firstStepsDismissed: true });
-}
-
-function startTodayWorkout() {
-  const split = todayPlan.value.split;
-  if (!split) return;
-  currentMainTab.value = 'workout';
-  currentSplitTab.value = split.id;
-  openTrainingMode();
-}
-
-function viewTodayWorkout() {
-  const split = todayPlan.value.split;
-  if (!split) return;
-  currentMainTab.value = 'workout';
-  currentSplitTab.value = split.id;
-  nextTick(() => document.getElementById('workout-sheet-anchor')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
-}
-
-// ---------------------------------------------------------------------------
-// Deload automático
-// ---------------------------------------------------------------------------
-
-const deloadEvaluation = computed(() => evaluateDeload(historySessions.value, {
-  now: Date.now(),
-  lastDeloadWeekKey: deloadState.value.lastDeloadWeekKey,
-  dismissedWeekKey: deloadState.value.dismissedWeekKey
-}));
-
-function persistDeloadState(next) {
-  deloadState.value = next;
-  try {
-    localStorage.setItem(DELOAD_STATE_KEY, JSON.stringify(next));
-  } catch {
-    // Sem storage a sugestão volta a aparecer, sem outro efeito.
-  }
-}
-
-function startDeload() {
-  persistDeloadState({ ...deloadState.value, lastDeloadWeekKey: deloadEvaluation.value.weekKey });
-}
-
-function dismissDeload() {
-  persistDeloadState({ ...deloadState.value, dismissedWeekKey: deloadEvaluation.value.weekKey });
-}
-
-function endDeload() {
-  persistDeloadState({ lastDeloadWeekKey: null, dismissedWeekKey: deloadEvaluation.value.weekKey });
-}
-
-function deloadHint(exerciseId) {
-  if (!deloadEvaluation.value.inDeload) return null;
-  const load = deloadLoad(lastSets.value[exerciseId]?.weight);
-  return load ? `${String(load).replace('.', ',')} kg` : null;
-}
-
-// ---------------------------------------------------------------------------
-// Evolução corporal, resumo semanal, coach, ligas reais e modo personal
-// ---------------------------------------------------------------------------
-
-async function loadBodyEntries() {
-  try {
-    bodyEntries.value = await listBodyEntries();
-  } catch (err) {
-    console.error('Não foi possível ler as medições corporais.', err);
-    bodyEntries.value = [];
-  }
-}
-
-const bodyTrend = computed(() => weightTrend(bodyEntries.value));
-const latestBodyWeight = computed(() => {
-  const withWeight = bodyEntries.value.filter(e => Number.isFinite(e.weightKg));
-  return withWeight.length ? withWeight[withWeight.length - 1].weightKg : null;
-});
-
-const currentIsoWeekKey = computed(() => isoWeekKey(Date.now()));
-
-const weeklySummary = computed(() => {
-  // Grupos "atrasados" só fazem sentido no fim da semana; na segunda-feira
-  // todos estariam abaixo da meta.
-  const weekday = new Date().getDay();
-  const lateWeek = weekday === 0 || weekday >= 5;
-  const lagging = lateWeek
-    ? calculateWeeklyMuscleVolume({
-      weeklySessions: weeklySessions.value,
-      liveWorkoutLogs: {},
-      exerciseMuscleMap: exerciseMuscleMap.value
-    }).laggingGroups.map(g => g.label)
-    : [];
-  return buildWeeklySummary({
-    sessions: historySessions.value,
-    now: Date.now(),
-    goal: userProfile.value?.goal || 'hypertrophy',
-    plannedSessions: Number(userProfile.value?.daysPerWeek) || 0,
-    exerciseName: id => exerciseNames.value[id] || id,
-    stalledExerciseIds: deloadEvaluation.value.stalledExercises,
-    weakMuscles: lagging,
-    weightTrendKgPerWeek: bodyTrend.value?.weeklyKg ?? null,
-    steps: todayWalkingData.value?.steps ?? null,
-    deloadSuggested: deloadEvaluation.value.recommended
-  });
-});
-
-// O que o personal enxerga: só agregados e a ficha atual, nada de nome real,
-// fotos ou histórico bruto.
-const studentSummary = computed(() => {
-  const profile = userProfile.value || {};
-  const recentWeeks = [3, 2, 1, 0].map(back => {
-    const key = isoWeekKey(Date.now() - back * 7 * 86_400_000);
-    const sessions = historySessions.value.filter(s => {
-      const t = Date.parse(s.startedAt || '');
-      return Number.isFinite(t) && isoWeekKey(t) === key && (s.sets || []).some(set => set?.isDone);
-    });
-    return { weekKey: key, sessions: sessions.length };
-  });
-  return {
-    goal: profile.goal,
-    daysPerWeek: profile.daysPerWeek,
-    experienceLevel: profile.experienceLevel,
-    equipment: profile.equipment,
-    restrictions: profile.restrictions || [],
-    weekly: weeklySummary.value,
-    recentWeeks,
-    latestWeightKg: latestBodyWeight.value ?? profile.weightKg ?? null,
-    weightTrendKgPerWeek: bodyTrend.value?.weeklyKg ?? null,
-    planSplits: (activePlan.value?.workoutSplits || []).map(split => ({
-      title: split.title,
-      exercises: (split.exercises || []).map(ex => ex.name)
-    }))
-  };
-});
-
-// Ficha que o personal envia: a dele, com os vídeos próprios anexados.
-const trainerSplitsToSend = computed(() => {
-  const videos = loadExerciseVideos();
-  return (activePlan.value?.workoutSplits || []).map(split => ({
-    ...JSON.parse(JSON.stringify(split)),
-    exercises: (split.exercises || []).map(ex => ({ ...JSON.parse(JSON.stringify(ex)), videoUrl: videos[ex.id] || ex.videoUrl || undefined }))
-  }));
-});
-
-async function handleApplyCalories(macros) {
-  if (!activePlan.value) return;
-  const rawPlan = JSON.parse(JSON.stringify(activePlan.value));
-  rawPlan.customNutrition = { enabled: true, ...macros };
-  const ok = await persistOrReport('Não foi possível aplicar a nova meta calórica.', () => db.active_plan.put(rawPlan));
-  if (!ok) return;
-  activePlan.value = rawPlan;
-  initCustomNutritionForm();
-  isBodyProgressOpen.value = false;
-  currentMainTab.value = 'nutrition';
-}
-
-async function handleAcceptTrainerPlan({ workoutSplits, className }) {
-  if (!activePlan.value) return;
-  const profile = userProfile.value || {};
-  let removed = 0;
-  const safeSplits = (workoutSplits || [])
-    .filter(split => split && split.id)
-    .map(split => {
-      const exercises = (split.exercises || []).filter(ex => ex && ex.id);
-      // A ficha vem de outro aparelho: passa pelo mesmo filtro articular e de
-      // equipamento do aluno, como qualquer outra origem de plano.
-      const safe = filterSafeExercises(exercises, {
-        restrictions: profile.restrictions || [],
-        equipment: profile.equipment || 'gym'
-      });
-      removed += exercises.length - safe.length;
-      return { ...split, exercises: safe };
-    })
-    .filter(split => split.exercises.length > 0);
-
-  if (safeSplits.length === 0) {
-    reportStorageError('A ficha do personal não tem exercícios compatíveis com suas restrições ou equipamento.', null);
-    return;
-  }
-
-  for (const split of safeSplits) {
-    for (const ex of split.exercises) {
-      const video = normalizeVideoUrl(ex.videoUrl);
-      if (video.ok && video.value) saveExerciseVideo(ex.id, video.value);
-    }
-  }
-
-  const rawPlan = JSON.parse(JSON.stringify(activePlan.value));
-  rawPlan.workoutSplits = JSON.parse(JSON.stringify(safeSplits));
-  rawPlan.planSource = 'trainer';
-  rawPlan.trainerName = String(className || '').slice(0, 40);
-  const ok = await persistOrReport('Não foi possível salvar a ficha do personal.', () => db.active_plan.put(rawPlan));
-  if (!ok) return;
-
-  activePlan.value = rawPlan;
-  // O aviso da última tentativa de IA não descreve mais a ficha ativa.
-  aiPlanMessage.value = null;
-  activeMuscleFilter.value = {};
-  currentSplitTab.value = rawPlan.workoutSplits[0].id;
-  await loadLastSets();
-  isTrainerOpen.value = false;
-  currentMainTab.value = 'workout';
-  if (removed > 0) {
-    reportStorageError(`${removed} exercício(s) da ficha do personal conflitavam com suas restrições ou equipamento e foram removidos.`, null);
-  }
-}
-
-function handleCloudRestore(backupObject) {
-  const parsed = parseBackupText(JSON.stringify(backupObject));
-  if (!parsed.ok) {
-    reportStorageError(`Backup da nuvem inválido: ${parsed.error}`, null);
-    return;
-  }
-  isCloudSyncOpen.value = false;
-  // Mesmo caminho do arquivo: o usuário confere o que será substituído antes.
-  pendingBackup.value = parsed.backup;
-  pendingBackupSummary.value = summarizeBackup(parsed.backup);
-  pendingBackupFileName.value = 'Backup na nuvem';
-  pendingBackupWarnings.value = parsed.warnings;
-  isBackupImportOpen.value = true;
-}
-
-// Depois de cada treino: envia o backup para a nuvem e atualiza o resumo do
-// aluno, se o usuário ativou os recursos online. Falha aqui nunca atrapalha o treino.
-async function autoCloudSync() {
-  const account = loadCloudAccount();
-  if (!account) return;
-  try {
-    await pushSnapshot(account, await buildBackup());
-  } catch (err) {
-    console.warn('Sync automático pendente:', err?.message ?? err);
-  }
-  uploadStudentSummary(account, studentSummary.value).catch(() => {});
-}
 const currentPatentTitle = computed(() => calculateLevelFromXp(gamificationState.value?.totalXp || 0).patent);
 
 const todayWorkoutProgressPercent = computed(() => {
@@ -4862,5 +3193,152 @@ async function rehydrateAfterRestore() {
   }
   await loadHistory();
   await loadBodyEntries();
+  reloadProgramState();
 }
+
+// ---------------------------------------------------------------------------
+// Funcionalidades em composables (src/composables). Ficam no fim do setup
+// porque dependem de estado declarado acima; tudo o que usam roda depois.
+// ---------------------------------------------------------------------------
+const { uiPrefs, saveUiPrefs, isDaySummaryOpen, toggleDaySummary, isGlossaryOpen, openGlossary, isSheetEditMode } = useUiPrefs();
+const { deloadEvaluation, startDeload, dismissDeload, endDeload, deloadHint } = useDeload({ historySessions, lastSets });
+const {
+  bodyEntries, loadBodyEntries, bodyTrend, latestBodyWeight, currentIsoWeekKey,
+  weeklySummary, studentSummary, trainerSplitsToSend
+} = useWeeklyInsights({
+  historySessions, weeklySessions, userProfile, activePlan,
+  exerciseNames, exerciseMuscleMap, todayWalkingData, deloadEvaluation
+});
+const {
+  todayPlan, todayMinutes, todayMuscles, firstStepsDone, showFirstSteps,
+  dismissFirstSteps, startTodayWorkout, viewTodayWorkout
+} = useTodayWorkout({
+  activePlan, historySessions, bodyEntries, uiPrefs, saveUiPrefs,
+  currentMainTab, currentSplitTab, openTrainingMode, getSplitMuscleGroups, MUSCLE_LABELS
+});
+const { handleApplyCalories, handleAcceptTrainerPlan, handleCloudRestore, autoCloudSync } = useOnlineActions({
+  activePlan, userProfile, persistOrReport, reportStorageError, initCustomNutritionForm,
+  isBodyProgressOpen, isTrainerOpen, isCloudSyncOpen, currentMainTab, currentSplitTab,
+  aiPlanMessage, activeMuscleFilter, loadLastSets, studentSummary,
+  pendingBackup, pendingBackupSummary, pendingBackupFileName, pendingBackupWarnings, isBackupImportOpen
+});
+const {
+  programInfo, isProgramActive, shouldOfferProgram, programReviewData, isProgramOpen,
+  programHint, programSeriesLabel, startProgram, dismissProgram, abandonProgram, completeProgram, reloadProgramState
+} = useBeginnerProgram({ historySessions, userProfile, gamificationState, exerciseNames });
+
+function handleCompleteProgram() {
+  completeProgram();
+  triggerHaptic('celebrate');
+  confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
+}
+
+// ---------------------------------------------------------------------------
+// Contexto das abas (components/tabs/*): o que cada aba lê ou chama do App.
+// Gerado a partir do uso real nos templates das abas.
+// ---------------------------------------------------------------------------
+provide('appContext', {
+  isProgramActive,
+  programHint,
+  programSeriesLabel,
+  DIETARY_PREFERENCES,
+  MUSCLE_LABELS,
+  activeMuscleFilter,
+  activePlan,
+  activeSessionId,
+  addExerciseSet,
+  addWater,
+  aiPlanMessage,
+  askDeleteSplit,
+  askRemoveExercise,
+  cancelRemoveExercise,
+  checkedMealsCount,
+  completedDaysCount,
+  confirmDeleteSplit,
+  confirmRemoveExercise,
+  consumedCaloriesEstimated,
+  consumedProteinEstimated,
+  currentDietaryPreference,
+  currentMainTab,
+  currentSplitTab,
+  customNutritionForm,
+  deloadEvaluation,
+  deloadHint,
+  dietAdherencePercent,
+  dismissDeload,
+  effectiveMacros,
+  effectiveTargetCalories,
+  endDeload,
+  exerciseMuscleMap,
+  exerciseNames,
+  finishCurrentSession,
+  gamificationState,
+  generatePlanWithAi,
+  getMuscleBadgeClass,
+  getMuscleCountInSplit,
+  getMuscleDotColor,
+  getSplitAccentBg,
+  getSplitMuscleGroups,
+  getSplitTabLabel,
+  getVisibleExercises,
+  handleClaimBossReward,
+  handleRegisterRestDay,
+  historySessions,
+  isAiPlanLoading,
+  isCreatineTakenToday,
+  isCustomNutritionActive,
+  isEditingCustomNutrition,
+  isSheetEditMode,
+  isWeightLoss,
+  lastSetLabel,
+  liveSessionGamification,
+  monthlyTonnageKg,
+  moveExercise,
+  nextLoadSuggestions,
+  openAdderFor,
+  openCreateSplitModal,
+  openCustomExercises,
+  openEditSplitModal,
+  openExerciseDetails,
+  openExercisePicker,
+  openGlossary,
+  openTrainingMode,
+  pendingDeleteSplit,
+  pendingRemove,
+  personalRecords,
+  removeExerciseSet,
+  resetCustomNutrition,
+  resetWater,
+  saveCustomNutrition,
+  setDietaryPreference,
+  shouldShowMuscleHeader,
+  showSplitBodyMap,
+  sortSplitByMuscle,
+  splitTitles,
+  startDeload,
+  targetCalories,
+  targetProteinGrams,
+  targetWaterMl,
+  todayDateFormatted,
+  todayMealChecks,
+  todayWaterMl,
+  toggleCreatineToday,
+  toggleDayCheck,
+  toggleExerciseCheck,
+  toggleMealCheck,
+  toggleMuscleFilter,
+  toggleSetDone,
+  totalMealsCount,
+  trainingSplit,
+  triggerRestTimer,
+  updateLog,
+  updateSetField,
+  userProfile,
+  waterPercent,
+  weeklyChecks,
+  weeklyChecksData,
+  weeklySessions,
+  weeklySummary,
+  workoutLogs
+});
 </script>

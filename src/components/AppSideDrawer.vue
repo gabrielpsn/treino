@@ -509,13 +509,15 @@ const emit = defineEmits([
   'open-cloud-sync',
   'open-friends-league',
   'open-trainer',
-  'open-glossary'
+  'open-glossary',
+  'open-program'
 ]);
 
 const PROGRESS_ITEMS = [
   { id: 'body-progress', action: 'open-body-progress', icon: '📏', label: 'Evolução Corporal (peso, medidas, fotos)' },
   { id: 'reminders', action: 'open-reminders', icon: '⏰', label: 'Lembretes de Treino' },
-  { id: 'glossary', action: 'open-glossary', icon: '📖', label: 'Termos da musculação' }
+  { id: 'glossary', action: 'open-glossary', icon: '📖', label: 'Termos da musculação' },
+  { id: 'program', action: 'open-program', icon: '🎓', label: 'Programa Iniciante (4 semanas)' }
 ];
 
 const ONLINE_ITEMS = [

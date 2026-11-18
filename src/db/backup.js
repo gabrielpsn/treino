@@ -10,6 +10,9 @@ import { GAMIFICATION_STORAGE_KEY, normalizeGamificationState } from './gamifica
 import { WALKING_STORAGE_PREFIX, normalizeWalkingDay } from '../engine/walkingTracker.js';
 import { normalizeBodyEntry } from '../engine/bodyProgress.js';
 import { EXERCISE_VIDEO_KEY, normalizeVideoUrl } from '../engine/exerciseMedia.js';
+import { normalizeProgramState } from '../engine/beginnerProgram.js';
+
+const PROGRAM_STORAGE_KEY = 'overload_beginner_program';
 
 // Backup e restauração de todos os dados do usuário.
 //
@@ -106,7 +109,7 @@ function defaultStorage() {
 }
 
 function readLocalExtras(storage) {
-  if (!storage) return { gamification: null, walking: [], exerciseVideos: {} };
+  if (!storage) return { gamification: null, walking: [], exerciseVideos: {}, beginnerProgram: null };
 
   let gamification = null;
   try {
@@ -141,7 +144,15 @@ function readLocalExtras(storage) {
     exerciseVideos = {};
   }
 
-  return { gamification, walking, exerciseVideos };
+  let beginnerProgram = null;
+  try {
+    const raw = storage.getItem(PROGRAM_STORAGE_KEY);
+    if (raw) beginnerProgram = normalizeProgramState(JSON.parse(raw));
+  } catch {
+    beginnerProgram = null;
+  }
+
+  return { gamification, walking, exerciseVideos, beginnerProgram };
 }
 
 function normalizeVideos(value) {
@@ -220,6 +231,10 @@ function writeLocalExtras(backup, storage) {
     if (backup.exerciseVideos) {
       storage.setItem(EXERCISE_VIDEO_KEY, JSON.stringify(backup.exerciseVideos));
     }
+
+    if (backup.beginnerProgram) {
+      storage.setItem(PROGRAM_STORAGE_KEY, JSON.stringify(backup.beginnerProgram));
+    }
   } catch {
     result.localDataError = true;
   }
@@ -252,7 +267,7 @@ export async function buildBackup({ database = db, now = new Date(), storage = d
     if (setsBySession.has(set.sessionId)) setsBySession.get(set.sessionId).push(pick(set, SET_FIELDS));
   }
 
-  const { gamification, walking, exerciseVideos } = readLocalExtras(storage);
+  const { gamification, walking, exerciseVideos, beginnerProgram } = readLocalExtras(storage);
 
   return {
     kind: BACKUP_KIND,
@@ -261,6 +276,7 @@ export async function buildBackup({ database = db, now = new Date(), storage = d
     gamification,
     walking,
     exerciseVideos,
+    beginnerProgram,
     bodyMetrics: bodyRows.map(row => ({ ...row })),
     userProfile: profileRow ? { ...profileRow } : null,
     activePlan: planRow ? { ...planRow } : null,
@@ -422,6 +438,7 @@ function normalizeBackup(raw, warnings) {
     gamification: normalizeGamification(raw.gamification),
     walking: normalizeWalking(raw.walking),
     exerciseVideos: normalizeVideos(raw.exerciseVideos),
+    beginnerProgram: raw.beginnerProgram && typeof raw.beginnerProgram === 'object' ? normalizeProgramState(raw.beginnerProgram) : null,
     bodyMetrics: normalizeBodyMetrics(raw.bodyMetrics)
   };
 }

@@ -173,6 +173,11 @@ export function awardCoins(amount = 0) {
 /**
  * Concede bônus de XP e Moedas ao usuário por avaliar o aplicativo e enviar feedback.
  */
+/** Credita XP e moedas (feedback, conclusão de programa, etc.). */
+export function awardXpAndCoins(xp = 0, coins = 0) {
+  return awardFeedbackReward(xp, coins);
+}
+
 export function awardFeedbackReward(xp = 50, coins = 20) {
   const current = loadGamificationState();
   const nextTotalXp = current.totalXp + Math.max(0, Number(xp) || 0);
