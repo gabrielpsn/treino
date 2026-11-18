@@ -293,3 +293,62 @@ test.describe('celular', () => {
     await expect(page.getByRole('note')).toContainText('repetições a mais');
   });
 });
+
+test.describe('caminhada em segundo plano', () => {
+  test.use({ viewport: { width: 390, height: 844 }, permissions: ['geolocation'], geolocation: { latitude: -8.05, longitude: -34.9, accuracy: 10 } });
+
+  async function setVisibility(page, state) {
+    await page.evaluate(s => {
+      Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => s });
+      Object.defineProperty(document, 'hidden', { configurable: true, get: () => s === 'hidden' });
+      document.dispatchEvent(new Event('visibilitychange'));
+    }, state);
+  }
+
+  test('fechar o modal não encerra a caminhada e, ao voltar do segundo plano, estima os passos pelo GPS', async ({ page, context }) => {
+    await page.clock.install();
+    await page.goto('/');
+    await completeOnboarding(page, { name: 'Caminhante', height: 170 });
+
+    await page.locator('#btn-toggle-day-summary').click();
+    await page.locator('#btn-open-walking-tracker').click();
+    await page.locator('#btn-start-walking').click();
+    await expect(page.locator('#btn-finish-walking')).toBeVisible();
+    await expect(page.locator('#walking-background-tip')).toContainText('celular pausa a contagem');
+
+    // Dá tempo do watchPosition registrar a posição inicial.
+    await page.clock.runFor(2000);
+
+    // Fecha o modal: a caminhada continua e aparece o atalho.
+    await page.locator('#btn-close-walking-modal').click();
+    await expect(page.locator('#btn-walking-in-progress')).toBeVisible();
+
+    // Minimiza, anda ~0,8 km em 10 minutos e volta.
+    // No iPhone o GPS não entrega posições com o app minimizado: a posição
+    // nova só chega depois de voltar.
+    await setVisibility(page, 'hidden');
+    await page.clock.fastForward('10:00');
+    await setVisibility(page, 'visible');
+    await context.setGeolocation({ latitude: -8.0428, longitude: -34.9, accuracy: 10 });
+    // Deixa o relógio falso andar para o retorno do GPS ser entregue.
+    await page.clock.runFor(1500);
+
+    await page.locator('#btn-walking-in-progress').click();
+    const notice = page.locator('#walking-background-notice');
+    await expect(notice).toContainText('estimamos +');
+    await expect(notice).toContainText('10 min');
+    const total = Number((await page.locator('#display-total-steps').innerText()).replace(/\D/g, ''));
+    expect(total).toBeGreaterThan(900);
+    expect(total).toBeLessThan(1400);
+  });
+
+  test('passos de outro app podem ser somados manualmente', async ({ page }) => {
+    await page.goto('/');
+    await completeOnboarding(page, { name: 'Somador' });
+    await page.locator('#btn-toggle-day-summary').click();
+    await page.locator('#btn-open-walking-tracker').click();
+    await page.locator('#input-manual-steps').fill('3456');
+    await page.locator('#btn-add-typed-steps').click();
+    await expect(page.locator('#display-total-steps')).toContainText('3.456');
+  });
+});

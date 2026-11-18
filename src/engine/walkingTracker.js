@@ -229,3 +229,55 @@ export function saveDailyWalkingData(dateStr, data) {
     console.error('Erro ao salvar dados de caminhada:', err);
   }
 }
+
+// ---------------------------------------------------------------------------
+// Segundo plano
+// ---------------------------------------------------------------------------
+//
+// Um PWA não roda em segundo plano: com o app minimizado ou a tela bloqueada,
+// o navegador (principalmente no iPhone) pausa o acelerômetro e o GPS da
+// página. Duas defesas:
+//   1) manter a tela ligada durante a caminhada (Screen Wake Lock), para o
+//      app continuar ativo com o celular no bolso;
+//   2) ao voltar, estimar os passos do intervalo pela distância em linha reta
+//      entre a última posição de GPS e a atual.
+
+export const MAX_WALKING_SPEED_MS = 2.8; // ~10 km/h: acima disso é corrida ou veículo
+export const MAX_CADENCE_STEPS_S = 2.2;
+
+/**
+ * Passos estimados para o intervalo em que o app ficou minimizado.
+ * A distância é em linha reta, então tende a SUBestimar (curvas, ida e volta):
+ * é melhor contar a menos do que inventar passos.
+ */
+export function estimateStepsForGap({ distanceKm, gapSeconds, heightCm }) {
+  const gap = Number(gapSeconds);
+  const km = Number(distanceKm);
+  if (!Number.isFinite(gap) || gap < 20) return { steps: 0, reason: 'short_gap' };
+  if (!Number.isFinite(km) || km < 0.02) return { steps: 0, reason: 'no_movement' };
+
+  const speed = (km * 1000) / gap;
+  if (speed > MAX_WALKING_SPEED_MS) return { steps: 0, reason: 'too_fast' };
+
+  const steps = Math.min(kilometersToSteps(km, heightCm), Math.floor(gap * MAX_CADENCE_STEPS_S));
+  return { steps, reason: 'gps' };
+}
+
+/** Tempo ativo de uma sessão por relógio, imune a timers pausados em segundo plano. */
+export function activeElapsedSeconds({ startedAt, pausedMs = 0, pausedSince = null, now = Date.now() }) {
+  if (!startedAt) return 0;
+  const pausedNow = pausedSince ? now - pausedSince : 0;
+  return Math.max(0, Math.floor((now - startedAt - pausedMs - pausedNow) / 1000));
+}
+
+/** Pede para manter a tela ligada. Devolve o sentinel ou null quando não há suporte. */
+export async function requestScreenWakeLock() {
+  try {
+    if (typeof navigator !== 'undefined' && navigator.wakeLock?.request) {
+      return await navigator.wakeLock.request('screen');
+    }
+  } catch {
+    // Negado (bateria fraca, aba oculta): segue sem.
+  }
+  return null;
+}

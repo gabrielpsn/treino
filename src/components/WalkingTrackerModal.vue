@@ -171,9 +171,21 @@
             </div>
           </div>
 
-          <p class="text-[10px] text-[#64748B] mt-2.5 text-center leading-relaxed">
-            💡 <strong>Dica mobile:</strong> coloque o celular no bolso ou segure na mão durante a caminhada para detecção contínua via acelerômetro.
+          <p
+            v-if="backgroundNotice"
+            id="walking-background-notice"
+            role="status"
+            class="mt-2.5 text-[11px] font-semibold rounded-xl p-2.5 bg-amber-50 border border-amber-200 text-amber-900 leading-relaxed"
+          >
+            {{ backgroundNotice }}
           </p>
+
+          <div id="walking-background-tip" class="mt-2.5 text-[11px] text-[#475569] leading-relaxed rounded-xl bg-white border border-[#E2E8F0] p-2.5 space-y-1">
+            <p><strong>📱 Para contar todos os passos:</strong> deixe o app aberto e o celular no bolso.
+              <template v-if="isWalkActive && hasWakeLock"> A tela vai ficar ligada sozinha durante a caminhada 🔆.</template>
+            </p>
+            <p>Se você minimizar o app ou bloquear a tela, o celular pausa a contagem (limite do sistema para apps instalados pelo navegador). Ao voltar, estimamos os passos desse intervalo pelo GPS.</p>
+          </div>
         </div>
 
         <!-- Ajuste Rápido de Passos (Manual / Esteira) -->
@@ -184,6 +196,21 @@
             </h4>
             <span class="text-[10px] text-[#64748B]">Esteira ou smartwatch</span>
           </div>
+
+          <form class="flex gap-2" @submit.prevent="addTypedSteps">
+            <input
+              id="input-manual-steps"
+              v-model="manualStepsInput"
+              type="number"
+              inputmode="numeric"
+              min="1"
+              max="60000"
+              placeholder="Passos do app Saúde / Google Fit"
+              aria-label="Quantidade de passos para somar"
+              class="flex-1 min-w-0 rounded-xl border-2 border-[#CBD5E1] px-3 py-2 text-sm"
+            />
+            <button id="btn-add-typed-steps" type="submit" class="tap-btn px-4 rounded-xl bg-[#0066FF] text-white text-xs font-black">Somar</button>
+          </form>
 
           <div class="grid grid-cols-3 gap-2">
             <button
@@ -228,7 +255,10 @@ import {
   requestDeviceMotionPermission,
   loadDailyWalkingData,
   saveDailyWalkingData,
-  calculateHaversineDistanceKm
+  calculateHaversineDistanceKm,
+  estimateStepsForGap,
+  activeElapsedSeconds,
+  requestScreenWakeLock
 } from '../engine/walkingTracker';
 import { formatElapsed } from '../engine/sessionMode';
 import { playPlateClick, playPrFanfare, triggerHaptic, speakCoachMessage } from '../engine/audioHaptics';
@@ -252,7 +282,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['close', 'goal-reached', 'steps-updated']);
+const emit = defineEmits(['close', 'goal-reached', 'steps-updated', 'active-changed']);
 
 const dailyData = ref(loadDailyWalkingData(props.todayDateStr));
 
@@ -266,6 +296,16 @@ const isSteppingPulse = ref(false);
 let sessionTimer = null;
 let lastGpsCoords = null;
 let gpsWatchId = null;
+// Tempo por relógio: o setInterval para em segundo plano, Date.now() não.
+let pausedMs = 0;
+let pausedSince = null;
+// Segundo plano: onde e quando o app foi minimizado.
+let hiddenAt = null;
+let hiddenCoords = null;
+let wakeLock = null;
+const backgroundNotice = ref('');
+const manualStepsInput = ref('');
+const hasWakeLock = ref(false);
 
 // Detector de passos
 let stepDetector = null;
@@ -328,6 +368,100 @@ function handleStepDetected() {
   checkGoalAchievement();
 }
 
+function addStepsToSession(count) {
+  if (count <= 0) return;
+  sessionSteps.value += count;
+  dailyData.value.steps += count;
+  dailyData.value.distanceKm = stepsToKilometers(dailyData.value.steps, props.userHeightCm);
+  dailyData.value.caloriesKcal = estimateWalkingCalories(dailyData.value.steps, props.userWeightKg, props.userHeightCm);
+  saveDailyWalkingData(props.todayDateStr, dailyData.value);
+  emit('steps-updated', dailyData.value);
+  checkGoalAchievement();
+}
+
+function currentPosition(timeout = 8000) {
+  return new Promise(resolve => {
+    if (typeof navigator === 'undefined' || !('geolocation' in navigator)) return resolve(null);
+    navigator.geolocation.getCurrentPosition(
+      pos => resolve(pos.coords.accuracy && pos.coords.accuracy > 60 ? null : { lat: pos.coords.latitude, lon: pos.coords.longitude }),
+      () => resolve(null),
+      { enableHighAccuracy: true, maximumAge: 0, timeout }
+    );
+  });
+}
+
+async function acquireWakeLock() {
+  if (wakeLock) return;
+  wakeLock = await requestScreenWakeLock();
+  hasWakeLock.value = !!wakeLock;
+  wakeLock?.addEventListener?.('release', () => {
+    wakeLock = null;
+    hasWakeLock.value = false;
+  });
+}
+
+function releaseWakeLock() {
+  wakeLock?.release?.().catch?.(() => {});
+  wakeLock = null;
+  hasWakeLock.value = false;
+}
+
+// Intervalo minimizado aguardando a primeira posição de GPS após voltar.
+let pendingGap = null;
+let pendingGapTimer = null;
+
+function resolvePendingGap(to) {
+  if (!pendingGap) return;
+  const { from, gapSeconds } = pendingGap;
+  pendingGap = null;
+  clearTimeout(pendingGapTimer);
+  const minutes = Math.max(1, Math.round(gapSeconds / 60));
+  if (!to) {
+    backgroundNotice.value = `O app ficou minimizado por ${minutes} min e o GPS não respondeu para estimar os passos desse intervalo.`;
+    return;
+  }
+  const distanceKm = calculateHaversineDistanceKm(from.lat, from.lon, to.lat, to.lon);
+  const estimate = estimateStepsForGap({ distanceKm, gapSeconds, heightCm: props.userHeightCm });
+  if (estimate.steps > 0) {
+    addStepsToSession(estimate.steps);
+    backgroundNotice.value = `Enquanto o app esteve minimizado (${minutes} min), estimamos +${estimate.steps.toLocaleString('pt-BR')} passos pela distância do GPS.`;
+  } else if (estimate.reason === 'too_fast') {
+    backgroundNotice.value = 'Você se deslocou rápido demais para ser caminhada enquanto o app estava minimizado (carro ou ônibus?). Esse trecho não foi contado.';
+  } else {
+    backgroundNotice.value = `O app ficou minimizado por ${minutes} min sem deslocamento detectado.`;
+  }
+}
+
+function handleVisibilityChange() {
+  if (!isWalkActive.value) return;
+  if (document.visibilityState === 'hidden') {
+    hiddenAt = Date.now();
+    hiddenCoords = lastGpsCoords;
+    return;
+  }
+
+  // Voltou para o app: o wake lock é liberado pelo sistema ao minimizar.
+  acquireWakeLock();
+  if (!hiddenAt) return;
+  const gapSeconds = Math.round((Date.now() - hiddenAt) / 1000);
+  const from = hiddenCoords;
+  hiddenAt = null;
+  hiddenCoords = null;
+  if (isPaused.value || gapSeconds < 20) return;
+
+  if (!from) {
+    const minutes = Math.max(1, Math.round(gapSeconds / 60));
+    backgroundNotice.value = `O app ficou minimizado por ${minutes} min e o celular pausou a contagem. Sem GPS não deu para estimar: some os passos do app Saúde/Google Fit abaixo, se quiser.`;
+    return;
+  }
+
+  // A primeira posição nova vence: a do pedido direto ou a do watchPosition.
+  pendingGap = { from, gapSeconds };
+  clearTimeout(pendingGapTimer);
+  pendingGapTimer = setTimeout(() => resolvePendingGap(null), 15000);
+  currentPosition().then(to => { if (to) resolvePendingGap(to); });
+}
+
 function checkGoalAchievement() {
   if (dailyData.value.steps >= dailyData.value.goalSteps) {
     emit('goal-reached', {
@@ -353,6 +487,9 @@ async function startWalkingSession() {
   sessionSteps.value = 0;
   elapsedSeconds.value = 0;
   sessionStartTimestamp.value = Date.now();
+  pausedMs = 0;
+  pausedSince = null;
+  backgroundNotice.value = '';
 
   stepDetector = createStepDetector({
     onStep: handleStepDetected
@@ -360,7 +497,10 @@ async function startWalkingSession() {
 
   if (typeof window !== 'undefined') {
     window.addEventListener('devicemotion', handleDeviceMotion, { passive: true });
+    document.addEventListener('visibilitychange', handleVisibilityChange);
   }
+  acquireWakeLock();
+  emit('active-changed', true);
 
   // Inicia rastreamento por GPS se disponível para refinar distância
   if (typeof navigator !== 'undefined' && 'geolocation' in navigator) {
@@ -370,6 +510,12 @@ async function startWalkingSession() {
           if (!isWalkActive.value || isPaused.value) return;
           const { latitude, longitude, accuracy } = position.coords;
           if (accuracy && accuracy <= 35) {
+            if (pendingGap) {
+              const to = { lat: latitude, lon: longitude };
+              resolvePendingGap(to);
+              lastGpsCoords = to;
+              return;
+            }
             if (lastGpsCoords) {
               const deltaKm = calculateHaversineDistanceKm(
                 lastGpsCoords.lat,
@@ -397,9 +543,11 @@ async function startWalkingSession() {
 
   clearInterval(sessionTimer);
   sessionTimer = setInterval(() => {
-    if (!isPaused.value) {
-      elapsedSeconds.value += 1;
-    }
+    elapsedSeconds.value = activeElapsedSeconds({
+      startedAt: sessionStartTimestamp.value,
+      pausedMs,
+      pausedSince
+    });
   }, 1000);
 
   triggerHaptic('click');
@@ -411,6 +559,12 @@ async function startWalkingSession() {
 
 function togglePauseWalking() {
   isPaused.value = !isPaused.value;
+  if (isPaused.value) {
+    pausedSince = Date.now();
+  } else if (pausedSince) {
+    pausedMs += Date.now() - pausedSince;
+    pausedSince = null;
+  }
   triggerHaptic('click');
   if (isPaused.value) {
     speakCoachMessage('start', 'Caminhada pausada.');
@@ -420,9 +574,11 @@ function togglePauseWalking() {
 }
 
 function finishWalkingSession() {
+  elapsedSeconds.value = activeElapsedSeconds({ startedAt: sessionStartTimestamp.value, pausedMs, pausedSince });
   stopSensors();
   isWalkActive.value = false;
   isPaused.value = false;
+  emit('active-changed', false);
 
   dailyData.value.activeMinutes += Math.round(elapsedSeconds.value / 60);
   saveDailyWalkingData(props.todayDateStr, dailyData.value);
@@ -439,7 +595,13 @@ function finishWalkingSession() {
 function stopSensors() {
   if (typeof window !== 'undefined') {
     window.removeEventListener('devicemotion', handleDeviceMotion);
+    document.removeEventListener('visibilitychange', handleVisibilityChange);
   }
+  releaseWakeLock();
+  hiddenAt = null;
+  hiddenCoords = null;
+  pendingGap = null;
+  clearTimeout(pendingGapTimer);
   if (typeof navigator !== 'undefined' && 'geolocation' in navigator && gpsWatchId !== null) {
     navigator.geolocation.clearWatch(gpsWatchId);
     gpsWatchId = null;
@@ -450,6 +612,13 @@ function stopSensors() {
   if (stepDetector) {
     stepDetector.reset();
   }
+}
+
+function addTypedSteps() {
+  const value = Math.round(Number(String(manualStepsInput.value).replace(/\D/g, '')));
+  if (!Number.isFinite(value) || value <= 0 || value > 60000) return;
+  addManualSteps(value);
+  manualStepsInput.value = '';
 }
 
 function addManualSteps(amount) {
@@ -489,12 +658,10 @@ watch(
 watch(
   () => props.isOpen,
   isOpen => {
-    if (isOpen) {
+    // Fechar o modal NÃO encerra a caminhada: ela segue enquanto o app estiver
+    // aberto, e o resumo na tela inicial mostra que está em andamento.
+    if (isOpen && !isWalkActive.value) {
       dailyData.value = loadDailyWalkingData(props.todayDateStr);
-    } else {
-      if (isWalkActive.value) {
-        finishWalkingSession();
-      }
     }
   }
 );

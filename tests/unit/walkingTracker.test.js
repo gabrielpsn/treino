@@ -142,3 +142,37 @@ describe('walkingTracker Engine', () => {
     });
   });
 });
+
+import { estimateStepsForGap, activeElapsedSeconds, requestScreenWakeLock } from '../../src/engine/walkingTracker.js';
+
+describe('segundo plano', () => {
+  it('estima passos pela distância do GPS no intervalo minimizado', () => {
+    // 1 km em 12 min, 170 cm (passada 0,704 m) -> ~1420 passos
+    const r = estimateStepsForGap({ distanceKm: 1, gapSeconds: 720, heightCm: 170 });
+    expect(r.reason).toBe('gps');
+    expect(r.steps).toBe(1420);
+  });
+
+  it('não conta deslocamento de carro nem intervalos curtos ou parados', () => {
+    expect(estimateStepsForGap({ distanceKm: 5, gapSeconds: 600, heightCm: 170 }).reason).toBe('too_fast');
+    expect(estimateStepsForGap({ distanceKm: 1, gapSeconds: 10, heightCm: 170 }).reason).toBe('short_gap');
+    expect(estimateStepsForGap({ distanceKm: 0.01, gapSeconds: 600, heightCm: 170 }).reason).toBe('no_movement');
+  });
+
+  it('limita pela cadência máxima de caminhada', () => {
+    // 0,7 km em 3 min (3,9 m/s seria rápido demais) -> recusado; 0,4 km em 3 min passa mas é limitado
+    const r = estimateStepsForGap({ distanceKm: 0.45, gapSeconds: 180, heightCm: 170 });
+    expect(r.steps).toBeLessThanOrEqual(Math.floor(180 * 2.2));
+  });
+
+  it('tempo ativo por relógio desconta pausas', () => {
+    const start = 1_000_000;
+    expect(activeElapsedSeconds({ startedAt: start, now: start + 600_000 })).toBe(600);
+    expect(activeElapsedSeconds({ startedAt: start, pausedMs: 60_000, now: start + 600_000 })).toBe(540);
+    expect(activeElapsedSeconds({ startedAt: start, pausedSince: start + 500_000, now: start + 600_000 })).toBe(500);
+  });
+
+  it('wake lock sem suporte devolve null', async () => {
+    expect(await requestScreenWakeLock()).toBeNull();
+  });
+});

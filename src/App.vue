@@ -293,7 +293,7 @@
               class="tap-btn px-4 py-2 rounded-xl text-xs font-bold bg-[#0066FF] text-white hover:bg-[#0052cc] transition-all flex items-center gap-1.5 shadow-xs"
               @click.stop="isWalkingModalOpen = true"
             >
-              <span>▶ Iniciar Caminhada</span>
+              <span>{{ isWalkActive ? '🟢 Em andamento — abrir' : '▶ Iniciar Caminhada' }}</span>
             </button>
           </div>
         </div>
@@ -2096,7 +2096,20 @@
       @close="isWalkingModalOpen = false"
       @steps-updated="handleWalkingStepsUpdated"
       @goal-reached="handleWalkingGoalReached"
+      @active-changed="active => isWalkActive = active"
     />
+
+    <!-- Caminhada em andamento com o modal fechado: atalho para voltar a ela -->
+    <button
+      v-if="isWalkActive && !isWalkingModalOpen"
+      type="button"
+      id="btn-walking-in-progress"
+      class="tap-btn fixed left-1/2 -translate-x-1/2 bottom-24 md:bottom-6 z-40 px-4 py-2.5 rounded-full bg-emerald-600 text-white text-xs font-black shadow-xl flex items-center gap-2"
+      @click="isWalkingModalOpen = true"
+    >
+      <span class="w-2 h-2 rounded-full bg-white animate-pulse" aria-hidden="true"></span>
+      Caminhada em andamento · {{ todayWalkingData.steps.toLocaleString('pt-BR') }} passos
+    </button>
 
     <!-- Modal de Avaliação do App e Envio de Feedback -->
     <AppFeedbackModal
@@ -2348,6 +2361,7 @@ const isWrappedModalOpen = ref(false);
 const isRaidModalOpen = ref(false);
 const isWalkingModalOpen = ref(false);
 const isFeedbackModalOpen = ref(false);
+const isWalkActive = ref(false);
 const isBodyProgressOpen = ref(false);
 const isRemindersOpen = ref(false);
 const isCloudSyncOpen = ref(false);
